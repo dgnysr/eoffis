@@ -160,6 +160,7 @@
       });
     } catch (err) { const e = new Error('Keine Verbindung zur KI'); e.code = 'unavailable'; throw e; }
     let body = null; try { body = await res.json(); } catch { /* leer */ }
+    if (res.status === 404) { const e = new Error('KI ist noch nicht eingerichtet (Supabase-Funktion „ai“ fehlt).'); e.code = 'not_configured'; throw e; }
     if (!res.ok || !body) { const e = new Error((body && body.error) || ('KI-Fehler ' + res.status)); e.code = (body && body.code) || (res.status === 429 ? 'rate_limited' : 'unavailable'); throw e; }
     return body;
   }
