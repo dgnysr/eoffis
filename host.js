@@ -4,7 +4,8 @@
 (function () {
   'use strict';
   const CFG = window.EOFFIS_CONFIG || {};
-  const sb = window.supabase && CFG.supabaseUrl ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, {
+  const configured = !!CFG.supabaseUrl && !/DEIN-PROJEKT/.test(CFG.supabaseUrl) && !!CFG.supabaseAnonKey && !/DEIN-ANON/.test(CFG.supabaseAnonKey);
+  const sb = window.supabase && configured ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'eoffis.auth' },
   }) : null;
   let session = null;
