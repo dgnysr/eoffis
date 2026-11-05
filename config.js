@@ -1,6 +1,5 @@
-// Zugangsdaten des Supabase-Projekts (Project Settings → API). Der „anon public“-Schlüssel ist für Browser gedacht
-// und darf öffentlich sein; die Daten schützt die Zeilensicherheit (RLS) in der Datenbank.
+// Verbindung zum Supabase-Projekt „eoffis“ (öffentliche Angaben – die Daten schützt die Zeilensicherheit in der Datenbank)
 window.EOFFIS_CONFIG = {
-  supabaseUrl: 'https://DEIN-PROJEKT.supabase.co',
-  supabaseAnonKey: 'DEIN-ANON-KEY',
+  supabaseUrl: 'https://lqohxlxemawzrtdqjnci.supabase.co',
+  supabaseAnonKey: 'sb_publishable_h6XL-yl-SfsYSRztC0Ekmg_pEwMRxWf',
 };

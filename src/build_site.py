@@ -5,7 +5,7 @@ shell = open('shell.html').read(); app = open('app.js').read(); i18n = open('i18
 body = shell.replace('__I18N__', i18n).replace('__APP__', app)
 title = re.search(r'<title>.*?</title>', body).group(0)
 body = body.replace(title, '').replace('<meta name="claude:viewport-fit-sides" content="cover">', '')
-host = ('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>\n'
+host = ('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>\n'
         '<script src="config.js"></script>\n<script src="host.js"></script>\n')
 body = body.replace('<script id="i18n"', host + '<script id="i18n"', 1)
 head = open('head.html').read().replace('__TITLE__', title)

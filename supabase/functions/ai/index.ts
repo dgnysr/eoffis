@@ -1,6 +1,7 @@
 // Supabase Edge Function „ai“ für die eOffis Web-App – einzige Stelle mit dem Claude-API-Schlüssel.
 // Einrichten: Supabase → Edge Functions → Secrets: ANTHROPIC_API_KEY (Pflicht), optional ANTHROPIC_MODEL,
-// AI_DAILY_LIMIT (Standard 150), AI_DEMO_DAILY_LIMIT (Standard 30). Dann Funktion „ai“ mit diesem Code anlegen.
+// AI_DAILY_LIMIT (Standard 150), AI_DEMO_DAILY_LIMIT (Standard 30). Dann Funktion „ai“ mit diesem Code anlegen
+// und „Verify JWT“ AUSschalten – die Funktion prüft die Anmeldung selbst (auth.getUser), das funktioniert auch mit den neuen API-Schlüsseln.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const MODEL = Deno.env.get('ANTHROPIC_MODEL') ?? 'claude-sonnet-5-5';
@@ -68,7 +69,7 @@ Deno.serve(async (req) => {
   if (!API_KEY) return json({ error: 'KI ist noch nicht eingerichtet (ANTHROPIC_API_KEY fehlt).', code: 'not_configured' }, 503);
   const auth = req.headers.get('Authorization');
   if (!auth) return json({ error: 'Nicht angemeldet', code: 'not_granted' }, 401);
-  const supa = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: auth } } });
+  const supa = createClient(Deno.env.get('SUPABASE_URL')!, (Deno.env.get('SUPABASE_ANON_KEY') ?? Deno.env.get('SUPABASE_PUBLISHABLE_KEY'))!, { global: { headers: { Authorization: auth } } });
   const { data: u } = await supa.auth.getUser();
   if (!u.user) return json({ error: 'Nicht angemeldet', code: 'not_granted' }, 401);
 
