@@ -153,7 +153,7 @@
     const { data: s } = await sb.auth.getSession();
     let res;
     try {
-      res = await fetch(CFG.supabaseUrl + '/functions/v1/ai', {
+      res = await fetch(CFG.supabaseUrl + '/functions/v1/' + (CFG.aiFunction || 'ai'), {
         method: 'POST', signal: opts && opts.signal,
         headers: { 'content-type': 'application/json', apikey: CFG.supabaseAnonKey, Authorization: 'Bearer ' + (s.session ? s.session.access_token : '') },
         body: JSON.stringify({ prompt, images, json: wantJson }),
