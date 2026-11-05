@@ -161,6 +161,7 @@
     } catch (err) { const e = new Error('Keine Verbindung zur KI'); e.code = 'unavailable'; throw e; }
     let body = null; try { body = await res.json(); } catch { /* leer */ }
     if (res.status === 404) { const e = new Error('KI ist noch nicht eingerichtet (Supabase-Funktion „ai“ fehlt).'); e.code = 'not_configured'; throw e; }
+    if (body && /credit balance is too low/i.test(body.error || '')) { const e = new Error('Das KI-Guthaben bei Anthropic ist leer. Bitte unter console.anthropic.com → Billing Guthaben aufladen.'); e.code = 'not_configured'; throw e; }
     if (!res.ok || !body) { const e = new Error((body && body.error) || ('KI-Fehler ' + res.status)); e.code = (body && body.code) || (res.status === 429 ? 'rate_limited' : 'unavailable'); throw e; }
     return body;
   }
