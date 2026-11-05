@@ -99,5 +99,8 @@ revoke all on function public.ai_give_back() from public, anon;
 grant execute on function public.ai_take(int, int) to authenticated;
 grant execute on function public.ai_give_back() to authenticated;
 
+-- Rechte ausdrücklich vergeben (funktioniert auch, wenn „Neue Tabellen automatisch anzeigen“ beim Projekt ausgeschaltet ist)
+grant usage on schema public to authenticated;
+grant execute on function public.kv_mine(text) to authenticated;
 grant select, insert, update, delete on public.kv, public.kv_lease to authenticated;
 grant select on public.ai_usage to authenticated;
