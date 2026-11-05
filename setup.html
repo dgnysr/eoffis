@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en" translate="no" class="notranslate">
+<head>
+<meta charset="utf-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>eOffis Einrichtung</title>
+<style>
+:root{--g:#1d7348;--bg:#f3f6f4;--fg:#17221c;--mut:#5d6b63}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,sans-serif;padding:20px max(16px,env(safe-area-inset-left,0px)) 40px}
+main{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{font-size:1.3rem;margin:0} p{margin:0}
+button{font:700 1.1rem system-ui,sans-serif;padding:16px;border:0;border-radius:14px;background:var(--g);color:#fff}
+.ok{background:#e3f1e9;color:#155a37;padding:12px;border-radius:12px}
+textarea{width:100%;box-sizing:border-box;height:220px;font:12px ui-monospace,monospace;border-radius:12px;border:1px solid #cfdad3;padding:10px}
+ol{margin:0;padding-left:22px}
+</style>
+</head>
+<body>
+<main>
+<h1>eOffis – Datenbank einrichten</h1>
+<ol><li>Unten auf <b>„Datenbank-Text kopieren“</b> tippen.</li><li>Im Supabase SQL-Editor alles im Feld löschen, dann <b>Einfügen</b>.</li><li>Auf <b>Run / Laufen</b> tippen.</li></ol>
+<button id="cp" type="button">Datenbank-Text kopieren</button>
+<p id="msg" class="ok" hidden>Kopiert. Jetzt in Supabase einfügen und ausführen.</p>
+<p style="color:var(--mut);font-size:.9rem">Zur Kontrolle (muss englisch sein, z. B. „create table if not exists“):</p>
+<textarea id="sql" readonly translate="no">-- eOffis Web-App – Datenbank für Supabase
+-- Einmal im Supabase-Dashboard unter „SQL Editor“ einfügen und ausführen (mehrfaches Ausführen ist unschädlich).
+-- Jeder Betrieb sieht nur seine eigenen Daten (Row Level Security). Ablage als Dokumente je Pfad:
+--   data/users/&lt;Konto-ID&gt;/&lt;Bereich&gt;                 Profil des Betriebs (Bereich: main oder demo)
+--   data/users/&lt;Konto-ID&gt;/&lt;Bereich&gt;/&lt;Sammlung&gt;/&lt;ID&gt; Belege, Seiten, Fristen, Rechnungen, Antworten …
+
+create table if not exists public.kv (
+  path text primary key,
+  owner uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  parent text not null,
+  data jsonb not null,
+  updated_at timestamptz not null default now(),
+  constraint kv_size check (octet_length(data::text) &lt;= 262144),
+  constraint kv_path check (path ~ &#x27;^data/users/[0-9a-f-]{36}(/[A-Za-z0-9_.~:@+-]{1,200})*$&#x27;)
+);
+create index if not exists kv_parent_created on public.kv (parent, (data-&gt;&gt;&#x27;created_at&#x27;), path);
+create index if not exists kv_parent_doc on public.kv (parent, (data-&gt;&gt;&#x27;docId&#x27;));
+create index if not exists kv_parent_number on public.kv (parent, (data-&gt;&gt;&#x27;number&#x27;));
+create index if not exists kv_owner on public.kv (owner);
+
+alter table public.kv enable row level security;
+-- Zugriff nur auf den eigenen Bereich data/users/&lt;eigene ID&gt;
+create or replace function public.kv_mine(p_path text) returns boolean
+language sql stable as $$
+  select split_part(p_path, &#x27;/&#x27;, 1) = &#x27;data&#x27; and split_part(p_path, &#x27;/&#x27;, 2) = &#x27;users&#x27;
+     and split_part(p_path, &#x27;/&#x27;, 3) = (select auth.uid())::text
+$$;
+drop policy if exists &quot;eigene Daten&quot; on public.kv;
+create policy &quot;eigene Daten&quot; on public.kv for all to authenticated
+  using (owner = (select auth.uid()) and public.kv_mine(path))
+  with check (owner = (select auth.uid()) and public.kv_mine(path));
+
+create or replace function public.kv_touch() returns trigger language plpgsql as $$
+begin
+  new.updated_at := now();
+  new.parent := regexp_replace(new.path, &#x27;/[^/]+$&#x27;, &#x27;&#x27;);
+  return new;
+end $$;
+drop trigger if exists kv_touch on public.kv;
+create trigger kv_touch before insert or update on public.kv for each row execute function public.kv_touch();
+
+-- Kurze Sperren (z. B. fortlaufende Rechnungsnummer, zwei Geräte gleichzeitig)
+create table if not exists public.kv_lease (
+  path text primary key,
+  owner uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  holder text not null,
+  until timestamptz not null
+);
+alter table public.kv_lease enable row level security;
+drop policy if exists &quot;eigene Sperren&quot; on public.kv_lease;
+create policy &quot;eigene Sperren&quot; on public.kv_lease for all to authenticated
+  using (owner = (select auth.uid())) with check (owner = (select auth.uid()));
+
+create or replace function public.kv_acquire(p_path text, p_holder text, p_ttl_ms int default 30000) returns jsonb
+language plpgsql security invoker set search_path = public as $$
+declare l public.kv_lease; v_until timestamptz := now() + make_interval(secs =&gt; least(600000, greatest(1000, coalesce(p_ttl_ms, 30000))) / 1000.0);
+begin
+  if not public.kv_mine(p_path) then raise exception &#x27;not allowed&#x27;; end if;
+  select * into l from public.kv_lease where path = p_path for update;
+  if found and l.until &gt; now() and l.holder &lt;&gt; p_holder then
+    return jsonb_build_object(&#x27;acquired&#x27;, false, &#x27;expiresAt&#x27;, l.until);
+  end if;
+  insert into public.kv_lease (path, holder, until) values (p_path, p_holder, v_until)
+  on conflict (path) do update set holder = excluded.holder, until = excluded.until;
+  return jsonb_build_object(&#x27;acquired&#x27;, true, &#x27;holder&#x27;, p_holder, &#x27;expiresAt&#x27;, v_until);
+end $$;
+grant execute on function public.kv_acquire(text, text, int) to authenticated;
+
+-- KI-Tageskontingent je Konto (schützt vor Kostenfallen)
+create table if not exists public.ai_usage (
+  owner uuid not null references auth.users(id) on delete cascade,
+  day date not null default current_date,
+  calls integer not null default 0,
+  primary key (owner, day)
+);
+alter table public.ai_usage enable row level security;
+drop policy if exists &quot;eigenes Kontingent lesen&quot; on public.ai_usage;
+create policy &quot;eigenes Kontingent lesen&quot; on public.ai_usage for select to authenticated using (owner = (select auth.uid()));
+
+create or replace function public.ai_take(p_limit int default 150, p_demo_limit int default 30) returns jsonb
+language plpgsql security definer set search_path = public, auth as $$
+declare uid uuid := auth.uid(); lim int; used int; anon boolean;
+begin
+  if uid is null then raise exception &#x27;Nicht angemeldet&#x27;; end if;
+  select coalesce(is_anonymous, false) into anon from auth.users where id = uid;
+  lim := case when anon then p_demo_limit else p_limit end;
+  insert into public.ai_usage (owner, day, calls) values (uid, current_date, 1)
+  on conflict (owner, day) do update set calls = public.ai_usage.calls + 1 where public.ai_usage.calls &lt; lim
+  returning calls into used;
+  if used is null then return jsonb_build_object(&#x27;ok&#x27;, false, &#x27;limit&#x27;, lim); end if;
+  return jsonb_build_object(&#x27;ok&#x27;, true, &#x27;used&#x27;, used, &#x27;limit&#x27;, lim);
+end $$;
+create or replace function public.ai_give_back() returns void
+language sql security definer set search_path = public as $$
+  update public.ai_usage set calls = greatest(calls - 1, 0) where owner = auth.uid() and day = current_date;
+$$;
+revoke all on function public.ai_take(int, int) from public, anon;
+revoke all on function public.ai_give_back() from public, anon;
+grant execute on function public.ai_take(int, int) to authenticated;
+grant execute on function public.ai_give_back() to authenticated;
+
+-- Rechte ausdrücklich vergeben (funktioniert auch, wenn „Neue Tabellen automatisch anzeigen“ beim Projekt ausgeschaltet ist)
+grant usage on schema public to authenticated;
+grant execute on function public.kv_mine(text) to authenticated;
+grant select, insert, update, delete on public.kv, public.kv_lease to authenticated;
+grant select on public.ai_usage to authenticated;
+</textarea>
+</main>
+<script>
+const SQL = "-- eOffis Web-App \u2013 Datenbank f\u00fcr Supabase\n-- Einmal im Supabase-Dashboard unter \u201eSQL Editor\u201c einf\u00fcgen und ausf\u00fchren (mehrfaches Ausf\u00fchren ist unsch\u00e4dlich).\n-- Jeder Betrieb sieht nur seine eigenen Daten (Row Level Security). Ablage als Dokumente je Pfad:\n--   data/users/<Konto-ID>/<Bereich>                 Profil des Betriebs (Bereich: main oder demo)\n--   data/users/<Konto-ID>/<Bereich>/<Sammlung>/<ID> Belege, Seiten, Fristen, Rechnungen, Antworten \u2026\n\ncreate table if not exists public.kv (\n  path text primary key,\n  owner uuid not null default auth.uid() references auth.users(id) on delete cascade,\n  parent text not null,\n  data jsonb not null,\n  updated_at timestamptz not null default now(),\n  constraint kv_size check (octet_length(data::text) <= 262144),\n  constraint kv_path check (path ~ '^data/users/[0-9a-f-]{36}(/[A-Za-z0-9_.~:@+-]{1,200})*$')\n);\ncreate index if not exists kv_parent_created on public.kv (parent, (data->>'created_at'), path);\ncreate index if not exists kv_parent_doc on public.kv (parent, (data->>'docId'));\ncreate index if not exists kv_parent_number on public.kv (parent, (data->>'number'));\ncreate index if not exists kv_owner on public.kv (owner);\n\nalter table public.kv enable row level security;\n-- Zugriff nur auf den eigenen Bereich data/users/<eigene ID>\ncreate or replace function public.kv_mine(p_path text) returns boolean\nlanguage sql stable as $$\n  select split_part(p_path, '/', 1) = 'data' and split_part(p_path, '/', 2) = 'users'\n     and split_part(p_path, '/', 3) = (select auth.uid())::text\n$$;\ndrop policy if exists \"eigene Daten\" on public.kv;\ncreate policy \"eigene Daten\" on public.kv for all to authenticated\n  using (owner = (select auth.uid()) and public.kv_mine(path))\n  with check (owner = (select auth.uid()) and public.kv_mine(path));\n\ncreate or replace function public.kv_touch() returns trigger language plpgsql as $$\nbegin\n  new.updated_at := now();\n  new.parent := regexp_replace(new.path, '/[^/]+$', '');\n  return new;\nend $$;\ndrop trigger if exists kv_touch on public.kv;\ncreate trigger kv_touch before insert or update on public.kv for each row execute function public.kv_touch();\n\n-- Kurze Sperren (z. B. fortlaufende Rechnungsnummer, zwei Ger\u00e4te gleichzeitig)\ncreate table if not exists public.kv_lease (\n  path text primary key,\n  owner uuid not null default auth.uid() references auth.users(id) on delete cascade,\n  holder text not null,\n  until timestamptz not null\n);\nalter table public.kv_lease enable row level security;\ndrop policy if exists \"eigene Sperren\" on public.kv_lease;\ncreate policy \"eigene Sperren\" on public.kv_lease for all to authenticated\n  using (owner = (select auth.uid())) with check (owner = (select auth.uid()));\n\ncreate or replace function public.kv_acquire(p_path text, p_holder text, p_ttl_ms int default 30000) returns jsonb\nlanguage plpgsql security invoker set search_path = public as $$\ndeclare l public.kv_lease; v_until timestamptz := now() + make_interval(secs => least(600000, greatest(1000, coalesce(p_ttl_ms, 30000))) / 1000.0);\nbegin\n  if not public.kv_mine(p_path) then raise exception 'not allowed'; end if;\n  select * into l from public.kv_lease where path = p_path for update;\n  if found and l.until > now() and l.holder <> p_holder then\n    return jsonb_build_object('acquired', false, 'expiresAt', l.until);\n  end if;\n  insert into public.kv_lease (path, holder, until) values (p_path, p_holder, v_until)\n  on conflict (path) do update set holder = excluded.holder, until = excluded.until;\n  return jsonb_build_object('acquired', true, 'holder', p_holder, 'expiresAt', v_until);\nend $$;\ngrant execute on function public.kv_acquire(text, text, int) to authenticated;\n\n-- KI-Tageskontingent je Konto (sch\u00fctzt vor Kostenfallen)\ncreate table if not exists public.ai_usage (\n  owner uuid not null references auth.users(id) on delete cascade,\n  day date not null default current_date,\n  calls integer not null default 0,\n  primary key (owner, day)\n);\nalter table public.ai_usage enable row level security;\ndrop policy if exists \"eigenes Kontingent lesen\" on public.ai_usage;\ncreate policy \"eigenes Kontingent lesen\" on public.ai_usage for select to authenticated using (owner = (select auth.uid()));\n\ncreate or replace function public.ai_take(p_limit int default 150, p_demo_limit int default 30) returns jsonb\nlanguage plpgsql security definer set search_path = public, auth as $$\ndeclare uid uuid := auth.uid(); lim int; used int; anon boolean;\nbegin\n  if uid is null then raise exception 'Nicht angemeldet'; end if;\n  select coalesce(is_anonymous, false) into anon from auth.users where id = uid;\n  lim := case when anon then p_demo_limit else p_limit end;\n  insert into public.ai_usage (owner, day, calls) values (uid, current_date, 1)\n  on conflict (owner, day) do update set calls = public.ai_usage.calls + 1 where public.ai_usage.calls < lim\n  returning calls into used;\n  if used is null then return jsonb_build_object('ok', false, 'limit', lim); end if;\n  return jsonb_build_object('ok', true, 'used', used, 'limit', lim);\nend $$;\ncreate or replace function public.ai_give_back() returns void\nlanguage sql security definer set search_path = public as $$\n  update public.ai_usage set calls = greatest(calls - 1, 0) where owner = auth.uid() and day = current_date;\n$$;\nrevoke all on function public.ai_take(int, int) from public, anon;\nrevoke all on function public.ai_give_back() from public, anon;\ngrant execute on function public.ai_take(int, int) to authenticated;\ngrant execute on function public.ai_give_back() to authenticated;\n\n-- Rechte ausdr\u00fccklich vergeben (funktioniert auch, wenn \u201eNeue Tabellen automatisch anzeigen\u201c beim Projekt ausgeschaltet ist)\ngrant usage on schema public to authenticated;\ngrant execute on function public.kv_mine(text) to authenticated;\ngrant select, insert, update, delete on public.kv, public.kv_lease to authenticated;\ngrant select on public.ai_usage to authenticated;\n";
+document.getElementById('cp').onclick = async () => {
+  try { await navigator.clipboard.writeText(SQL); }
+  catch (e) { const t = document.getElementById('sql'); t.value = SQL; t.focus(); t.select(); document.execCommand('copy'); }
+  document.getElementById('msg').hidden = false;
+};
+</script>
+</body>
+</html>
