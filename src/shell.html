@@ -154,8 +154,9 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 /* Briefvorschau nach DIN 5008 (verkleinert) */
 .letter { background: #fff; color: #111; border: 1px solid var(--line); border-radius: 6px; padding: 22px 20px 26px 26px; font-family: Helvetica, Arial, sans-serif; font-size: .82rem; line-height: 1.5; box-shadow: var(--shadow); }
 .letter .ret { font-size: .66rem; color: #555; border-bottom: 1px solid #bbb; display: inline-block; margin-bottom: 6px; }
-.letter .addr { white-space: pre-line; min-height: 6.5em; }
-.letter .meta { text-align: end; white-space: pre-line; margin: 10px 0 14px; }
+.letter .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; min-height: 6.5em; margin-bottom: 18px; }
+.letter .addr { white-space: pre-line; }
+.letter .meta { text-align: end; white-space: nowrap; }
 .letter .subj { font-weight: 700; margin-bottom: 12px; }
 .letter .body { white-space: pre-wrap; overflow-wrap: anywhere; }
 

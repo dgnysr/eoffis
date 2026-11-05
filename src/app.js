@@ -95,6 +95,16 @@ for (const k of Object.keys(EXTRA)) I18N.de[k] = Object.assign({}, I18N.de[k] ||
 const LANGS = ['de', 'tr', 'pl', 'ru', 'ar', 'ro'];
 const LANG_NAMES = { de: 'Deutsch', tr: 'Türkisch', pl: 'Polnisch', ru: 'Russisch', ar: 'Arabisch', ro: 'Rumänisch' };
 let lang = 'de';
+/* Mehrseitiger Scan, Fristen → Kalender (alle Sprachen) */
+const NEW_TEXT = {
+  de: { pagesDone: '{{count}} Seite(n) erfasst', morePage: 'Weitere Seite scannen', finishAi: 'Fertig – mit KI analysieren ({{count}} S.)', saveOnly: 'Nur speichern, ohne KI', moreHint: 'Mehrseitiges Schreiben? Einfach jede Seite nacheinander fotografieren – erst danach auf „Fertig“ tippen.', otherSources: 'Andere Quelle hinzufügen', calTitle: '{{count}} Frist(en) erkannt', calAuto: 'Sie stehen jetzt unter „Fristen“.', calAsk: 'Auch in den Kalender deines Handys eintragen? Erinnerung 1 Woche und 1 Tag vorher.', calYes: 'In Handy-Kalender eintragen', calNo: 'Nein, danke', calHow: 'Es wird eine Kalenderdatei (.ics) geöffnet bzw. heruntergeladen. Antippen → „Hinzufügen“ bzw. mit deiner Kalender-App öffnen. iPhone übernimmt beide Erinnerungen automatisch.', calGoogle: 'Einzeln in Google Kalender', calGoogleHint: 'Android mit Google Kalender: falls die Datei nicht aufgeht, hier je Frist eintragen (Erinnerungen dann im Kalender auf 1 Woche und 1 Tag stellen).', calDone: 'Kalenderdatei erstellt', calOne: 'In Kalender' },
+  tr: { pagesDone: '{{count}} sayfa alındı', morePage: 'Sonraki sayfayı tara', finishAi: 'Bitti – yapay zekâ ile analiz et ({{count}} s.)', saveOnly: 'Sadece kaydet, analiz yok', moreHint: 'Çok sayfalı mektup mu? Her sayfayı sırayla fotoğraflayın – sonra „Bitti“ye dokunun.', otherSources: 'Başka kaynak ekle', calTitle: '{{count}} süre tespit edildi', calAuto: 'Artık „Süreler“ altında listeleniyor.', calAsk: 'Telefon takvimine de eklensin mi? 1 hafta ve 1 gün önce hatırlatma.', calYes: 'Telefon takvimine ekle', calNo: 'Hayır, teşekkürler', calHow: 'Bir takvim dosyası (.ics) açılır veya indirilir. Dokunun → „Ekle“ ya da takvim uygulamanızla açın.', calGoogle: 'Google Takvim’e tek tek', calGoogleHint: 'Dosya açılmazsa her süreyi buradan ekleyin (hatırlatmaları takvimde 1 hafta ve 1 gün olarak ayarlayın).', calDone: 'Takvim dosyası oluşturuldu', calOne: 'Takvime' },
+  pl: { pagesDone: 'Zeskanowano stron: {{count}}', morePage: 'Skanuj kolejną stronę', finishAi: 'Gotowe – analizuj z AI ({{count}} str.)', saveOnly: 'Tylko zapisz, bez AI', moreHint: 'Pismo wielostronicowe? Fotografuj kolejno każdą stronę – dopiero potem dotknij „Gotowe”.', otherSources: 'Dodaj z innego źródła', calTitle: 'Wykryte terminy: {{count}}', calAuto: 'Są teraz na liście „Terminy”.', calAsk: 'Dodać też do kalendarza w telefonie? Przypomnienie tydzień i dzień wcześniej.', calYes: 'Dodaj do kalendarza telefonu', calNo: 'Nie, dziękuję', calHow: 'Otworzy się lub pobierze plik kalendarza (.ics). Dotknij → „Dodaj” lub otwórz aplikacją kalendarza.', calGoogle: 'Pojedynczo w Kalendarzu Google', calGoogleHint: 'Jeśli plik się nie otworzy, dodaj tu każdy termin (przypomnienia ustaw w kalendarzu na tydzień i dzień).', calDone: 'Utworzono plik kalendarza', calOne: 'Do kalendarza' },
+  ru: { pagesDone: 'Страниц снято: {{count}}', morePage: 'Сканировать ещё страницу', finishAi: 'Готово – анализ ИИ ({{count}} стр.)', saveOnly: 'Только сохранить, без ИИ', moreHint: 'Многостраничное письмо? Снимите каждую страницу по очереди – затем нажмите «Готово».', otherSources: 'Добавить из другого источника', calTitle: 'Найдено сроков: {{count}}', calAuto: 'Они уже в разделе «Сроки».', calAsk: 'Добавить и в календарь телефона? Напоминание за неделю и за день.', calYes: 'Добавить в календарь телефона', calNo: 'Нет, спасибо', calHow: 'Откроется или скачается файл календаря (.ics). Нажмите → «Добавить» или откройте приложением календаря.', calGoogle: 'По одному в Google Календарь', calGoogleHint: 'Если файл не открывается, добавьте каждый срок здесь (напоминания в календаре: за неделю и за день).', calDone: 'Файл календаря создан', calOne: 'В календарь' },
+  ar: { pagesDone: 'تم التقاط {{count}} صفحة', morePage: 'مسح صفحة أخرى', finishAi: 'تم – التحليل بالذكاء الاصطناعي ({{count}} ص)', saveOnly: 'حفظ فقط بدون تحليل', moreHint: 'رسالة من عدة صفحات؟ صوّر كل صفحة على حدة ثم اضغط „تم“.', otherSources: 'إضافة من مصدر آخر', calTitle: 'تم العثور على {{count}} موعد', calAuto: 'أصبحت الآن ضمن „المواعيد“.', calAsk: 'إضافتها أيضًا إلى تقويم الهاتف؟ تذكير قبل أسبوع وقبل يوم.', calYes: 'إضافة إلى تقويم الهاتف', calNo: 'لا، شكرًا', calHow: 'سيتم فتح أو تنزيل ملف تقويم (.ics). اضغط عليه ← „إضافة“ أو افتحه بتطبيق التقويم.', calGoogle: 'كل موعد في تقويم Google', calGoogleHint: 'إن لم يُفتح الملف، أضف كل موعد من هنا (واضبط التذكير في التقويم قبل أسبوع ويوم).', calDone: 'تم إنشاء ملف التقويم', calOne: 'إلى التقويم' },
+  ro: { pagesDone: '{{count}} pagină(i) scanate', morePage: 'Scanează pagina următoare', finishAi: 'Gata – analizează cu AI ({{count}} p.)', saveOnly: 'Doar salvează, fără AI', moreHint: 'Scrisoare cu mai multe pagini? Fotografiază pe rând fiecare pagină – apoi apasă „Gata”.', otherSources: 'Adaugă din altă sursă', calTitle: '{{count}} termen(e) găsite', calAuto: 'Sunt acum în lista „Termene”.', calAsk: 'Le adaugi și în calendarul telefonului? Memento cu o săptămână și o zi înainte.', calYes: 'Adaugă în calendarul telefonului', calNo: 'Nu, mulțumesc', calHow: 'Se deschide sau se descarcă un fișier de calendar (.ics). Atinge → „Adaugă” sau deschide-l cu aplicația de calendar.', calGoogle: 'Pe rând în Google Calendar', calGoogleHint: 'Dacă fișierul nu se deschide, adaugă aici fiecare termen (setează în calendar memento cu o săptămână și o zi).', calDone: 'Fișier de calendar creat', calOne: 'În calendar' },
+};
+for (const l of Object.keys(NEW_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].web = Object.assign({}, I18N[l].web || {}, NEW_TEXT[l]); }
 /* Eigenständige Web-App (Supabase): Texte, die sich sonst auf Claude beziehen */
 const HOST_TEXT = {"de": {"setupIntro": "Lege einmal deine Betriebsdaten an. Alles, was du speicherst, liegt geschützt in deinem eOffis-Konto – nur du siehst es.", "privacy": "Deine Daten liegen geschützt in deinem eOffis-Konto (Supabase, Server in der EU). Für die KI-Auswertung werden Belegbilder an Claude (Anthropic) übertragen.", "privacyText": "Testphase: Daten liegen in der Supabase-Datenbank dieses Projekts. Vor der Nutzung mit echten Daten Speicherort, Dienstleister (Supabase, Anthropic) und Auftragsverarbeitung prüfen – bis dahin nur Beispieldaten verwenden.", "storeQuota": "Der Speicher ist voll. Bitte ältere Belege exportieren und löschen.", "pickWhy": "Dieser Browser gibt Kamera und Dateiauswahl nicht frei (oft in Apps eingebaute Browser). In Chrome oder Safari funktioniert es – deine Daten bleiben dieselben.", "pickStep2": "In Chrome oder Safari einfügen und mit deinem eOffis-Konto anmelden", "account": "Konto", "logout": "Abmelden", "demoAccount": "Demo ohne Konto – Daten werden nach einigen Tagen gelöscht."}, "tr": {"setupIntro": "İşletme bilgilerini bir kez gir. Kaydettiğin her şey eOffis hesabında korunur – yalnızca sen görürsün.", "privacy": "Verilerin eOffis hesabında korunur (Supabase, AB sunucuları). Yapay zekâ analizi için belge görüntüleri Claude’a (Anthropic) gönderilir.", "privacyText": "Test aşaması: Veriler bu projenin Supabase veritabanında. Gerçek verilerle kullanmadan önce depolama yerini, hizmet sağlayıcıları (Supabase, Anthropic) ve veri işleme sözleşmesini kontrol et – o zamana kadar yalnızca örnek veriler kullan.", "storeQuota": "Depolama dolu. Lütfen eski belgeleri dışa aktarıp sil.", "pickWhy": "Bu tarayıcı kamerayı ve dosya seçimini açmıyor (genellikle uygulama içi tarayıcılar). Chrome veya Safari’de çalışır – verilerin aynı kalır.", "pickStep2": "Chrome veya Safari’ye yapıştır ve eOffis hesabınla giriş yap", "account": "Hesap", "logout": "Çıkış yap", "demoAccount": "Hesapsız demo – veriler birkaç gün sonra silinir."}, "pl": {"setupIntro": "Podaj raz dane firmy. Wszystko, co zapiszesz, jest chronione na Twoim koncie eOffis – widzisz to tylko Ty.", "privacy": "Twoje dane są chronione na koncie eOffis (Supabase, serwery w UE). Do analizy AI obrazy dokumentów są przesyłane do Claude (Anthropic).", "privacyText": "Faza testów: dane są w bazie Supabase tego projektu. Przed użyciem prawdziwych danych sprawdź miejsce przechowywania, usługodawców (Supabase, Anthropic) i umowę powierzenia – do tego czasu tylko przykładowe dane.", "storeQuota": "Pamięć jest pełna. Wyeksportuj i usuń starsze dokumenty.", "pickWhy": "Ta przeglądarka nie udostępnia aparatu ani wyboru plików (często przeglądarki wbudowane w aplikacje). W Chrome lub Safari działa – dane pozostają te same.", "pickStep2": "Wklej w Chrome lub Safari i zaloguj się kontem eOffis", "account": "Konto", "logout": "Wyloguj", "demoAccount": "Demo bez konta – dane zostaną usunięte po kilku dniach."}, "ru": {"setupIntro": "Один раз укажите данные предприятия. Всё сохранённое защищено в вашем аккаунте eOffis – видите только вы.", "privacy": "Ваши данные защищены в аккаунте eOffis (Supabase, серверы в ЕС). Для анализа ИИ изображения документов передаются в Claude (Anthropic).", "privacyText": "Тестовый этап: данные хранятся в базе Supabase этого проекта. Перед работой с реальными данными проверьте место хранения, поставщиков (Supabase, Anthropic) и договор обработки – до этого только примеры.", "storeQuota": "Хранилище заполнено. Экспортируйте и удалите старые документы.", "pickWhy": "Этот браузер не даёт доступ к камере и выбору файлов (часто встроенные в приложения браузеры). В Chrome или Safari работает – данные остаются теми же.", "pickStep2": "Вставьте в Chrome или Safari и войдите в аккаунт eOffis", "account": "Аккаунт", "logout": "Выйти", "demoAccount": "Демо без аккаунта – данные удаляются через несколько дней."}, "ar": {"setupIntro": "أدخل بيانات منشأتك مرة واحدة. كل ما تحفظه محمي في حساب eOffis الخاص بك – لا يراه غيرك.", "privacy": "بياناتك محمية في حساب eOffis (Supabase، خوادم في الاتحاد الأوروبي). لتحليل الذكاء الاصطناعي تُرسل صور المستندات إلى Claude (Anthropic).", "privacyText": "مرحلة الاختبار: البيانات في قاعدة بيانات Supabase لهذا المشروع. قبل استخدام بيانات حقيقية تحقّق من مكان التخزين ومقدّمي الخدمة (Supabase وAnthropic) وعقد المعالجة – حتى ذلك الحين بيانات تجريبية فقط.", "storeQuota": "مساحة التخزين ممتلئة. يرجى تصدير المستندات القديمة وحذفها.", "pickWhy": "هذا المتصفح لا يتيح الكاميرا واختيار الملفات (غالبًا المتصفحات المدمجة في التطبيقات). في Chrome أو Safari يعمل – وتبقى بياناتك نفسها.", "pickStep2": "الصقه في Chrome أو Safari وسجّل الدخول بحساب eOffis", "account": "الحساب", "logout": "تسجيل الخروج", "demoAccount": "عرض تجريبي بدون حساب – تُحذف البيانات بعد بضعة أيام."}, "ro": {"setupIntro": "Introdu o singură dată datele firmei. Tot ce salvezi este protejat în contul tău eOffis – doar tu vezi.", "privacy": "Datele tale sunt protejate în contul eOffis (Supabase, servere în UE). Pentru analiza AI, imaginile documentelor sunt trimise la Claude (Anthropic).", "privacyText": "Faza de test: datele sunt în baza Supabase a acestui proiect. Înainte de date reale verifică locul de stocare, furnizorii (Supabase, Anthropic) și contractul de prelucrare – până atunci doar date exemplu.", "storeQuota": "Spațiul este plin. Exportă și șterge documentele mai vechi.", "pickWhy": "Acest browser nu permite camera și alegerea fișierelor (adesea browserele integrate în aplicații). În Chrome sau Safari funcționează – datele rămân aceleași.", "pickStep2": "Lipește în Chrome sau Safari și conectează-te cu contul eOffis", "account": "Cont", "logout": "Deconectare", "demoAccount": "Demo fără cont – datele se șterg după câteva zile."}};
 if (window.EOFFIS_HOST) for (const l of Object.keys(HOST_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].web = Object.assign({}, I18N[l].web || {}, HOST_TEXT[l]); }
@@ -774,8 +784,15 @@ VIEWS.scan = {
     const items = sc.items, bytes = items.reduce((s, i) => s + (i.size || 0), 0), prob = draftProblem(items);
     return `${sc.restored ? `<div class="banner">${esc(t('scan.draftRestored'))}</div>` : ''}
       ${S.busy ? busyCard(S.busy) : `
+      ${items.length ? `<div class="card" style="border:2px solid var(--accent)"><h2>✓ ${esc(t('web.pagesDone', { count: items.length }))}</h2>
+        ${items.filter((i) => i.thumb).length ? `<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:10px">${items.map((it, i) => it.thumb ? `<img src="${it.thumb}" alt="${i + 1}" style="width:44px;height:60px;object-fit:cover;border-radius:4px;border:1px solid var(--line)">` : '').join('')}</div>` : ''}
+        <label class="btn sec pick">${ico('camera')}＋ ${esc(t('web.morePage'))}<input id="camIn" class="vh" type="file" accept="image/*" capture="environment"></label>
+        <button class="btn" data-a="finishAnalyze" ${prob || !S.sample ? 'disabled' : ''}>${ico('spark')}${esc(t('web.finishAi', { count: items.length }))}</button>
+        <button class="btn ghost" data-a="finishScan" data-v="save" ${prob ? 'disabled' : ''}>${esc(t('web.saveOnly'))}</button></div>
+      <p class="muted small">${esc(t('web.otherSources'))}:</p>` : `
       <label class="btn pick">${ico('camera')}${esc(t('web.camera'))}<input id="camIn" class="vh" type="file" accept="image/*" capture="environment"></label>
-      <label class="btn sec pick">${ico('doc')}${esc(t('web.photoOrFile'))}<input id="galIn" class="vh" type="file" multiple accept="image/*"></label>
+      <p class="muted small">${esc(t('web.moreHint'))}</p>`}
+      <label class="btn ${items.length ? 'ghost' : 'sec'} pick">${ico('doc')}${esc(t('web.photoOrFile'))}<input id="galIn" class="vh" type="file" multiple accept="image/*"></label>
       <label class="btn ghost pick">${ico('clip')}${esc(t('scan.import'))}<input id="fileIn" class="vh" type="file" multiple accept=".jpg,.jpeg,.png,.heic,.heif,.webp,.pdf,.xml,image/*,application/pdf,text/xml,application/xml"></label>
       <p class="muted small">${esc(t('web.cameraHint'))}</p>
       ${S.pickerBlocked || IN_CLAUDE_ANDROID ? pickerHelp() : ''}
@@ -792,7 +809,7 @@ VIEWS.scan = {
             <button class="ib" data-a="partDown" data-i="${i}" ${i === items.length - 1 ? 'disabled' : ''} aria-label="${esc(t('scan.moveDown'))}">▼</button>
             <button class="ib" data-a="partDel" data-i="${i}" aria-label="${esc(t('scan.remove'))}">✕</button></div>`).join('') : `<p class="muted">${esc(t('scan.empty'))}</p>`) : ''}
       </div>
-      <button class="btn" data-a="finishScan" ${!items.length || prob || S.busy ? 'disabled' : ''}>✔ ${esc(t('scan.finish'))}</button>
+      ${items.length ? '' : `<button class="btn" data-a="finishScan" disabled>✔ ${esc(t('scan.finish'))}</button>`}
       ${items.length ? `<button class="btn ghost" data-a="discardScan">${esc(t('scan.discard'))}</button>` : ''}`;
   },
   after() {
@@ -879,9 +896,10 @@ async function useCrop(full) {
   await guard(async () => { await addPageFromCanvas(c, `${t('web.camera')} ${S.scan.items.length + 1}`, cr.file.size); await persistDraft(); });
   S.busy = null; render();
 }
-async function finishScan() {
+async function finishScan(mode) {
   const items = S.scan.items;
-  if (!(await ask(t('scan.finishConfirm'), t('scan.finish')))) return;
+  if (!items.length || draftProblem(items)) return;
+  if (!mode && !(await ask(t('scan.finishConfirm'), t('scan.finish')))) return;
   S.busy = t('scan.uploading'); render();
   await guard(async () => {
     const id = uid();
@@ -907,7 +925,7 @@ async function finishScan() {
     upsertLocal('docs', saved);
     S.scan.items = []; await persistDraft(); S.scan = null;
     S.busy = null; S.docUi = { step: 1 };
-    go('doc', parsed ? { id } : { id, analyze: 1 }, { replace: true });
+    go('doc', parsed || mode === 'save' ? { id } : { id, analyze: 1 }, { replace: true });
   });
   S.busy = null; if (S.view === 'scan') render();
 }
@@ -955,6 +973,7 @@ function docStep1(d, st) {
       <div class="thumbs" id="thumbs">${d.page_count ? '<div class="spin"></div>' : `<p class="muted">${esc(t('doc.noFile'))}</p>`}</div></div>
     ${st.analyzing ? busyCard(t('doc.analyzing')) : !d.analyzed_at && d.page_count ? (S.sample ? `<button class="btn" data-a="analyze">${ico('spark')}${esc(t('doc.analyze'))}</button>` : `<div class="banner">${esc(t('web.noAi'))}</div>`) : ''}
     ${st.aiNote ? `<div class="banner warn">${esc(st.aiNote)}</div>` : ''}
+    ${calOfferCard(st)}
     ${d.explanation ? `<div class="card"><h2>${esc(t('doc.explanation'))}</h2><p class="prose">${esc(d.explanation)}</p>
       ${d.page_count && S.sample && d.file_kind !== 'xml' ? `<button class="btn sm ghost" data-a="analyze">${esc(t('doc.reanalyze'))}</button>` : ''}</div>` : ''}
     ${(d.invoice_checks || []).length ? `<div class="sec-h">${esc(t('web.checksTitle'))}</div><div class="group">${d.invoice_checks.map((c) => `<div class="cell noicon" style="cursor:default"><span class="pill c-${c.status === 'present' ? 'green' : c.status === 'missing' ? 'red' : 'orange'}">${esc(t('web.st_' + c.status))}</span><span class="cx"><span class="ct">${esc(c.label)}</span>${c.detail ? `<span class="cs" style="display:block">${esc(c.detail)}</span>` : ''}</span></div>`).join('')}</div><p class="muted small">${esc(t('web.checksNote'))}</p>` : ''}
@@ -1102,7 +1121,9 @@ Antworte nur mit einem JSON-Objekt dieser Form:
       ocr_text: String(r.ocr_text || '').slice(0, 15000),
       analyzed_at: nowIso(),
     }, 'KI-Analyse');
-    S.docUi = { aiNote: inp.cut ? t('web.pagesSent', { count: inp.cut }) : '' };
+    let calIds = [];
+    try { calIds = await autoTakeDates(getDoc(id)); } catch (e2) { console.error(e2); }
+    S.docUi = { aiNote: inp.cut ? t('web.pagesSent', { count: inp.cut }) : '', calIds };
   } catch (e) {
     if (e && e.conflict) { await reloadAll(); S.docUi = { aiNote: t('doc.conflict') }; }
     else { console.error(e); S.docUi = { aiNote: aiError(e) }; }
@@ -1148,6 +1169,43 @@ function pagesToPdf(pages) {
     pdf.addImage(p.dataUrl, 'JPEG', (210 - w) / 2, (297 - h) / 2, w, h);
   });
   return pdf.output('blob');
+}
+/** Nach der KI-Analyse: erkannte (heutige/künftige) Fristen automatisch unter „Fristen“ eintragen – ohne Doppelte */
+async function autoTakeDates(d) {
+  if (!d) return [];
+  const list = (d.dates || []).filter((x) => x.date);
+  if (d.due_date && !list.some((x) => x.kind === 'payment' && x.date === d.due_date)) list.push({ kind: 'payment', date: d.due_date, description: t('tasks.kind_payment') });
+  const ids = [];
+  for (const x of list) {
+    if (x.date < todayISO()) continue;
+    const have = S.tasks.find((k) => k.document_id === d.id && k.kind === x.kind && k.due_date === x.date);
+    if (have) { ids.push(have.id); continue; }
+    const saved = await saveVersioned('tasks', taskFromDate(d, x));
+    S.tasks.push(saved); ids.push(saved.id);
+  }
+  return ids;
+}
+function taskFromDate(d, x) {
+  return {
+    id: uid(), document_id: d.id, title: `${x.description || t('tasks.kind_' + x.kind)} – ${d.sender || d.title}`, kind: x.kind,
+    due_date: x.date, status: 'open', priority: x.kind === 'payment' || x.kind === 'cancellation' || x.kind === 'skonto' ? 'high' : 'normal', notes: '', created_at: nowIso(), version: 0,
+  };
+}
+function gcalLink(x) {
+  const a = x.due_date.replace(/-/g, ''), b = addDays(x.due_date, 1).replace(/-/g, '');
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('eOffis: ' + x.title)}&dates=${a}/${b}&details=${encodeURIComponent(t('tasks.kind_' + x.kind))}`;
+}
+function calOfferCard(st) {
+  const tasks = (st.calIds || []).map((id) => S.tasks.find((x) => x.id === id)).filter((x) => x && x.due_date);
+  if (!tasks.length || st.calDismissed) return '';
+  return `<div class="card" style="border:2px solid var(--accent)"><h2>${ico('bell')}${esc(t('web.calTitle', { count: tasks.length }))}</h2>
+    <ul class="small" style="margin:4px 0 8px;padding-inline-start:20px">${tasks.map((x) => `<li><b class="num">${esc(fmtDate(x.due_date))}</b> – ${esc(x.title)}</li>`).join('')}</ul>
+    <p class="small">✓ ${esc(t('web.calAuto'))} ${esc(t('web.calAsk'))}</p>
+    <button class="btn" data-a="calAdd">${ico('cal')}${esc(t('web.calYes'))}</button>
+    <p class="muted small">${esc(t('web.calHow'))}</p>
+    <details><summary class="small" style="cursor:pointer;font-weight:700">${esc(t('web.calGoogle'))}</summary><p class="muted small">${esc(t('web.calGoogleHint'))}</p>
+      ${tasks.map((x) => `<a class="btn sm ghost" href="${esc(gcalLink(x))}" target="_blank" rel="noopener">${esc(fmtDate(x.due_date))} · ${esc(t('web.calOne'))}</a>`).join('')}</details>
+    <button class="btn ghost" data-a="calNo">${esc(t('web.calNo'))}</button></div>`;
 }
 async function takeDate(d, x) {
   const task = {
@@ -1305,10 +1363,16 @@ async function erTake() {
 }
 
 /* ---------- Antwortschreiben ---------- */
-const LETTER_FIELDS = [['sender', 'reply.sender', 1], ['recipient', 'reply.recipient', 1], ['place_date', 'reply.placeDate'], ['reference', 'reply.reference'], ['subject', 'reply.subject'], ['salutation', 'reply.salutation'], ['body', 'reply.body', 2], ['closing', 'reply.closing'], ['signature', 'reply.signature']];
+const LETTER_FIELDS = [['sender', 'reply.sender', 1], ['recipient', 'reply.recipient', 1], ['place_date', 'reply.placeDate'], ['subject', 'reply.subject'], ['salutation', 'reply.salutation'], ['body', 'reply.body', 2], ['closing', 'reply.closing'], ['signature', 'reply.signature']];
 function addrLines(s) { const out = []; for (const raw of String(s || '').split(/\r?\n/)) { const l = raw.trim(); if (l && !out.some((o) => o.toLowerCase() === l.toLowerCase())) out.push(l); } return out; }
+/** Betreff inkl. Bezug/Zeichen (ältere Entwürfe hatten ein eigenes Feld „Bezug“) */
+function letterSubject(L) {
+  const s = String(L.subject || '').trim(), r = String(L.reference || '').trim();
+  if (!r || s.toLowerCase().includes(r.toLowerCase())) return s;
+  return s ? `${s} – ${r}` : r;
+}
 function letterText(L) {
-  return [addrLines(L.sender).join('\n'), '', addrLines(L.recipient).join('\n'), '', L.place_date, L.reference ? `Bezug: ${L.reference}` : '', '', L.subject, '', L.salutation, '', String(L.body || '').trim(), '', '', L.closing, '', '', '', L.signature].join('\n').replace(/\n{4,}(?=\S)/g, (m) => m);
+  return [addrLines(L.sender).join('\n'), '', addrLines(L.recipient).join('\n'), '', L.place_date, '', letterSubject(L), '', L.salutation, '', String(L.body || '').trim(), '', '', L.closing, '', '', '', L.signature].join('\n').replace(/\n{4,}(?=\S)/g, (m) => m);
 }
 function letterMail(L) { return [L.salutation, '', String(L.body || '').trim(), '', '', L.closing, '', '', '', L.signature].join('\n'); }
 function letterPdf(L) {
@@ -1318,10 +1382,11 @@ function letterPdf(L) {
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(7); pdf.text(addrLines(L.sender).join(' · '), left, 48, { maxWidth: 85 });
   pdf.setFontSize(10.5);
-  let y = 55; for (const l of addrLines(L.recipient)) { pdf.text(l, left, y); y += lh; }
-  const meta = [L.place_date, L.reference ? `Bezug: ${L.reference}` : ''].filter(Boolean);
-  let my = 55; for (const m of meta) { pdf.text(m, 190, my, { align: 'right', maxWidth: 70 }); my += lh; }
-  y = 103.4; pdf.setFont('helvetica', 'bold'); for (const l of pdf.splitTextToSize(L.subject || '', width)) { pdf.text(l, left, y); y += lh; }
+  const rl = addrLines(L.recipient).slice(0, 9);
+  let y = 55; for (const l of rl) { pdf.text(l, left, y, { maxWidth: 85 }); y += lh; }
+  // „Ort, Datum“ rechts, auf Höhe der letzten Anschriftzeile (PLZ Ort)
+  if (L.place_date) pdf.text(String(L.place_date), 190, 55 + Math.max(0, rl.length - 1) * lh, { align: 'right', maxWidth: 70 });
+  y = Math.max(103.4, y + 2 * lh); pdf.setFont('helvetica', 'bold'); for (const l of pdf.splitTextToSize(letterSubject(L), width)) { pdf.text(l, left, y); y += lh; }
   pdf.setFont('helvetica', 'normal'); y += lh;
   const lines = [L.salutation, '', ...String(L.body || '').trim().split('\n'), '', '', L.closing, '', '', '', L.signature];
   for (const para of lines) {
@@ -1351,12 +1416,13 @@ VIEWS.reply = {
         ${R.questions.map((q, i) => area('q_' + i, q.question, R.answers[i] || '', 'style="min-height:70px"')).join('')}
         <button class="btn" data-a="replyGenerate">${ico('pen')}${esc(t('reply.generate'))}</button></div>`;
     }
+    if (rep.data.reference) rep.data = Object.assign({}, rep.data, { subject: letterSubject(rep.data), reference: '' });
     const L = rep.data;
     return `<div class="banner warn">${esc(t('reply.checkHint'))}</div>
       <div class="row between"><span class="pill c-grey">${esc(t('reply.kind_' + rep.kind))}</span><span class="muted small" id="saveState">${esc(R.saveState || '')}</span></div>
       <div class="grid2"><button class="btn" data-a="letterPdf">${esc(t('web.downloadPdf'))}</button><button class="btn sec" data-a="letterCopy">${esc(t('web.copyText'))}</button></div>
       ${field('l_email', t('web.email'), L.email || '', 'type="email" data-l="email" autocomplete="off"')}
-      <a class="btn ghost" id="mailLink" href="mailto:${encodeURIComponent(L.email || '')}?subject=${encodeURIComponent(L.subject || '')}&body=${encodeURIComponent(letterMail(L))}" target="_blank" rel="noopener">${esc(t('web.mailApp'))}</a>
+      <a class="btn ghost" id="mailLink" href="mailto:${encodeURIComponent(L.email || '')}?subject=${encodeURIComponent(letterSubject(L))}&body=${encodeURIComponent(letterMail(L))}" target="_blank" rel="noopener">${esc(t('web.mailApp'))}</a>
       <p class="muted small">${esc(t('web.mailNote'))}</p>
       <button class="btn sm ghost" data-go="doc" data-id="${d.id}">${esc(t('reply.toOriginal'))}</button>
       <div class="card">${LETTER_FIELDS.map(([k, lab, multi]) => multi ? area('l_' + k, t(lab), L[k] || '', `data-l="${k}" ${multi === 2 ? 'style="min-height:240px"' : ''}`) : field('l_' + k, t(lab), L[k] || '', `data-l="${k}"`)).join('')}</div>
@@ -1368,9 +1434,9 @@ VIEWS.reply = {
   },
 };
 function letterPreview(L) {
-  return `<div class="ret">${esc(addrLines(L.sender).join(' · '))}</div><div class="addr">${esc(addrLines(L.recipient).join('\n'))}</div>
-    <div class="meta">${esc([L.place_date, L.reference ? t('reply.reference') + ': ' + L.reference : ''].filter(Boolean).join('\n'))}</div>
-    <div class="subj">${esc(L.subject)}</div><div class="body">${esc(`${L.salutation}\n\n${String(L.body || '').trim()}\n\n\n${L.closing}\n\n\n\n${L.signature}`)}</div>`;
+  return `<div class="ret">${esc(addrLines(L.sender).join(' · '))}</div><div class="head"><div class="addr">${esc(addrLines(L.recipient).join('\n'))}</div>
+    <div class="meta">${esc(L.place_date || '')}</div></div>
+    <div class="subj">${esc(letterSubject(L))}</div><div class="body">${esc(`${L.salutation}\n\n${String(L.body || '').trim()}\n\n\n${L.closing}\n\n\n\n${L.signature}`)}</div>`;
 }
 let replyTimer = null;
 function replyChanged() {
@@ -1415,10 +1481,11 @@ async function replyGenerate() {
     const qa = R.questions.map((q, i) => `- ${q.question}\n  Antwort: ${R.answers[i] || '(keine Angabe – Platzhalter [ … ] verwenden)'}`).join('\n') || '(keine zusätzlichen Angaben)';
     const L = await aiJson(`Schreibe ein sachliches, höfliches ${kl} auf Deutsch im Namen des Betriebs. Heute ist ${fmtDate(todayISO())}. ${companyLine()}
 ${inp.text}
-Absender ist der Betrieb, Empfänger ist der Absender des beiliegenden Schreibens. Nenne den Bezug (Aktenzeichen, Rechnungsnummer, Datum des Schreibens). Erfinde keine Tatsachen; fehlende Angaben als [Platzhalter]. ${R.kind === 'cancellation' ? 'Kündige fristgerecht zum nächstmöglichen Zeitpunkt und bitte um schriftliche Bestätigung mit Datum. ' : ''}Anschriften mehrzeilig mit \\n, jeder Name nur einmal. Im Feld "body" weder Anrede noch Grußformel; Absätze mit \\n\\n.
+Absender ist der Betrieb, Empfänger ist der Absender des beiliegenden Schreibens. "place_date" enthält NUR Ort und Datum, z. B. "Köln, ${fmtDate(todayISO())}" – keinen Bezug, kein Zeichen. Der Bezug (Datum des Schreibens, Aktenzeichen/„Ihr Zeichen“, Rechnungs- oder Kundennummer) gehört in die Betreffzeile "subject", z. B. "SEPA-Mandat Nr. 123 – Ihr Schreiben vom 13.12.2024, Ihr Zeichen: AB-77". Keine eigene Bezugs- oder Zeichenzeile. Erfinde keine Tatsachen; fehlende Angaben als [Platzhalter]. ${R.kind === 'cancellation' ? 'Kündige fristgerecht zum nächstmöglichen Zeitpunkt und bitte um schriftliche Bestätigung mit Datum. ' : ''}Anschriften mehrzeilig mit \\n, jeder Name nur einmal. Im Feld "body" weder Anrede noch Grußformel; Absätze mit \\n\\n.
 ${d.response_recipient ? `Antwort an: ${d.response_recipient}\n${d.response_address || ''}\n` : ''}${d.response_reference ? `Bezug: ${d.response_reference}\n` : ''}${d.response_subject ? `Betreff-Vorschlag: ${d.response_subject}\n` : ''}Angaben des Betriebs:\n${qa}
-Antworte nur mit JSON: {"sender":string,"recipient":string,"place_date":string,"reference":string,"subject":string,"salutation":string,"body":string,"closing":string,"signature":string}`, inp.images);
+Antworte nur mit JSON: {"sender":string,"recipient":string,"place_date":string,"subject":string,"salutation":string,"body":string,"closing":string,"signature":string}`, inp.images);
     const data = {}; for (const [k] of LETTER_FIELDS) data[k] = String((L && L[k]) || '');
+    data.subject = letterSubject({ subject: data.subject, reference: String((L && L.reference) || '') });
     if (!data.closing) data.closing = 'Mit freundlichen Grüßen';
     data.email = d.recipient_email || '';
     const saved = await saveVersioned('replies', { id: uid(), docId: d.id, kind: R.kind, data, created_at: nowIso(), version: 0 }, t('reply.title'));
@@ -1494,16 +1561,16 @@ async function taskSave() {
 
 function icsEscape(v) { return String(v || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
 function icsFold(line) { const out = []; let l = line; while (l.length > 74) { out.push(l.slice(0, 74)); l = ' ' + l.slice(74); } out.push(l); return out.join('\r\n'); }
-function buildIcs() {
+function buildIcs(ids, fixedDays) {
   const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
   const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//eOffis//Fristen//DE', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:eOffis Fristen'];
-  for (const x of S.tasks.filter((k) => k.status !== 'done' && k.due_date)) {
+  for (const x of S.tasks.filter((k) => k.status !== 'done' && k.due_date && (!ids || ids.includes(k.id)))) {
     const d = x.due_date.replace(/-/g, ''), e = addDays(x.due_date, 1).replace(/-/g, '');
     lines.push('BEGIN:VEVENT', `UID:${x.id}@eoffis`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${d}`, `DTEND;VALUE=DATE:${e}`,
       icsFold(`SUMMARY:${icsEscape('eOffis: ' + x.title)}`), icsFold(`DESCRIPTION:${icsEscape(t('tasks.kind_' + x.kind) + (x.notes ? ' – ' + x.notes : ''))}`), 'TRANSP:TRANSPARENT');
-    for (const n of [...new Set(offsetsFor(x.kind))].sort((a, b) => b - a)) {
+    for (const n of [...new Set(fixedDays || offsetsFor(x.kind))].sort((a, b) => b - a)) {
       // Ganztägiger Termin beginnt 00:00 – Erinnerung jeweils um 9 Uhr am Tag „n Tage vorher“
-      const trig = n === 0 ? 'PT9H' : `-P${n - 1}DT15H`;
+      const trig = n === 0 ? 'PT9H' : n === 1 ? '-PT15H' : `-P${n - 1}DT15H`;
       lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', `TRIGGER:${trig}`, icsFold(`DESCRIPTION:${icsEscape(x.title)}`), 'END:VALARM');
     }
     lines.push('END:VEVENT');
@@ -2353,7 +2420,8 @@ document.addEventListener('click', async (e) => {
     case 'togglePages': S.scan.open = !S.scan.open; return render();
     case 'partUp': case 'partDown': { const j = i + (A === 'partUp' ? -1 : 1); const it = S.scan.items; [it[i], it[j]] = [it[j], it[i]]; await guard(persistDraft); return render(); }
     case 'partDel': { const [x] = S.scan.items.splice(i, 1); await guard(async () => { await store.del('pages', x.id); await persistDraft(); }); return render(); }
-    case 'finishScan': return finishScan();
+    case 'finishScan': return finishScan(v || '');
+    case 'finishAnalyze': return finishScan('ai');
     case 'discardScan': if (!(await ask(t('scan.discardConfirm'), t('scan.discard'), true))) return; await guard(async () => { for (const x of S.scan.items) await store.del('pages', x.id); S.scan.items = []; S.scan.restored = false; await persistDraft(); }); return render();
     case 'cropUse': return useCrop(false);
     case 'cropFull': return useCrop(true);
@@ -2458,6 +2526,8 @@ document.addEventListener('click', async (e) => {
     case 'fwText': return copy(forwardText(S.docs.filter((x) => S.exSel.has(x.id) && x.tax_flag === 'deadline')));
     case 'taskCycle': return guard(async () => { const x = S.tasks.find((k) => k.id === v); const nx = { open: 'in_progress', in_progress: 'done', done: 'open' }[x.status] || 'open'; const saved = await saveVersioned('tasks', Object.assign({}, x, { status: nx }), t('tasks.status_' + nx)); S.tasks[S.tasks.findIndex((k) => k.id === v)] = saved; await spawnNext(saved); render(); });
     case 'taskSeg': S.showDone = v === 'done'; return render();
+    case 'calAdd': { const ids = (S.docUi && S.docUi.calIds) || []; if (!ids.length) return; return saveFile(`eOffis_Fristen_${(d && (d.sender || d.title) || 'Beleg').replace(/[^A-Za-z0-9ÄÖÜäöüß_-]+/g, '_').slice(0, 40)}.ics`, buildIcs(ids, [7, 1])).then(() => toast(t('web.calDone'))); }
+    case 'calNo': if (S.docUi) S.docUi.calDismissed = true; return render();
     case 'icsExport': return saveFile(`eOffis_Fristen_${todayISO()}.ics`, buildIcs());
     case 'remInApp': return guard(async () => { S.profile = Object.assign({}, S.profile, { reminders: Object.assign(remCfg(), { inApp: a.checked }) }); await store.setProfile(S.profile); render(); });
     case 'remSet': return guard(async () => { const rc = remCfg(); const n = +v; const k = a.dataset.k; const list = rc[k].includes(n) ? rc[k].filter((x) => x !== n) : rc[k].concat([n]); if (!list.length) return; rc[k] = list.sort((x, y) => y - x); S.profile = Object.assign({}, S.profile, { reminders: rc }); await store.setProfile(S.profile); render(); });

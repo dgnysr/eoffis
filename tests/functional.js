@@ -82,8 +82,15 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     assert(await ev(() => draftProblem([{ kind: 'page', size: 26 * 1024 * 1024 }])) === 'scan.limitSize', '25 MB nicht erkannt');
   });
   await check('F09', 'Abschließen → Beleg + KI-Analyse', async () => {
-    await p.click('[data-a=finishScan]'); await p.click('#askYes');
+    assert(/Weitere Seite scannen/.test(await text()), 'Knopf „Weitere Seite scannen“ fehlt');
+    await p.click('[data-a=finishAnalyze]');
     await p.waitForFunction(() => S.view === 'doc' && S.docs[0] && S.docs[0].analyzed_at, null, { timeout: 20000 });
+    await p.waitForSelector('[data-a=calAdd]');
+    assert(await ev(() => S.tasks.some((x) => x.document_id === S.docs[0].id && x.kind === 'cancellation' && x.due_date === '2026-12-31')), 'Frist nicht automatisch eingetragen');
+    const nT = await ev(() => S.tasks.length); await ev(() => autoTakeDates(S.docs[0])); assert(await ev(() => S.tasks.length) === nT, 'Fristen doppelt eingetragen');
+    await p.click('[data-a=calAdd]'); await p.waitForFunction(() => __mock.saved.some((x) => /\.ics$/.test(x.filename) && x.text));
+    const ics = await ev(() => __mock.saved.find((x) => /\.ics$/.test(x.filename)).text);
+    assert(/TRIGGER:-P6DT15H/.test(ics) && /TRIGGER:-PT15H/.test(ics) && /20261231/.test(ics), 'Kalender-Erinnerungen falsch');
     const d = await ev(() => S.docs[0]);
     assert(d.title === 'Stadtwerke Muster GmbH SW-2026-77', 'Benennung falsch: ' + d.title);
     assert(d.page_count === 2 && d.sha256, 'Seiten/Prüfsumme fehlen');
@@ -97,7 +104,6 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
   await check('F11', 'Schritt 2: Aufgabe aus Analyse, Frist, Erinnerung, Leistung erhalten', async () => {
     await p.click('[data-a=docStep][data-v="2"]');
     await p.click('[data-a=todoTask][data-i="0"]'); await p.waitForFunction(() => S.tasks.some((x) => x.title === 'Stromrechnung bezahlen'));
-    const n0 = await ev(() => S.tasks.length); await p.click('[data-a=takeDate]:not([disabled])'); await p.waitForFunction((n) => S.tasks.length === n + 1, n0);
     assert(await ev(() => S.tasks.some((x) => x.due_date === '2026-11-20')), 'Zahlungsfrist fehlt');
     assert(await p.$('[data-a=takeDate][disabled]'), 'übernommene Frist nicht als ✓ markiert');
     await p.fill('#remDate', '15.11.2026'); await p.click('[data-a=setReminder]'); await p.waitForFunction(() => S.tasks.some((x) => x.due_date === '2026-11-15'));
@@ -110,6 +116,9 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     assert(await p.inputValue('#l_email') === 'service@stadtwerke.example', 'E-Mail nicht übernommen');
     await p.fill('#l_body', 'Geänderter Text'); await p.waitForTimeout(1600);
     const r = await ev(() => S.replies[0]); assert(r.data.body === 'Geänderter Text' && r.version >= 2, 'Autosave fehlgeschlagen');
+    const prev = await p.textContent('#letterPrev');
+    assert(!/Bezug:/.test(prev) && /Kd-Nr\. 4711/.test(await p.textContent('#letterPrev .subj')), 'Bezug nicht im Betreff');
+    assert(await ev(() => { const a = document.querySelector('#letterPrev .addr').getBoundingClientRect(), m = document.querySelector('#letterPrev .meta').getBoundingClientRect(); return Math.abs(a.bottom - m.bottom) < 4; }), 'Ort/Datum nicht auf Höhe der Ortszeile');
     await p.click('[data-a=letterPdf]'); assert(await ev(() => __mock.saved.some((x) => /\.pdf$/.test(x.filename))), 'PDF nicht erzeugt');
   });
   await check('F13', 'Schritt 4: geprüft, ablegen, archivieren (Sperre + Aufbewahrung)', async () => {
@@ -137,7 +146,7 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
   });
   await check('F16', 'E-Rechnung über normalen Import erkannt', async () => {
     await p.click('.tab[data-go=scan]'); await p.setInputFiles('#fileIn', { name: 'e.xml', mimeType: 'text/xml', buffer: Buffer.from(UBL) });
-    await p.waitForFunction(() => S.scan && S.scan.items.length === 1); await p.click('[data-a=finishScan]'); await p.click('#askYes');
+    await p.waitForFunction(() => S.scan && S.scan.items.length === 1); await p.click('[data-a=finishAnalyze]');
     await p.waitForFunction(() => S.docs.some((d) => d.invoice_number === 'UBL-9' && d.einvoice));
   });
   await check('F17', 'Fristen: anlegen, Kategorie, Wiederholung, Status-Kreis, löschen', async () => {
