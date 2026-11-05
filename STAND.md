@@ -1,6 +1,6 @@
 # Entwicklungsstand eOffis Web-App
 
-**Aktueller Stand:** Version `v2026.11.05` (Tag im Repository) – live unter https://dgnysr.github.io/eoffis/
+**Aktueller Stand:** Stand 05.11.2026 (Branch `main`) – live unter https://dgnysr.github.io/eoffis/
 
 ## Weiterentwickeln (Ausgangspunkt für jede neue Sitzung)
 1. Repository `dgnysr/eoffis` klonen – **immer auf dem neuesten Stand von `main` aufbauen**.
@@ -12,7 +12,7 @@
 Backend: Supabase-Projekt `lqohxlxemawzrtdqjnci` (Tabelle `kv`, `supabase/schema.sql`), KI-Funktion `smooth-processor` (Code: `supabase/functions/ai/index.ts`, „Verify JWT“ aus). Schlüssel: nur der öffentliche Publishable Key steht in `config.js`.
 
 ## Änderungsverlauf
-### 05.11.2026 – v2026.11.05
+### 05.11.2026
 - Mehrseitiger Scan: „Weitere Seite scannen“, „Fertig – mit KI analysieren“, „Nur speichern, ohne KI“
 - Antwortschreiben: oben rechts nur „Ort, Datum“ auf Höhe der PLZ/Ort-Zeile des Empfängers; Bezug/„Ihr Zeichen“ in der Betreffzeile
 - Nach der KI-Analyse: Fristen automatisch unter „Fristen“; Vorschlag „In Handy-Kalender eintragen“ (.ics, Erinnerung 1 Woche + 1 Tag vorher, 9 Uhr) bzw. einzeln Google Kalender
