@@ -128,11 +128,17 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     const d = await ev(() => S.docs[0]); assert(/^\d{4}-01-01$/.test(d.retain_until) && Number(d.retain_until.slice(0, 4)) >= 2037, 'Aufbewahrung falsch: ' + d.retain_until);
     await p.click('[data-a=toggleFields]'); assert(await p.getAttribute('#f_title', 'readonly') !== null, 'Felder nicht gesperrt');
   });
-  await check('F14', 'Belege: Suche (Volltext), Filter, Verträge, Ordner', async () => {
-    await p.click('.tab[data-go=docs]'); await p.click('[data-a=docFilter][data-v=archived]');
-    await p.fill('#dq', '998877'); await p.waitForTimeout(400); assert(/SW-2026-77/.test(await text()), 'Volltextsuche findet nichts');
+  await check('F14', 'Ablage: Ordnerübersicht, Volltextsuche, Archiv, Verträge, Firmen-Checkliste', async () => {
+    await p.click('.tab[data-go=docs]'); const ov = await text();
+    assert(/Ordner/.test(ov) && /Firma & Stammdaten/.test(ov) && /Bank & Kredite/.test(ov) && /Archiv/.test(ov), 'Ordnerübersicht fehlt');
+    await p.fill('#dq', '998877'); await p.waitForTimeout(400); assert(/SW-2026-77/.test(await text()), 'Volltextsuche (auch Archiv) findet nichts');
     await p.fill('#dq', 'gibtesnicht'); await p.waitForTimeout(400); assert(/Noch keine Belege/.test(await text()), 'Leerzustand fehlt');
-    await p.fill('#dq', ''); await p.waitForTimeout(400); await p.click('[data-a=docFilter][data-v=open]'); await p.click('[data-a=docContracts]');
+    await p.fill('#dq', ''); await p.waitForTimeout(400);
+    await p.click('[data-a=openList][data-v=archived]'); assert(await ev(() => S.view) === 'doclist' && /SW-2026-77/.test(await text()), 'Archiv-Liste');
+    await p.click('[data-a=back]'); await p.click('[data-a=openList][data-v=contracts]'); assert(await ev(() => S.filters.contracts), 'Verträge-Ansicht');
+    await p.click('[data-a=back]'); await p.click('[data-a=openList][data-v="f:firma"]');
+    const fx = await text(); assert(/Checkliste Firmenunterlagen/.test(fx) && /Gewerbeanmeldung/.test(fx) && /fehlt/.test(fx), 'Firmen-Checkliste');
+    await p.click('[data-a=back]');
   });
   await check('F15', 'E-Rechnung lesen (XRechnung CII und UBL) und übernehmen', async () => {
     await p.click('.tab[data-go=home]'); await p.click('.gear:not(.plus)'); await p.click('[data-go=erech]');
