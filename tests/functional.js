@@ -38,7 +38,7 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     assert(db.docs.has('data/users/user-a/main'), 'Profil nicht im Konto-Speicher');
   });
   await check('F02', 'Sprache wechseln inkl. Arabisch (RTL)', async () => {
-    await p.click('.gear'); await p.click('[data-go=settings]'); await p.click('[data-a=setLang][data-v=ar]');
+    await p.click('.gear:not(.plus)'); await p.click('[data-go=settings]'); await p.click('[data-a=setLang][data-v=ar]');
     assert(await ev(() => document.documentElement.dir) === 'rtl', 'kein RTL');
     await p.click('[data-a=setLang][data-v=tr]'); assert(/Ayarlar|Dil/.test(await text()), 'Türkisch fehlt');
     await p.click('[data-a=setLang][data-v=de]'); assert(await ev(() => document.documentElement.dir) === 'ltr', 'nicht zurück auf LTR');
@@ -135,10 +135,10 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     await p.fill('#dq', ''); await p.waitForTimeout(400); await p.click('[data-a=docFilter][data-v=open]'); await p.click('[data-a=docContracts]');
   });
   await check('F15', 'E-Rechnung lesen (XRechnung CII und UBL) und übernehmen', async () => {
-    await p.click('.tab[data-go=home]'); await p.click('.gear'); await p.click('[data-go=erech]');
+    await p.click('.tab[data-go=home]'); await p.click('.gear:not(.plus)'); await p.click('[data-go=erech]');
     await p.setInputFiles('#erIn', { name: 'r.xml', mimeType: 'application/xml', buffer: Buffer.from(UBL) });
     await p.waitForSelector('[data-a=erTake]'); assert(/Reinigung West/.test(await text()), 'UBL nicht gelesen');
-    await p.click('.tab[data-go=home]'); await p.click('.gear'); await p.click('[data-go=erech]');
+    await p.click('.tab[data-go=home]'); await p.click('.gear:not(.plus)'); await p.click('[data-go=erech]');
     await p.setInputFiles('#erIn', { name: 'r.xml', mimeType: 'application/xml', buffer: Buffer.from(CII) });
     await p.waitForSelector('[data-a=erTake]'); await p.click('[data-a=erTake]'); await p.waitForFunction(() => S.docs.some((d) => d.invoice_number === 'R-4711'));
     await p.setInputFiles; // kaputte Datei
@@ -180,7 +180,7 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     return `${(f.text.match(/BEGIN:VEVENT/g) || []).length} Termine`;
   });
   await check('F20', 'Rechnung: Entwurf, Prüfampel, Vorlage, aus Vorlage', async () => {
-    await p.click('.tab[data-go=invoices]'); await p.click('[data-go=invoice][data-id=new]');
+    await p.click('.tab[data-go=more]'); await p.click('[data-go=invoices]'); await p.click('[data-go=invoice][data-id=new]');
     await p.fill('#i_cust', 'Kunde Eins GmbH'); await p.fill('#i_street', 'Weg 1'); await p.fill('#i_zip', '50667'); await p.fill('#i_city', 'Köln');
     await p.fill('#it_d_0', 'Montage'); await p.fill('#it_q_0', '2,5'); await p.fill('#it_p_0', '80'); await p.click('[data-a=itemUnit][data-i="0"][data-v=HUR]');
     assert(/Für XRechnung\/ZUGFeRD fehlt noch/.test(await text()), 'E-Rechnungs-Ampel fehlt');
@@ -222,7 +222,7 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     await p.click('[data-go=invoice][data-from]'); assert(await p.inputValue('#i_cust') === 'Kunde Eins GmbH', 'Kopie leer');
   });
   await check('F25', 'Kontoauszug: Skonto-Treffer, manuell zuordnen, bestätigen', async () => {
-    await p.click('.tab[data-go=home]'); await p.click('.gear'); await p.click('[data-go=bank]');
+    await p.click('.tab[data-go=home]'); await p.click('.gear:not(.plus)'); await p.click('[data-go=bank]');
     // Skonto-Zahlung auf einen offenen Beleg: archivierten SW-Beleg reaktivieren wäre gesperrt → neuen offenen Beleg anlegen
     await ev(async () => { const rec = { id: 'tdoc1', title: 'Stadtwerke SW-2026-77', doc_type: 'Eingangsrechnung', sender: 'Stadtwerke Muster GmbH', invoice_number: 'SW-2026-77', amount_gross: 119, discount_percent: 2, discount_date: '2026-11-10', is_incoming_invoice: true, payment_required: true, paid: false, folder: 'rechnungen', status: 'saved', dates: [], next_steps: [], created_at: new Date().toISOString(), version: 0 }; upsertLocal('docs', await saveVersioned('docs', rec)); });
     await p.setInputFiles('#bankIn', { name: 'auszug.png', mimeType: 'image/png', buffer: png });
@@ -234,7 +234,7 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     assert(await p.$('#bsel_1'), 'manuelle Zuordnung fehlt');
   });
   await check('F26', 'Steuerberater: ZIP mit Übersicht, Sammel-PDF, Fristschreiben', async () => {
-    await p.click('.tab[data-go=home]'); await p.click('.gear'); await p.click('[data-go=export]');
+    await p.click('.tab[data-go=home]'); await p.click('.gear:not(.plus)'); await p.click('[data-go=export]');
     if (!(await ev(() => S.exSel.size))) await p.click('[data-a=exAll]');
     await p.click('[data-a=exZip]'); await p.waitForFunction(() => __mock.saved.some((s) => /\.zip$/.test(s.filename)), null, { timeout: 20000 });
     const names = await ev(async () => Object.keys((await JSZip.loadAsync(window.__lastBlob)).files));
@@ -244,7 +244,7 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     return names.length + ' Dateien im ZIP';
   });
   await check('F27', 'DATEV: Validierung, Export (CP1252, 125 Spalten), Verlauf', async () => {
-    await p.click('.tab[data-go=home]'); await p.click('.gear'); await p.click('[data-go=datev]');
+    await p.click('.tab[data-go=home]'); await p.click('.gear:not(.plus)'); await p.click('[data-go=datev]');
     await p.fill('#dv_adv', '12'); await p.fill('#dv_cli', '1'); await p.click('[data-a=dvSel]'); await p.click('[data-a=dvExport]');
     assert(/Beraternummer/.test(await text()), 'Validierung greift nicht');
     await p.fill('#dv_adv', '29098'); await p.click('[data-a=dvExport]');
@@ -255,21 +255,26 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     await p.click('[data-a=dvAgain]');
   });
   await check('F28', 'Mehr: Funktionsübersicht, Suche, Sprünge', async () => {
-    await p.click('.tab[data-go=home]'); await p.click('.gear'); await p.fill('#hubq', 'datev'); await p.waitForTimeout(400);
+    await p.click('.tab[data-go=home]'); await p.click('.gear:not(.plus)'); await p.fill('#hubq', 'datev'); await p.waitForTimeout(400);
     assert(/DATEV-Export/.test(await text()) && !/Mahnungen/.test(await text()), 'Suche filtert nicht');
     await p.fill('#hubq', ''); await p.waitForTimeout(300); await p.click('[data-a=hubDun]'); assert(await ev(() => S.view) === 'invoices', 'Sprung Mahnungen');
   });
-  await check('F29', 'Start: nächste Frist, Erinnerungen, letzte Dokumente, Funktionssuche', async () => {
+  await check('F29', 'Start: Scannen, nächste Fristen, zuletzt gescannt; Suche über Lupe', async () => {
     await p.click('.tab[data-go=home]'); const tx = await text();
-    assert(/Nächste Frist/.test(tx) && /Letzte Dokumente/.test(tx) && /Mindestlohn/.test(tx), 'Startseite unvollständig');
-    await p.fill('#fsearch', 'kontoauszug'); assert(/Kontoauszug abgleichen/.test(await text()), 'Funktionssuche');
+    assert(/Dokument scannen/.test(tx) && /Nächste Fristen/.test(tx) && /Zuletzt gescannt/.test(tx), 'Startseite unvollständig');
+    assert(!/Mindestlohn/.test(tx) && !(await p.$('.stat')) && !(await p.$('.qa')), 'Startseite nicht reduziert');
+    await p.click('.scanhero'); assert(await ev(() => S.view) === 'scan', 'Scan-Knopf');
+    await p.click('.tab[data-go=home]'); await p.click('[data-a=openSearch]'); assert(await ev(() => S.view) === 'more', 'Lupe → Suche');
+    await p.fill('#hubq', 'kontoauszug'); await p.waitForTimeout(400); assert(/Kontoauszug/.test(await text()), 'Funktionssuche');
+    await p.fill('#hubq', ''); await p.waitForTimeout(300); assert(/Mindestlohn/.test(await text()), 'Rechtshinweise unter Mehr');
+    await p.click('.tab[data-go=home]');
   });
   await check('F30', 'Demo: getrennte Daten, zurücksetzen, verlassen', async () => {
     const mine = await ev(() => S.docs.length);
-    await p.click('.gear'); await p.click('[data-a=enterDemo]'); await p.waitForFunction(() => store.space === 'demo' && S.loaded);
+    await p.click('.gear:not(.plus)'); await p.click('[data-a=enterDemo]'); await p.waitForFunction(() => store.space === 'demo' && S.loaded);
     assert(await ev(() => S.docs.every((d) => d.example)), 'Demo vermischt');
-    await p.click('.gear'); await p.click('[data-a=resetDemo]'); await p.click('#askYes'); await p.waitForFunction(() => S.loaded && S.docs.length === 3);
-    await p.click('.gear'); await p.click('[data-a=leaveDemo]'); await p.waitForFunction(() => store.space === 'main' && S.loaded);
+    await p.click('.gear:not(.plus)'); await p.click('[data-a=resetDemo]'); await p.click('#askYes'); await p.waitForFunction(() => S.loaded && S.docs.length === 3);
+    await p.click('.gear:not(.plus)'); await p.click('[data-a=leaveDemo]'); await p.waitForFunction(() => store.space === 'main' && S.loaded);
     assert(await ev(() => S.docs.length) === mine, 'eigene Daten verändert');
   });
   await check('F31', 'KI nicht erlaubt / Limit erreicht → verständliche Meldung', async () => {

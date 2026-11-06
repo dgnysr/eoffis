@@ -8,7 +8,7 @@ const ok = (c, m) => console.log((c ? 'PASS ' : 'FAIL ') + m);
   const { page: p, errors } = await newPage(b, db, { uid: 'u' }); p.setDefaultTimeout(8000);
   await loadApp(p, HTML); await p.fill('#s_name', 'X'); await p.click('[data-a=setupSave]'); await p.waitForFunction(() => S.profile && S.view === 'home');
   const png = await p.screenshot();
-  await p.click('.tab[data-go=scan]'); await p.waitForSelector('#pasteIn');
+  await p.click('.tab[data-go=scan]'); await p.waitForSelector('#pasteIn', { state: 'attached' });
   ok(!(await p.$('[data-a=copyLink]')), 'Normaler Browser: kein Hinweis-Kasten');
   // 1. Bild einfügen
   await p.evaluate(async (b64) => {
@@ -28,10 +28,10 @@ const ok = (c, m) => console.log((c ? 'PASS ' : 'FAIL ') + m);
   ok(true, 'Sofort abgebrochene Auswahl → Hinweis „Foto-Auswahl hier nicht möglich“ mit Link');
   // 3. Android-Claude-App wird schon beim Öffnen erkannt
   const { page: q } = await newPage(b, db, { uid: 'u', ua: 'Mozilla/5.0 (Linux; Android 10; K; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/156.0.0.0 Mobile Safari/537.36 Claude/1.261103.19' });
-  await loadApp(q, HTML); await q.click('.tab[data-go=scan]'); await q.waitForSelector('#pasteIn');
+  await loadApp(q, HTML); await q.click('.tab[data-go=scan]'); await q.waitForSelector('#pasteIn', { state: 'attached' });
   ok(!!(await q.$('[data-a=copyLink]')), 'Claude-App Android: Hinweis erscheint sofort');
   const { page: r } = await newPage(b, db, { uid: 'u', ua: 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36' });
-  await loadApp(r, HTML); await r.click('.tab[data-go=scan]'); await r.waitForSelector('#pasteIn');
+  await loadApp(r, HTML); await r.click('.tab[data-go=scan]'); await r.waitForSelector('#pasteIn', { state: 'attached' });
   ok(!(await r.$('[data-a=copyLink]')), 'Chrome auf Android: kein Hinweis');
   ok(errors.length === 0, 'keine Konsolenfehler ' + errors.join(' | '));
   await b.close();

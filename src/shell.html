@@ -239,6 +239,29 @@ table.pos { width: 100%; border-collapse: collapse; font-size: .9rem; font-varia
 table.pos th, table.pos td { text-align: start; padding: 6px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
 table.pos .r { text-align: end; white-space: nowrap; }
 .tscroll { overflow-x: auto; }
+
+/* Oberfläche 06.11.2026: ruhige Startseite (Scan · Fristen · Zuletzt), schmale Demo-Zeile, wischbare Chips */
+.company { margin: 0 4px; font-weight: 600; }
+.scanhero { display: flex; align-items: center; gap: 14px; width: 100%; border: 0; border-radius: 16px; padding: 18px 16px; background: var(--accent); color: var(--accent-ink); cursor: pointer; text-align: start; box-shadow: var(--shadow); }
+.scanhero .si { width: 52px; height: 52px; border-radius: 14px; background: rgba(255,255,255,.18); display: grid; place-items: center; flex: none; }
+.scanhero .si svg { width: 28px; height: 28px; }
+.scanhero .st { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.scanhero b { font-size: 1.15rem; }
+.scanhero small { font-size: .86rem; opacity: .9; line-height: 1.3; }
+.scanhero .chev { font-size: 1.6rem; opacity: .8; }
+.scanhero:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.sec-h.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 12px; }
+.sec-link { border: 0; background: none; color: var(--accent); font: inherit; font-weight: 700; text-transform: none; letter-spacing: 0; font-size: .86rem; cursor: pointer; padding: 6px 4px; }
+.demo-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: .84rem; color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, var(--sheet)); border-radius: 10px; padding: 6px 6px 6px 12px; }
+.demo-line span { display: flex; align-items: center; gap: 6px; }
+.demo-line svg { width: 16px; height: 16px; }
+.demo-line button { border: 0; background: none; color: var(--warn); font: inherit; font-weight: 700; cursor: pointer; padding: 6px 8px; }
+.chips.scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; }
+.chips.scroll::-webkit-scrollbar { display: none; }
+.chips.scroll .chip { flex: none; }
+.btn.big { min-height: 72px; font-size: 1.1rem; border-radius: 16px; }
+.btn.big svg { width: 28px; height: 28px; }
+.more-opts summary { font-weight: 700; cursor: pointer; color: var(--muted); }
 </style>
 <header class="top"><div class="top-in" id="top"></div></header>
 <main><div class="wrap" id="main"></div></main>

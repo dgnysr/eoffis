@@ -256,6 +256,29 @@ table.pos { width: 100%; border-collapse: collapse; font-size: .9rem; font-varia
 table.pos th, table.pos td { text-align: start; padding: 6px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
 table.pos .r { text-align: end; white-space: nowrap; }
 .tscroll { overflow-x: auto; }
+
+/* Oberfläche 06.11.2026: ruhige Startseite (Scan · Fristen · Zuletzt), schmale Demo-Zeile, wischbare Chips */
+.company { margin: 0 4px; font-weight: 600; }
+.scanhero { display: flex; align-items: center; gap: 14px; width: 100%; border: 0; border-radius: 16px; padding: 18px 16px; background: var(--accent); color: var(--accent-ink); cursor: pointer; text-align: start; box-shadow: var(--shadow); }
+.scanhero .si { width: 52px; height: 52px; border-radius: 14px; background: rgba(255,255,255,.18); display: grid; place-items: center; flex: none; }
+.scanhero .si svg { width: 28px; height: 28px; }
+.scanhero .st { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.scanhero b { font-size: 1.15rem; }
+.scanhero small { font-size: .86rem; opacity: .9; line-height: 1.3; }
+.scanhero .chev { font-size: 1.6rem; opacity: .8; }
+.scanhero:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.sec-h.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 12px; }
+.sec-link { border: 0; background: none; color: var(--accent); font: inherit; font-weight: 700; text-transform: none; letter-spacing: 0; font-size: .86rem; cursor: pointer; padding: 6px 4px; }
+.demo-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: .84rem; color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, var(--sheet)); border-radius: 10px; padding: 6px 6px 6px 12px; }
+.demo-line span { display: flex; align-items: center; gap: 6px; }
+.demo-line svg { width: 16px; height: 16px; }
+.demo-line button { border: 0; background: none; color: var(--warn); font: inherit; font-weight: 700; cursor: pointer; padding: 6px 8px; }
+.chips.scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; }
+.chips.scroll::-webkit-scrollbar { display: none; }
+.chips.scroll .chip { flex: none; }
+.btn.big { min-height: 72px; font-size: 1.1rem; border-radius: 16px; }
+.btn.big svg { width: 28px; height: 28px; }
+.more-opts summary { font-weight: 700; cursor: pointer; color: var(--muted); }
 </style>
 <header class="top"><div class="top-in" id="top"></div></header>
 <main><div class="wrap" id="main"></div></main>
@@ -377,6 +400,9 @@ const NEW_TEXT = {
   ro: { pagesDone: '{{count}} pagină(i) scanate', morePage: 'Scanează pagina următoare', finishAi: 'Gata – analizează cu AI ({{count}} p.)', saveOnly: 'Doar salvează, fără AI', moreHint: 'Scrisoare cu mai multe pagini? Fotografiază pe rând fiecare pagină – apoi apasă „Gata”.', otherSources: 'Adaugă din altă sursă', calTitle: '{{count}} termen(e) găsite', calAuto: 'Sunt acum în lista „Termene”.', calAsk: 'Le adaugi și în calendarul telefonului? Memento cu o săptămână și o zi înainte.', calYes: 'Adaugă în calendarul telefonului', calNo: 'Nu, mulțumesc', calHow: 'Se deschide sau se descarcă un fișier de calendar (.ics). Atinge → „Adaugă” sau deschide-l cu aplicația de calendar.', calGoogle: 'Pe rând în Google Calendar', calGoogleHint: 'Dacă fișierul nu se deschide, adaugă aici fiecare termen (setează în calendar memento cu o săptămână și o zi).', calDone: 'Fișier de calendar creat', calOne: 'În calendar' },
 };
 for (const l of Object.keys(NEW_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].web = Object.assign({}, I18N[l].web || {}, NEW_TEXT[l]); }
+/* Oberfläche 06.11.2026: reduzierte Startseite, Tab „Mehr“, Scan-Seite */
+const UI_TEXT = {"de": {"uiScanTab": "Scannen", "uiScanHero": "Dokument scannen", "uiScanHeroSub": "Foto aufnehmen – die KI erkennt Absender, Beträge und Fristen", "uiNextDeadlines": "Nächste Fristen", "uiNoDeadlines": "Keine offenen Fristen", "uiRecent": "Zuletzt gescannt", "uiReviewN": "{{count}} zu prüfen", "uiToReview": "zu prüfen", "uiAll": "Alle", "uiGallery": "Galerie", "uiFile": "Datei", "uiMoreOptions": "Weitere Optionen", "uiDemoShort": "Demo-Modus – Beispieldaten", "uiNew": "Neu"}, "tr": {"uiScanTab": "Tara", "uiScanHero": "Belge tara", "uiScanHeroSub": "Fotoğraf çek – yapay zekâ göndereni, tutarları ve süreleri tanır", "uiNextDeadlines": "Yaklaşan süreler", "uiNoDeadlines": "Açık süre yok", "uiRecent": "Son taranan", "uiReviewN": "{{count}} kontrol edilecek", "uiToReview": "kontrol edilecek", "uiAll": "Tümü", "uiGallery": "Galeri", "uiFile": "Dosya", "uiMoreOptions": "Diğer seçenekler", "uiDemoShort": "Demo modu – örnek veriler", "uiNew": "Yeni"}, "pl": {"uiScanTab": "Skanuj", "uiScanHero": "Skanuj dokument", "uiScanHeroSub": "Zrób zdjęcie – AI rozpozna nadawcę, kwoty i terminy", "uiNextDeadlines": "Najbliższe terminy", "uiNoDeadlines": "Brak otwartych terminów", "uiRecent": "Ostatnio zeskanowane", "uiReviewN": "{{count}} do sprawdzenia", "uiToReview": "do sprawdzenia", "uiAll": "Wszystkie", "uiGallery": "Galeria", "uiFile": "Plik", "uiMoreOptions": "Więcej opcji", "uiDemoShort": "Tryb demo – dane przykładowe", "uiNew": "Nowy"}, "ru": {"uiScanTab": "Скан", "uiScanHero": "Сканировать документ", "uiScanHeroSub": "Сделайте фото – ИИ распознает отправителя, суммы и сроки", "uiNextDeadlines": "Ближайшие сроки", "uiNoDeadlines": "Нет открытых сроков", "uiRecent": "Недавно отсканировано", "uiReviewN": "{{count}} на проверку", "uiToReview": "на проверку", "uiAll": "Все", "uiGallery": "Галерея", "uiFile": "Файл", "uiMoreOptions": "Другие варианты", "uiDemoShort": "Демо-режим – примеры данных", "uiNew": "Новый"}, "ar": {"uiScanTab": "مسح", "uiScanHero": "مسح مستند", "uiScanHeroSub": "التقط صورة – يتعرّف الذكاء الاصطناعي على المرسل والمبالغ والمواعيد", "uiNextDeadlines": "المواعيد القادمة", "uiNoDeadlines": "لا توجد مواعيد مفتوحة", "uiRecent": "آخر ما تم مسحه", "uiReviewN": "{{count}} للمراجعة", "uiToReview": "للمراجعة", "uiAll": "الكل", "uiGallery": "المعرض", "uiFile": "ملف", "uiMoreOptions": "خيارات أخرى", "uiDemoShort": "الوضع التجريبي – بيانات نموذجية", "uiNew": "جديد"}, "ro": {"uiScanTab": "Scanează", "uiScanHero": "Scanează document", "uiScanHeroSub": "Fă o fotografie – AI recunoaște expeditorul, sumele și termenele", "uiNextDeadlines": "Termene apropiate", "uiNoDeadlines": "Niciun termen deschis", "uiRecent": "Scanate recent", "uiReviewN": "{{count}} de verificat", "uiToReview": "de verificat", "uiAll": "Toate", "uiGallery": "Galerie", "uiFile": "Fișier", "uiMoreOptions": "Alte opțiuni", "uiDemoShort": "Mod demo – date exemplu", "uiNew": "Nou"}};
+for (const l of Object.keys(UI_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].web = Object.assign({}, I18N[l].web || {}, UI_TEXT[l]); }
 /* Eigenständige Web-App (Supabase): Texte, die sich sonst auf Claude beziehen */
 const HOST_TEXT = {"de": {"setupIntro": "Lege einmal deine Betriebsdaten an. Alles, was du speicherst, liegt geschützt in deinem eOffis-Konto – nur du siehst es.", "privacy": "Deine Daten liegen geschützt in deinem eOffis-Konto (Supabase, Server in der EU). Für die KI-Auswertung werden Belegbilder an Claude (Anthropic) übertragen.", "privacyText": "Testphase: Daten liegen in der Supabase-Datenbank dieses Projekts. Vor der Nutzung mit echten Daten Speicherort, Dienstleister (Supabase, Anthropic) und Auftragsverarbeitung prüfen – bis dahin nur Beispieldaten verwenden.", "storeQuota": "Der Speicher ist voll. Bitte ältere Belege exportieren und löschen.", "pickWhy": "Dieser Browser gibt Kamera und Dateiauswahl nicht frei (oft in Apps eingebaute Browser). In Chrome oder Safari funktioniert es – deine Daten bleiben dieselben.", "pickStep2": "In Chrome oder Safari einfügen und mit deinem eOffis-Konto anmelden", "account": "Konto", "logout": "Abmelden", "demoAccount": "Demo ohne Konto – Daten werden nach einigen Tagen gelöscht."}, "tr": {"setupIntro": "İşletme bilgilerini bir kez gir. Kaydettiğin her şey eOffis hesabında korunur – yalnızca sen görürsün.", "privacy": "Verilerin eOffis hesabında korunur (Supabase, AB sunucuları). Yapay zekâ analizi için belge görüntüleri Claude’a (Anthropic) gönderilir.", "privacyText": "Test aşaması: Veriler bu projenin Supabase veritabanında. Gerçek verilerle kullanmadan önce depolama yerini, hizmet sağlayıcıları (Supabase, Anthropic) ve veri işleme sözleşmesini kontrol et – o zamana kadar yalnızca örnek veriler kullan.", "storeQuota": "Depolama dolu. Lütfen eski belgeleri dışa aktarıp sil.", "pickWhy": "Bu tarayıcı kamerayı ve dosya seçimini açmıyor (genellikle uygulama içi tarayıcılar). Chrome veya Safari’de çalışır – verilerin aynı kalır.", "pickStep2": "Chrome veya Safari’ye yapıştır ve eOffis hesabınla giriş yap", "account": "Hesap", "logout": "Çıkış yap", "demoAccount": "Hesapsız demo – veriler birkaç gün sonra silinir."}, "pl": {"setupIntro": "Podaj raz dane firmy. Wszystko, co zapiszesz, jest chronione na Twoim koncie eOffis – widzisz to tylko Ty.", "privacy": "Twoje dane są chronione na koncie eOffis (Supabase, serwery w UE). Do analizy AI obrazy dokumentów są przesyłane do Claude (Anthropic).", "privacyText": "Faza testów: dane są w bazie Supabase tego projektu. Przed użyciem prawdziwych danych sprawdź miejsce przechowywania, usługodawców (Supabase, Anthropic) i umowę powierzenia – do tego czasu tylko przykładowe dane.", "storeQuota": "Pamięć jest pełna. Wyeksportuj i usuń starsze dokumenty.", "pickWhy": "Ta przeglądarka nie udostępnia aparatu ani wyboru plików (często przeglądarki wbudowane w aplikacje). W Chrome lub Safari działa – dane pozostają te same.", "pickStep2": "Wklej w Chrome lub Safari i zaloguj się kontem eOffis", "account": "Konto", "logout": "Wyloguj", "demoAccount": "Demo bez konta – dane zostaną usunięte po kilku dniach."}, "ru": {"setupIntro": "Один раз укажите данные предприятия. Всё сохранённое защищено в вашем аккаунте eOffis – видите только вы.", "privacy": "Ваши данные защищены в аккаунте eOffis (Supabase, серверы в ЕС). Для анализа ИИ изображения документов передаются в Claude (Anthropic).", "privacyText": "Тестовый этап: данные хранятся в базе Supabase этого проекта. Перед работой с реальными данными проверьте место хранения, поставщиков (Supabase, Anthropic) и договор обработки – до этого только примеры.", "storeQuota": "Хранилище заполнено. Экспортируйте и удалите старые документы.", "pickWhy": "Этот браузер не даёт доступ к камере и выбору файлов (часто встроенные в приложения браузеры). В Chrome или Safari работает – данные остаются теми же.", "pickStep2": "Вставьте в Chrome или Safari и войдите в аккаунт eOffis", "account": "Аккаунт", "logout": "Выйти", "demoAccount": "Демо без аккаунта – данные удаляются через несколько дней."}, "ar": {"setupIntro": "أدخل بيانات منشأتك مرة واحدة. كل ما تحفظه محمي في حساب eOffis الخاص بك – لا يراه غيرك.", "privacy": "بياناتك محمية في حساب eOffis (Supabase، خوادم في الاتحاد الأوروبي). لتحليل الذكاء الاصطناعي تُرسل صور المستندات إلى Claude (Anthropic).", "privacyText": "مرحلة الاختبار: البيانات في قاعدة بيانات Supabase لهذا المشروع. قبل استخدام بيانات حقيقية تحقّق من مكان التخزين ومقدّمي الخدمة (Supabase وAnthropic) وعقد المعالجة – حتى ذلك الحين بيانات تجريبية فقط.", "storeQuota": "مساحة التخزين ممتلئة. يرجى تصدير المستندات القديمة وحذفها.", "pickWhy": "هذا المتصفح لا يتيح الكاميرا واختيار الملفات (غالبًا المتصفحات المدمجة في التطبيقات). في Chrome أو Safari يعمل – وتبقى بياناتك نفسها.", "pickStep2": "الصقه في Chrome أو Safari وسجّل الدخول بحساب eOffis", "account": "الحساب", "logout": "تسجيل الخروج", "demoAccount": "عرض تجريبي بدون حساب – تُحذف البيانات بعد بضعة أيام."}, "ro": {"setupIntro": "Introdu o singură dată datele firmei. Tot ce salvezi este protejat în contul tău eOffis – doar tu vezi.", "privacy": "Datele tale sunt protejate în contul eOffis (Supabase, servere în UE). Pentru analiza AI, imaginile documentelor sunt trimise la Claude (Anthropic).", "privacyText": "Faza de test: datele sunt în baza Supabase a acestui proiect. Înainte de date reale verifică locul de stocare, furnizorii (Supabase, Anthropic) și contractul de prelucrare – până atunci doar date exemplu.", "storeQuota": "Spațiul este plin. Exportă și șterge documentele mai vechi.", "pickWhy": "Acest browser nu permite camera și alegerea fișierelor (adesea browserele integrate în aplicații). În Chrome sau Safari funcționează – datele rămân aceleași.", "pickStep2": "Lipește în Chrome sau Safari și conectează-te cu contul eOffis", "account": "Cont", "logout": "Deconectare", "demoAccount": "Demo fără cont – datele se șterg după câteva zile."}};
 if (window.EOFFIS_HOST) for (const l of Object.keys(HOST_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].web = Object.assign({}, I18N[l].web || {}, HOST_TEXT[l]); }
@@ -628,10 +654,13 @@ const ICON = {
   lang: '<path d="M4 5h9M8.5 3v2M6 5c0 4 3 7 6 8M11 5c0 3-3 7-7 8M13 21l4-9 4 9M14.5 18h5"/>',
   doc: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
   dots: '<circle cx="12" cy="12" r="9"/><path d="M8 12h.01M12 12h.01M16 12h.01" stroke-width="3"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
 };
 const ico = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n] || ''}</svg>`;
 
-const TABS = [['home', 'tabs.start', 'home'], ['docs', 'tabs.documents', 'folder'], ['scan', 'home.scan', 'camera'], ['tasks', 'tabs.deadlines', 'clock'], ['invoices', 'tabs.invoices', 'invoice']];
+const TABS = [['home', 'tabs.start', 'home'], ['docs', 'tabs.documents', 'folder'], ['scan', 'home.scan', 'camera'], ['tasks', 'tabs.deadlines', 'clock'], ['more', 'tabs.more', 'menu']];
 const ROOTS = new Set(['home', 'docs', 'tasks', 'invoices', 'more']);
 
 function go(view, params = {}, opts = {}) {
@@ -777,7 +806,7 @@ function render() {
 }
 function banners() {
   let h = '';
-  if (store.space === 'demo') h += `<div class="banner warn row between"><span>${esc(t('web.demoOn'))}</span><button class="btn sm ghost" data-a="leaveDemo">${esc(t('web.demoLeave'))}</button></div>`;
+  if (store.space === 'demo') h += `<div class="demo-line"><span>${ico('flask')}${esc(t('web.uiDemoShort'))}</span><button data-a="leaveDemo">${esc(t('web.demoLeave'))}</button></div>`;
   if (store.mode === 'local') h += `<div class="banner">${esc(t('web.localMode'))}</div>`;
   if (store.full) h += `<div class="banner warn">${esc(t('web.storageFull'))}</div>`;
   return h;
@@ -786,9 +815,10 @@ function renderTop() {
   const v = VIEWS[S.view] || VIEWS.home;
   const title = v.title ? v.title() : '';
   const showBack = !ROOTS.has(S.view) && S.view !== 'setup' || (S.view === 'more' && S.stack.length);
-  const gear = S.loaded && S.view !== 'setup' && S.view !== 'more' && ROOTS.has(S.view) ? `<button class="gear" data-go="more" aria-label="${esc(t('web.more'))}">${ico('dots')}</button>` : '';
+  const plus = S.loaded && v.topPlus ? `<button class="gear plus" ${v.topPlus} aria-label="${esc(t('web.uiNew'))}">${ico('plus')}</button>` : '';
+  const gear = S.loaded && S.view !== 'setup' && S.view !== 'more' && ROOTS.has(S.view) ? `<button class="gear" data-a="openSearch" aria-label="${esc(t('common.search'))}">${ico('search')}</button>` : '';
   $('#top').innerHTML = (showBack ? `<button class="back" data-a="back" aria-label="${esc(t('common.back'))}">←</button>` : '') +
-    (S.view === 'home' || S.view === 'setup' ? `<span class="brand">eOffis</span><h1 class="muted" style="font-size:1rem;font-weight:600">${esc(title)}</h1>` : `<h1>${esc(title)}</h1>`) + gear;
+    (S.view === 'home' || S.view === 'setup' ? `<span class="brand">eOffis</span><h1 class="muted" style="font-size:1rem;font-weight:600">${esc(title)}</h1>` : `<h1>${esc(title)}</h1>`) + plus + gear;
 }
 function renderTabs() {
   const tabs = $('#tabs');
@@ -796,7 +826,7 @@ function renderTabs() {
   tabs.hidden = false;
   const root = ROOTS.has(S.view) ? S.view : (S.stack.find((s) => ROOTS.has(s.view)) || { view: '' }).view;
   tabs.innerHTML = `<div class="tabs-in">${TABS.map(([v, k, i]) => v === 'scan'
-    ? `<button class="tab scan" data-go="scan" aria-label="${esc(t(k))}"><span class="sb">${ico(i)}</span><span>${esc(t('web.camera').split(' ')[0])}</span></button>`
+    ? `<button class="tab scan" data-go="scan" aria-label="${esc(t(k))}"><span class="sb">${ico(i)}</span><span>${esc(t('web.uiScanTab'))}</span></button>`
     : `<button class="tab" data-go="${v}" ${root === v ? 'aria-current="page"' : ''}>${ico(i)}<span>${esc(t(k))}</span></button>`).join('')}</div>`;
 }
 /** iOS-Listenzeile */
@@ -865,41 +895,19 @@ VIEWS.home = {
   render() {
     const p = S.profile;
     if (!p && store.space !== 'demo') return VIEWS.setup.render();
-    const feats = FEATURES();
     const docs = S.docs.filter((d) => !d.archived);
-    const open = S.tasks.filter((x) => x.status !== 'done');
-    const next = open.filter((x) => x.due_date).sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
-    const nd = next ? daysUntil(next.due_date) : null;
-    const rem = remCfg().inApp ? dueReminders().filter((r) => !next || r.x.id !== next.id).slice(0, 5) : [];
-    const openInv = S.invoices.filter((i) => ['open', 'overdue'].includes(invState(i).label));
-    const recent = docs.slice(0, 5);
-    return `${p ? `<p class="muted">${esc(p.company_name)}</p>` : ''}
-      ${next ? `<button class="hero ${nd < 0 ? 'red' : ''}" data-go="task" data-id="${next.id}"><span class="hl">${esc(t('web.nextDeadline'))}</span><span class="ht">${esc(next.title)}</span><span class="hd">${esc(fmtDate(next.due_date))} · ${esc(dueLabel(nd))}</span></button>`
-        : `<div class="hero" style="cursor:default"><span class="hl">${esc(t('web.nextDeadline'))}</span><span class="ht">${esc(t('web.noDeadline'))}</span></div>`}
-      <div class="qa">${feats.slice(0, 4).map((f, i) => `<button data-feat="${i}"><i>${ico(f[0])}</i>${esc(f[1])}</button>`).join('')}</div>
-      <div class="stats">
-        <button class="stat" data-go="docs"><b>${docs.length}</b><span>${esc(t('home.docs'))}</span></button>
-        <button class="stat" data-go="docs"><b>${docs.filter((d) => d.status === 'saved').length}</b><span>${esc(t('home.toReview'))}</span></button>
-        <button class="stat" data-go="tasks"><b>${open.length}</b><span>${esc(t('home.openTasks'))}</span></button>
-        <button class="stat" data-go="invoices"><b>${openInv.length}</b><span>${esc(t('home.openInvoices'))}</span></button>
-      </div>
-      ${rem.length ? group(rem.map(({ x, d }) => cell({ icon: 'bell', ic: d < 0 ? 'r' : d <= 3 ? 'o' : '', title: x.title, sub: fmtDate(x.due_date) + ' · ' + t('tasks.kind_' + x.kind), right: dueLabel(d), attrs: `data-go="task" data-id="${x.id}"` })), t('web.reminders')) : ''}
-      ${recent.length ? group(recent.map((d) => cell({ icon: 'doc', ic: d.status === 'done' ? '' : 'g', title: d.title, sub: [fmtDate(d.created_at), t('docs.status_' + d.status)].join(' · '), right: d.amount_gross != null ? money(d.amount_gross, d.currency) : '', attrs: `data-go="doc" data-id="${d.id}"` })), t('web.recent')) : ''}
-      <label class="f" for="fsearch">${esc(t('common.search'))}<input class="in" id="fsearch" placeholder="${esc(t('home.searchFeatures'))}" autocomplete="off" type="search"></label>
-      <div id="fhits"></div>
-      ${!S.docs.length && store.space !== 'demo' ? `<div class="card"><h2>${esc(t('web.demoTitle'))}</h2><p class="muted">${esc(t('web.demoIntro'))}</p><button class="btn sec" data-a="enterDemo">${ico('flask')}${esc(t('auth.demo'))}</button></div>` : ''}
-      <div class="sec-h">${esc(t('web.infoTitle'))}</div>
-      <div class="group">${INFO.map((k) => `<details class="cell-d"><summary class="cell"><span class="ci g">${ico('info')}</span><span class="cx"><span class="ct">${esc(t('web.info_' + k + '_t'))}</span></span><span class="chev">›</span></summary><div class="dbody">${esc(t('web.info_' + k))}</div></details>`).join('')}</div>
-      <p class="muted small">${esc(t('web.infoStand'))}</p>`;
-  },
-  after() {
-    const inp = $('#fsearch'); if (!inp) return;
-    const feats = FEATURES();
-    inp.oninput = () => {
-      const q = inp.value.trim().toLowerCase();
-      const hits = q ? feats.map((f, i) => [f, i]).filter(([f]) => f[1].toLowerCase().includes(q)) : [];
-      $('#fhits').innerHTML = hits.length ? group(hits.map(([f, i]) => cell({ icon: f[0], title: f[1], attrs: `data-feat="${i}"` }))) : '';
-    };
+    const open = S.tasks.filter((x) => x.status !== 'done' && x.due_date).sort((a, b) => a.due_date.localeCompare(b.due_date));
+    const review = docs.filter((d) => d.status === 'saved').length;
+    const head = (label, to, n) => `<div class="sec-h row between"><span>${esc(label)}</span>${n ? `<button class="sec-link" data-go="${to}">${esc(t('web.uiAll'))} (${n}) ›</button>` : ''}</div>`;
+    const dl = open.slice(0, 3).map((x) => { const d = daysUntil(x.due_date); return cell({ icon: 'clock', ic: d < 0 ? 'r' : d <= 7 ? 'o' : 'g', title: x.title, sub: fmtDate(x.due_date) + ' · ' + t('tasks.kind_' + x.kind), right: dueLabel(d), attrs: `data-go="task" data-id="${x.id}"` }); });
+    const rc = docs.slice(0, 3).map((d) => cell({ icon: d.file_kind === 'xml' ? 'xml' : 'doc', ic: d.status === 'saved' ? 'o' : d.status === 'done' ? '' : 'g', title: d.title, sub: [fmtDate(d.created_at), d.status === 'saved' ? t('web.uiToReview') : t('docs.status_' + d.status)].join(' · '), right: d.amount_gross != null ? money(d.amount_gross, d.currency) : '', attrs: `data-go="doc" data-id="${d.id}"` }));
+    return `${p ? `<p class="muted company">${esc(p.company_name)}</p>` : ''}
+      <button class="scanhero" data-go="scan"><span class="si">${ico('camera')}</span><span class="st"><b>${esc(t('web.uiScanHero'))}</b><small>${esc(t('web.uiScanHeroSub'))}</small></span><span class="chev" aria-hidden="true">›</span></button>
+      ${head(t('web.uiNextDeadlines'), 'tasks', open.length)}
+      ${dl.length ? `<div class="group">${dl.join('')}</div>` : `<div class="group">${cell({ icon: 'check', ic: 'g', title: t('web.uiNoDeadlines'), attrs: 'data-go="tasks"' })}</div>`}
+      ${head(t('web.uiRecent') + (review ? ' · ' + t('web.uiReviewN', { count: review }) : ''), 'docs', docs.length)}
+      ${rc.length ? `<div class="group">${rc.join('')}</div>` : `<div class="group">${cell({ icon: 'doc', title: t('docs.empty'), attrs: 'data-go="scan"' })}</div>`}
+      ${!S.docs.length && store.space !== 'demo' ? `<button class="btn ghost" data-a="enterDemo">${ico('flask')}${esc(t('auth.demo'))}</button>` : ''}`;
   },
 };
 
@@ -922,7 +930,7 @@ VIEWS.docs = {
     });
     return `${seg([['open', t('web.open')], ['done', t('web.done')], ['archived', t('docs.archived')]], F.f, 'docFilter')}
       <input class="in" id="dq" type="search" value="${esc(F.q)}" placeholder="${esc(t('common.search') + ': ' + t('docs.searchPh'))}" autocomplete="off" aria-label="${esc(t('common.search'))}">
-      <div class="chips">${chip(t('web.contracts'), !!F.contracts, 'data-a="docContracts"')}${FOLDERS.map((f) => `<button class="chip quiet" aria-pressed="${F.folder === f}" data-a="docFolder" data-v="${f}">${esc(t('docs.folder_' + f))}</button>`).join('')}</div>
+      <div class="chips scroll">${chip(t('web.contracts'), !!F.contracts, 'data-a="docContracts"')}${FOLDERS.map((f) => `<button class="chip quiet" aria-pressed="${F.folder === f}" data-a="docFolder" data-v="${f}">${esc(t('docs.folder_' + f))}</button>`).join('')}</div>
       <div id="dlist">${list.length > PAGE ? `<p class="muted small">${esc(tn('web.docs', list.length))}</p>` : ''}${list.length ? group(list.slice(0, lim('docs')).map((d) => cell({
         icon: d.file_kind === 'xml' ? 'xml' : 'doc', ic: d.status === 'done' ? '' : d.status === 'reviewed' ? 'g' : 'o',
         title: d.title,
@@ -1058,31 +1066,33 @@ VIEWS.scan = {
       ${S.busy ? busyCard(S.busy) : `
       ${items.length ? `<div class="card" style="border:2px solid var(--accent)"><h2>✓ ${esc(t('web.pagesDone', { count: items.length }))}</h2>
         ${items.filter((i) => i.thumb).length ? `<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:10px">${items.map((it, i) => it.thumb ? `<img src="${it.thumb}" alt="${i + 1}" style="width:44px;height:60px;object-fit:cover;border-radius:4px;border:1px solid var(--line)">` : '').join('')}</div>` : ''}
-        <label class="btn sec pick">${ico('camera')}＋ ${esc(t('web.morePage'))}<input id="camIn" class="vh" type="file" accept="image/*" capture="environment"></label>
         <button class="btn" data-a="finishAnalyze" ${prob || !S.sample ? 'disabled' : ''}>${ico('spark')}${esc(t('web.finishAi', { count: items.length }))}</button>
-        <button class="btn ghost" data-a="finishScan" data-v="save" ${prob ? 'disabled' : ''}>${esc(t('web.saveOnly'))}</button></div>
-      <p class="muted small">${esc(t('web.otherSources'))}:</p>` : `
-      <label class="btn pick">${ico('camera')}${esc(t('web.camera'))}<input id="camIn" class="vh" type="file" accept="image/*" capture="environment"></label>
-      <p class="muted small">${esc(t('web.moreHint'))}</p>`}
-      <label class="btn ${items.length ? 'ghost' : 'sec'} pick">${ico('doc')}${esc(t('web.photoOrFile'))}<input id="galIn" class="vh" type="file" multiple accept="image/*"></label>
-      <label class="btn ghost pick">${ico('clip')}${esc(t('scan.import'))}<input id="fileIn" class="vh" type="file" multiple accept=".jpg,.jpeg,.png,.heic,.heif,.webp,.pdf,.xml,image/*,application/pdf,text/xml,application/xml"></label>
-      <p class="muted small">${esc(t('web.cameraHint'))}</p>
+        <label class="btn sec pick">${ico('camera')}＋ ${esc(t('web.morePage'))}<input id="camIn" class="vh" type="file" accept="image/*" capture="environment"></label>
+        <button class="btn ghost" data-a="finishScan" data-v="save" ${prob ? 'disabled' : ''}>${esc(t('web.saveOnly'))}</button></div>` : `
+      <label class="btn pick big">${ico('camera')}${esc(t('web.camera'))}<input id="camIn" class="vh" type="file" accept="image/*" capture="environment"></label>
+      <p class="muted small" style="text-align:center">${esc(t('web.moreHint'))}</p>`}
+      <div class="grid2">
+        <label class="btn ghost pick">${ico('doc')}${esc(t('web.uiGallery'))}<input id="galIn" class="vh" type="file" multiple accept="image/*"></label>
+        <label class="btn ghost pick">${ico('clip')}${esc(t('web.uiFile'))}<input id="fileIn" class="vh" type="file" multiple accept=".jpg,.jpeg,.png,.heic,.heif,.webp,.pdf,.xml,image/*,application/pdf,text/xml,application/xml"></label>
+      </div>
       ${S.pickerBlocked || IN_CLAUDE_ANDROID ? pickerHelp() : ''}
-      <textarea id="pasteIn" class="in" rows="2" style="border-style:dashed" placeholder="${esc(t('web.pastePh'))}" aria-label="${esc(t('web.pastePh'))}"></textarea>
-      ${items.length ? '' : `<details class="card"><summary style="font-weight:700;cursor:pointer">${esc(t('web.scanTipsTitle'))}</summary><ol class="small" style="margin:8px 0 0;padding-inline-start:20px">${t('web.scanTips').split('|').map((x) => `<li>${esc(x)}</li>`).join('')}</ol></details>`}`}
-      <div class="card"><div class="row between"><h2>${esc(t('scan.pages', { count: items.length }))}</h2><span class="muted num">${esc(t('scan.size', { mb: (bytes / 1048576).toFixed(1) }))}</span></div>
+      <details class="card more-opts"><summary>${esc(t('web.uiMoreOptions'))}</summary>
+        <p class="muted small">${esc(t('web.cameraHint'))}</p>
+        <textarea id="pasteIn" class="in" rows="2" style="border-style:dashed" placeholder="${esc(t('web.pastePh'))}" aria-label="${esc(t('web.pastePh'))}"></textarea>
+        <p style="font-weight:700;margin:12px 0 0">${esc(t('web.scanTipsTitle'))}</p><ol class="small" style="margin:6px 0 0;padding-inline-start:20px">${t('web.scanTips').split('|').map((x) => `<li>${esc(x)}</li>`).join('')}</ol>
+      </details>`}
+      ${items.length ? `<div class="card"><div class="row between"><h2>${esc(t('scan.pages', { count: items.length }))}</h2><span class="muted num">${esc(t('scan.size', { mb: (bytes / 1048576).toFixed(1) }))}</span></div>
         <div class="meter"><i style="width:${Math.min(100, (bytes / MAX_BYTES) * 100)}%"></i></div>
         ${prob ? `<div class="banner warn">${esc(t(prob))}</div>` : ''}
         <button class="btn sm ghost" data-a="togglePages" aria-expanded="${sc.open}">${sc.open ? '▾' : '▸'} ${esc(t('scan.pageList'))} (${items.length})</button>
-        ${sc.open ? (items.length ? items.map((it, i) => `<div class="part">
+        ${sc.open ? items.map((it, i) => `<div class="part">
             ${it.thumb ? `<img src="${it.thumb}" alt="" style="width:34px;height:46px;object-fit:cover;border-radius:3px;border:1px solid var(--line)">` : `<span class="mono" style="width:34px;text-align:center">XML</span>`}
             <div class="nm">${i + 1}. ${esc(it.name)}</div>
             <button class="ib" data-a="partUp" data-i="${i}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(t('scan.moveUp'))}">▲</button>
             <button class="ib" data-a="partDown" data-i="${i}" ${i === items.length - 1 ? 'disabled' : ''} aria-label="${esc(t('scan.moveDown'))}">▼</button>
-            <button class="ib" data-a="partDel" data-i="${i}" aria-label="${esc(t('scan.remove'))}">✕</button></div>`).join('') : `<p class="muted">${esc(t('scan.empty'))}</p>`) : ''}
+            <button class="ib" data-a="partDel" data-i="${i}" aria-label="${esc(t('scan.remove'))}">✕</button></div>`).join('') : ''}
       </div>
-      ${items.length ? '' : `<button class="btn" data-a="finishScan" disabled>✔ ${esc(t('scan.finish'))}</button>`}
-      ${items.length ? `<button class="btn ghost" data-a="discardScan">${esc(t('scan.discard'))}</button>` : ''}`;
+      <button class="btn ghost" data-a="discardScan">${esc(t('scan.discard'))}</button>` : ''}`;
   },
   after() {
     const cam = $('#camIn'), gal = $('#galIn'), fi = $('#fileIn');
@@ -1770,16 +1780,16 @@ Antworte nur mit JSON: {"sender":string,"recipient":string,"place_date":string,"
 /* ---------- Fristen & Aufgaben ---------- */
 VIEWS.tasks = {
   title: () => t('tasks.title'),
+  topPlus: 'data-go="task" data-id="new"',
   render() {
     const list = S.tasks.filter((x) => (S.showDone ? x.status === 'done' : x.status !== 'done')).sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999'));
     return `${seg([['open', t('web.open')], ['done', t('web.done')]], S.showDone ? 'done' : 'open', 'taskSeg')}
-      <div class="grid2"><button class="btn" data-go="task" data-id="new">＋ ${esc(t('tasks.new'))}</button><button class="btn sec" data-go="tax">${ico('cal')}${esc(t('tasks.taxCalendar'))}</button></div>
       ${list.length ? `<div class="group">${list.slice(0, lim('tasks')).map((x) => { const dn = x.status === 'done'; const d = dn ? null : daysUntil(x.due_date); const sv = sev(d);
         const circ = dn ? '✓' : x.status === 'in_progress' ? '◐' : '○';
         return `<div class="cell" style="padding:0;gap:0"><button class="ib" style="border:0;margin-inline-start:6px;font-size:1.3rem;color:var(--${dn ? 'ok' : sv === 'red' ? 'stamp' : sv === 'orange' || sv === 'yellow' ? 'warn' : 'muted'})" data-a="taskCycle" data-v="${x.id}" aria-label="${esc(t('tasks.tapStatus'))}: ${esc(t('tasks.status_' + x.status))}">${circ}</button>
           <button class="cell" style="flex:1" data-go="task" data-id="${x.id}"><span class="cx"><span class="ct" ${dn ? 'style="text-decoration:line-through;color:var(--muted)"' : ''}>${esc((x.priority === 'high' && !dn ? '● ' : '') + x.title)}</span><span class="cs" style="display:block">${esc([fmtDate(x.due_date), t('tasks.kind_' + x.kind), t('tasks.status_' + x.status), x.recur ? '↻ ' + t('tasks.recur_' + x.recur) : ''].filter(Boolean).join(' · '))}</span></span><span class="cr">${esc(dn ? '' : dueLabel(d))}</span><span class="chev">›</span></button></div>`; }).join('')}</div>`
         : `<div class="empty">${ico('clock')}<p class="muted">${esc(t('tasks.empty'))}</p></div>`}${moreBtn('tasks', list.length)}
-      ${S.tasks.some((x) => x.status !== 'done' && x.due_date) ? `<div class="card"><button class="btn sec" data-a="icsExport">${ico('bell')}${esc(t('web.icsExport'))}</button><p class="muted small">${esc(t('web.icsHint'))}</p></div>` : ''}
+      ${group([cell({ icon: 'cal', ic: 'g', title: t('tasks.taxCalendar'), attrs: 'data-go="tax"' })].concat(S.tasks.some((x) => x.status !== 'done' && x.due_date) ? [cell({ icon: 'bell', ic: 'g', title: t('web.icsExport'), sub: t('web.icsHint'), attrs: 'data-a="icsExport"' })] : []))}
       <p class="muted small">${esc(t('tax.stateNote'))}</p>`;
   },
 };
@@ -2560,7 +2570,6 @@ VIEWS.more = {
     const q = (S.hubQ || '').trim().toLowerCase();
     const groups = HUB().map(([g, items]) => [g, items.filter(([, l, h]) => !q || (t(l) + ' ' + t(h)).toLowerCase().includes(q))]).filter(([, items]) => items.length);
     return `<div class="group">${cell({ icon: 'gear', title: p.company_name || '–', sub: `${t('settings.ind_' + (p.industry || 'sonstiges'))} · ${store.space === 'demo' ? 'Demo' : t('web.test')}`, attrs: 'data-go="settings"' })}</div>
-      <div class="qa" style="grid-template-columns:1fr 1fr"><button data-go="invoice" data-id="new"><i>${ico('pen')}</i>${esc(t('home.newInvoice'))}</button><button data-go="scan"><i>${ico('camera')}</i>${esc(t('home.scan'))}</button></div>
       <input class="in" id="hubq" type="search" value="${esc(S.hubQ || '')}" placeholder="${esc(t('home.searchFeatures'))}" aria-label="${esc(t('common.search'))}">
       ${groups.map(([g, items]) => group(items.map(([icon, l, h, attrs]) => cell({ icon, title: t(l), sub: t(h), attrs })), t(g))).join('') || `<p class="muted">–</p>`}
       ${group(store.space === 'demo'
@@ -2568,7 +2577,9 @@ VIEWS.more = {
         : [cell({ icon: 'flask', ic: 'o', title: t('auth.demo'), sub: t('web.demoIntro'), attrs: 'data-a="enterDemo"' })], 'Demo')}
       <div class="sec-h">${esc(t('web.infoTitle'))}</div>
       <div class="group">${[['gobdTitle', 'gobd'], ['privacyTitle', 'privacy'], ['homeScreen', 'homeScreenH']].map(([k, h]) => `<details class="cell-d"><summary class="cell"><span class="ci g">${ico('info')}</span><span class="cx"><span class="ct">${esc(t('web.' + k))}</span></span><span class="chev">›</span></summary><div class="dbody">${esc(t('web.' + h))}</div></details>`).join('')}
-        <details class="cell-d"><summary class="cell"><span class="ci g">${ico('info')}</span><span class="cx"><span class="ct">${esc(t('more.limitsTitle'))}</span></span><span class="chev">›</span></summary><div class="dbody">${esc(t('more.limitsText'))}<br><br>${esc(t('inv.limits'))}</div></details></div>`;
+        ${INFO.map((k) => `<details class="cell-d"><summary class="cell"><span class="ci g">${ico('info')}</span><span class="cx"><span class="ct">${esc(t('web.info_' + k + '_t'))}</span></span><span class="chev">›</span></summary><div class="dbody">${esc(t('web.info_' + k))}</div></details>`).join('')}
+        <details class="cell-d"><summary class="cell"><span class="ci g">${ico('info')}</span><span class="cx"><span class="ct">${esc(t('more.limitsTitle'))}</span></span><span class="chev">›</span></summary><div class="dbody">${esc(t('more.limitsText'))}<br><br>${esc(t('inv.limits'))}</div></details></div>
+      <p class="muted small">${esc(t('web.infoStand'))}</p>`;
   },
   after() {
     const q = $('#hubq'); if (!q) return;
@@ -2669,6 +2680,7 @@ document.addEventListener('click', async (e) => {
   const d = getDoc(S.params.id);
   switch (A) {
     case 'back': return back();
+    case 'openSearch': S.hubQ = ''; go('more'); setTimeout(() => { const q = $('#hubq'); if (q) q.focus(); }, 30); return;
     case 'closeModal': $('#layer').innerHTML = ''; return;
     case 'modalGo': $('#layer').innerHTML = ''; return go(v);
     case 'setupLang': setLang(v); return render();
