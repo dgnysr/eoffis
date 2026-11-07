@@ -12,6 +12,10 @@
 Backend: Supabase-Projekt `lqohxlxemawzrtdqjnci` (Tabelle `kv`, `supabase/schema.sql`), KI-Funktion `smooth-processor` (Code: `supabase/functions/ai/index.ts`, „Verify JWT“ aus). Schlüssel: nur der öffentliche Publishable Key steht in `config.js`.
 
 ## Änderungsverlauf
+### 07.11.2026
+- Keine Beispielunterlagen mehr: „Demo starten“ heißt jetzt „Ohne Konto testen“ und beginnt leer mit den eigenen Betriebsdaten
+- Früher angelegte Beispielunterlagen (Frischemarkt, Finanzamt, Getränke Nord, Muster Event, Beispiel-Fristen, Beispiel-Betrieb „Demo Bistro“) werden beim Öffnen automatisch gelöscht; selbst gescannte Unterlagen bleiben
+- Demo-Hinweise auf Start- und Einrichtungsseite entfernt; im Testbereich unter „Mehr“: „Alle Testdaten löschen“
 ### 06.11.2026 – Oberfläche aufgeräumt (iPhone-Bedienung, DATEV-nüchtern)
 - Startseite nur noch: großer Knopf „Dokument scannen“, „Nächste Fristen“ (3), „Zuletzt gescannt“ (3, mit „zu prüfen“) – je mit „Alle ›“
 - Schnellknöpfe, Zahlen-Kacheln und Funktionssuche von der Startseite entfernt; gesetzliche Hinweise unter „Mehr“

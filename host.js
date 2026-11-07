@@ -15,7 +15,7 @@
   /* ---------- Anmeldung ---------- */
   const T = {
     title: 'Willkommen bei eOffis', sub: 'Dein digitaler Büroassistent', email: 'E-Mail', pw: 'Passwort (mind. 8 Zeichen)',
-    login: 'Anmelden', signup: 'Neues Konto registrieren', demo: 'Demo starten', demoHint: 'Eigener Demo-Bereich mit Beispieldaten – ohne Anmeldung. Nur Beispieldaten verwenden.',
+    login: 'Anmelden', signup: 'Neues Konto registrieren', demo: 'Ohne Konto testen', demoHint: 'Eigener, leerer Testbereich ohne Anmeldung – nur du siehst deine Unterlagen. Daten werden nach einiger Zeit gelöscht.',
     forgot: 'Passwort vergessen?', checkMail: 'Fast geschafft: Bitte bestätige deine E-Mail-Adresse über den Link in der Mail, dann hier anmelden.',
     resetSent: 'Wir haben dir eine Mail zum Zurücksetzen geschickt.', newPw: 'Neues Passwort festlegen', savePw: 'Passwort speichern',
     pwSaved: 'Passwort gespeichert.', notConfigured: 'Die App ist noch nicht mit der Datenbank verbunden (config.js fehlt).',

@@ -275,12 +275,21 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     await p.fill('#hubq', ''); await p.waitForTimeout(300); assert(/Mindestlohn/.test(await text()), 'Rechtshinweise unter Mehr');
     await p.click('.tab[data-go=home]');
   });
-  await check('F30', 'Demo: getrennte Daten, zurücksetzen, verlassen', async () => {
+  await check('F30', 'Beispielunterlagen werden entfernt, eigene bleiben; Testbereich leer und getrennt', async () => {
     const mine = await ev(() => S.docs.length);
-    await p.click('.gear:not(.plus)'); await p.click('[data-a=enterDemo]'); await p.waitForFunction(() => store.space === 'demo' && S.loaded);
-    assert(await ev(() => S.docs.every((d) => d.example)), 'Demo vermischt');
-    await p.click('.gear:not(.plus)'); await p.click('[data-a=resetDemo]'); await p.click('#askYes'); await p.waitForFunction(() => S.loaded && S.docs.length === 3);
-    await p.click('.gear:not(.plus)'); await p.click('[data-a=leaveDemo]'); await p.waitForFunction(() => store.space === 'main' && S.loaded);
+    // alte Beispieldaten wie in früheren Versionen anlegen
+    await ev(async () => { const d = { id: 'ex-1', title: 'Frischemarkt_GmbH', folder: 'rechnungen', example: true, status: 'saved', created_at: nowIso(), version: 1, page_count: 0 };
+      await store.put('docs', d); await store.put('tasks', { id: 'ex-t1', document_id: 'ex-1', title: 'Skonto Frischemarkt nutzen', kind: 'skonto', due_date: todayISO(), status: 'open', version: 1 });
+      await store.put('tasks', { id: 'ex-t2', document_id: null, title: 'Hygieneschulung Personal', kind: 'other', due_date: todayISO(), status: 'open', version: 1 });
+      await store.put('invoices', { id: 'ex-i1', example: true, status: 'draft', customer_name: 'Muster Event GmbH', created_at: nowIso(), version: 1 }); await reloadAll(); });
+    assert(await ev(() => S.docs.length) === mine + 1, 'Beispiel nicht angelegt');
+    await ev(async () => { await purgeExamples(); await reloadAll(); });
+    assert(await ev(() => S.docs.length) === mine && await ev(() => !S.docs.some((d) => d.example) && !S.tasks.some((x) => x.id.startsWith('ex-')) && !S.invoices.some((x) => x.example)), 'Beispiele nicht entfernt');
+    await ev(() => switchSpace('demo')); await p.waitForFunction(() => store.space === 'demo' && S.loaded);
+    assert(await ev(() => S.docs.length === 0 && S.view === 'setup'), 'Testbereich nicht leer');
+    await p.fill('#s_name', 'Testkunde'); await p.click('[data-a=setupSave]'); await p.waitForFunction(() => S.profile && S.view === 'home');
+    await p.click('.gear:not(.plus)'); await p.click('[data-a=resetDemo]'); await p.click('#askYes'); await p.waitForFunction(() => S.loaded && S.docs.length === 0 && S.view === 'home' && S.profile);
+    await ev(() => switchSpace('main')); await p.waitForFunction(() => store.space === 'main' && S.loaded);
     assert(await ev(() => S.docs.length) === mine, 'eigene Daten verändert');
   });
   await check('F31', 'KI nicht erlaubt / Limit erreicht → verständliche Meldung', async () => {
