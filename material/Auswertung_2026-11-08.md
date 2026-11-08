@@ -64,3 +64,10 @@ Pflichten: Auftragsverarbeitungsvertrag mit jedem Kunden, prüfen ob Datenschutz
 5. Apple/Google-Anmeldung (Apple-Entwicklerkonto ca. 99 $/Jahr).
 6. Supabase-Region prüfen, Zwei-Faktor-Anmeldung, Pro-Tarif vor dem Start.
 7. Danach: weitere Änderungswünsche, ganz am Ende Bezahlsystem.
+
+## 7. Nach der Technik: Rechtsthemen und Nebenarbeiten
+Erst wenn die Endversion fertig und getestet ist, dann der Reihe nach:
+- **Recht/Datenschutz:** Auftragsverarbeitungsverträge mit Kunden und mit Supabase, Anthropic, Brevo, Cloudflare; Datenschutzerklärung, Impressum, AGB; Verarbeitungsverzeichnis; Löschkonzept und Aufbewahrungsfristen; Datenübermittlung in die USA (Claude); prüfen, ob ein Datenschutzbeauftragter nötig ist; Meldeweg bei Datenpanne (72 Stunden); Haftung bei falsch erkannten Fristen; Aussagen „GoBD“ und „Server in der EU“ prüfen.
+- **Absicherung:** Supabase-Region prüfen, Zwei-Faktor-Anmeldung, Pro-Tarif mit Sicherungen, externer Sicherheitscheck, Notfallplan und Vertretung.
+- **Betrieb:** Bilder in den Dateispeicher verlagern, Claude Haiku für einfache Aufgaben, Hosting für kommerziellen Betrieb statt GitHub Pages, eigene Domain, Support und Personal.
+- **Bezahlsystem** ganz zuletzt.
