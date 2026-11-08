@@ -1,0 +1,243 @@
+<title>eOffis Strukturbaum</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: Kopf mit Legende → App-Aufbau als aufklappbarer Baum → Abläufe als senkrechte Ketten, die sich an Kundenentscheidungen verzweigen (am Handy untereinander) */
+:root {
+  --bg: #f2f2f7; --sheet: #ffffff; --ink: #0f1720; --muted: #5f6b70; --line: #c9d2d0;
+  --brand: #0a6b5b; --brand-soft: #e3f3ef; --ask: #b45309; --ask-soft: #fff4e5; --srv: #5856d6; --srv-soft: #eeedfc; --end: #0a7d55;
+  --f: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, system-ui, sans-serif;
+  --fd: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", Roboto, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #000; --sheet: #1c1c1e; --ink: #f5f5f7; --muted: #a1a1a8; --line: #3a3f3e; --brand: #2fbf9f; --brand-soft: #0f2f29; --ask: #ffb340; --ask-soft: #33260f; --srv: #9a98ff; --srv-soft: #23224a; --end: #30d17a; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #000; --sheet: #1c1c1e; --ink: #f5f5f7; --muted: #a1a1a8; --line: #3a3f3e; --brand: #2fbf9f; --brand-soft: #0f2f29; --ask: #ffb340; --ask-soft: #33260f; --srv: #9a98ff; --srv-soft: #23224a; --end: #30d17a; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.45 var(--f); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 64px; display: flex; flex-direction: column; gap: 28px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+h1 { font: 700 2.1rem/1.1 var(--fd); letter-spacing: -.025em; margin: 0; text-wrap: balance; }
+h2 { font: 700 1.45rem/1.2 var(--fd); letter-spacing: -.015em; margin: 0; text-wrap: balance; }
+h3 { font: 650 1.1rem/1.25 var(--fd); margin: 0; }
+p { margin: 0; max-width: 68ch; }
+.lead { color: var(--muted); font-size: 1.02rem; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: .86rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+nav.jump { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: -4px; padding: 2px 4px; }
+nav.jump a { flex: none; text-decoration: none; color: var(--brand); background: var(--brand-soft); border-radius: 999px; padding: 7px 13px; font-weight: 600; font-size: .88rem; }
+nav.jump a:focus-visible, summary:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+section.card { background: var(--sheet); border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.scroll { overflow-x: auto; }
+
+/* Knotenformen */
+.n { display: inline-block; border-radius: 12px; padding: 9px 13px; font-size: .94rem; line-height: 1.3; max-width: 100%; border: 1.5px solid transparent; }
+.n small { display: block; color: var(--muted); font-size: .8rem; margin-top: 2px; }
+.n.screen { background: var(--brand-soft); border-color: color-mix(in srgb, var(--brand) 35%, transparent); font-weight: 600; }
+.n.act { background: var(--sheet); border-color: var(--line); }
+.n.ask { background: var(--ask-soft); border-color: color-mix(in srgb, var(--ask) 45%, transparent); font-weight: 600; border-radius: 4px 16px 4px 16px; }
+.n.ask::before { content: "?"; display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; background: var(--ask); color: var(--sheet); font-size: .78rem; font-weight: 800; margin-right: 8px; vertical-align: 1px; }
+.n.srv { background: var(--srv-soft); border-color: color-mix(in srgb, var(--srv) 45%, transparent); }
+.n.srv::after { content: "nach Server-Einrichtung"; display: block; color: var(--srv); font-size: .74rem; font-weight: 600; }
+.n.end { background: var(--sheet); border-color: var(--end); color: var(--end); font-weight: 600; }
+.n.end::before { content: "✓ "; }
+.sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; border: 1.5px solid; }
+
+/* Abläufe: senkrechte Kette mit Verbindungslinie; Entscheidungen verzweigen in Spalten */
+ol.seq { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 0; }
+ol.seq > li { position: relative; padding: 0 0 18px 20px; width: 100%; }
+ol.seq > li::before { content: ""; position: absolute; left: 6px; top: 0; bottom: 0; border-left: 2px solid var(--line); }
+ol.seq > li::after { content: ""; position: absolute; left: 1px; top: 14px; width: 12px; height: 12px; border-radius: 50%; background: var(--bg); border: 2px solid var(--line); }
+ol.seq > li:last-child { padding-bottom: 0; }
+ol.seq > li:last-child::before { bottom: auto; height: 20px; }
+ol.seq > li.has-ask::after { border-color: var(--ask); background: var(--ask-soft); border-radius: 3px; transform: rotate(45deg); }
+.br { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px; }
+.arm { border-radius: 14px; padding: 12px; background: color-mix(in srgb, var(--bg) 55%, var(--sheet)); display: flex; flex-direction: column; gap: 10px; min-width: 0; border-top: 3px solid var(--ask); }
+.opt { align-self: flex-start; font-weight: 700; font-size: .84rem; color: var(--ask); background: var(--ask-soft); border-radius: 999px; padding: 3px 10px; }
+.arm .arm { background: var(--sheet); }
+.arm .br { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.arm .arm .br { grid-template-columns: 1fr; }
+.cont { color: var(--muted); font-size: .84rem; }
+
+/* Baum des App-Aufbaus */
+.tree, .tree ul { list-style: none; margin: 0; padding: 0; }
+.tree ul { padding-left: 18px; margin-left: 9px; border-left: 2px solid var(--line); display: flex; flex-direction: column; gap: 6px; padding-top: 6px; }
+.tree > li { padding: 4px 0; }
+.tree li > details > summary { cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 8px; }
+.tree li > details > summary::-webkit-details-marker { display: none; }
+.tree li > details > summary::before { content: "▸"; color: var(--brand); width: 12px; transition: transform .15s; }
+.tree li > details[open] > summary::before { transform: rotate(90deg); }
+.tree .tab { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.05rem; }
+.tree .tab i { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: #fff; font-style: normal; font-size: .9rem; }
+.tree li li { font-size: .94rem; }
+.tree .note { color: var(--muted); font-size: .84rem; }
+.tag { font-size: .72rem; font-weight: 700; color: var(--srv); background: var(--srv-soft); border-radius: 6px; padding: 1px 6px; margin-left: 6px; white-space: nowrap; }
+.flowhead { display: flex; flex-direction: column; gap: 4px; }
+.flowhead p { color: var(--muted); font-size: .92rem; }
+@media (max-width: 520px) { h1 { font-size: 1.75rem; } section.card { padding: 16px; } .br { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .tree li > details > summary::before { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>eOffis Strukturbaum</h1>
+    <p class="lead">Aufbau der App mit allen Funktionen aus Paket 1–3 und dem neuen Design, darunter die wichtigsten Abläufe. Wo der Kunde etwas entscheidet, verzweigt sich der Ablauf.</p>
+    <div class="legend" aria-label="Legende">
+      <span><i class="sw" style="background:var(--brand-soft);border-color:var(--brand)"></i>Bildschirm</span>
+      <span><i class="sw" style="background:var(--ask-soft);border-color:var(--ask)"></i>Entscheidung des Kunden</span>
+      <span><i class="sw" style="background:var(--sheet);border-color:var(--line)"></i>eOffis erledigt</span>
+      <span><i class="sw" style="background:var(--srv-soft);border-color:var(--srv)"></i>aktiv nach Server-Einrichtung</span>
+      <span><i class="sw" style="background:var(--sheet);border-color:var(--end)"></i>Ergebnis</span>
+    </div>
+    <nav class="jump" aria-label="Abschnitte">
+      <a href="#aufbau">App-Aufbau</a><a href="#f-start">Erster Start</a><a href="#f-scan">Dokument scannen</a><a href="#f-buch">Buchhaltung</a><a href="#f-sprache">Termin per Sprache</a><a href="#f-stb">Steuerberater</a><a href="#f-vertrag">Verträge</a><a href="#f-firma">Firma & GoBD</a>
+    </nav>
+  </header>
+
+  <section class="card" id="aufbau">
+    <h2>App-Aufbau: fünf Bereiche in der Tab-Leiste</h2>
+    <div class="scroll"><ul class="tree" id="tree"></ul></div>
+  </section>
+
+  <div id="flows" style="display:flex;flex-direction:column;gap:28px"></div>
+</div>
+
+<script>
+// Baum: [Titel, Farbe, Unterpunkte]; Unterpunkt = Text | [Text, Unterpunkte] ; "*" am Ende = nach Server-Einrichtung
+const TREE = [
+  ['Start', '#0a6b5b', [
+    'Kopf: eOffis-Symbol, Suche, Sprachwahl (🇩🇪 DE … 6 Sprachen)',
+    ['Begrüßung mit Datum und Firmenname', ['Kennzahl: Fristen in 7 Tagen → Fristen', 'Kennzahl: zu prüfen → Eingang', 'Kennzahl: nicht übertragen → Buchhaltung']],
+    'Karte „Dokument scannen“',
+    'Termin per Sprache eintragen',
+    ['Heute & demnächst', ['Überfällige und nahe Fristen zuerst', 'Offene Antworten', 'Fehlende Firmenunterlagen', '„Weitere anzeigen“']],
+    'Karte „Tägliche Erinnerung am Morgen“ (Einschalten / Später)*',
+    'Zuletzt gescannt'
+  ]],
+  ['Ablage', '#007aff', [
+    'Suche in allen Unterlagen',
+    'Eingang – zu prüfen',
+    ['Ordner (je eigene Farbe)', [
+      ['Buchhaltung (Rechnungen, Lieferscheine)', ['Jahr → Monat → Belegart', 'Nicht übertragene Belege hervorgehoben', 'Auswahl: Monat / einzelne Belege', 'Übertragen · An Steuerberater · PC-Ordner · Freigabe-Link*', 'Einstellungen: Programm, Adresse, PC-Ordner']],
+      ['Firma & Stammdaten', ['Checkliste: Gewerbeanmeldung, Handelsregister, Ausweis, Steuernummer, USt-IdNr., Gesellschaftsvertrag, Betriebshaftpflicht', 'Verfahrensdokumentation (GoBD)', 'Firmenunterlagen als ein PDF']],
+      'Finanzamt', 'Bank & Kredite', 'Versicherungen', 'Personal', 'Behörden', 'Mietverträge', 'Hygiene', 'Sonstiges'
+    ]],
+    ['Ansichten', ['Verträge & Versicherungen', 'Erledigt', 'Archiv', 'Alle Dokumente']],
+    ['Dokument (4 Schritte)', ['1 Zusammenfassung: Erklärung, Beträge, Rechnungsprüfung, Ablage-Vorschlag, Buchhaltungs-Optionen, Vorauszahlungen', '2 Das ist zu tun: Fristen, nächste Schritte', '3 Reaktion: Antwort, Stellungnahme, Kündigung (Brief nach DIN 5008)', '4 Ablegen / Archivieren']]
+  ]],
+  ['Scannen', '#0a6b5b', [
+    'Foto aufnehmen (mehrseitig)', 'Galerie', 'Datei (PDF)', 'E-Rechnung (XRechnung / ZUGFeRD)', 'Zuschneiden auf DIN A4', '„Fertig“ → mit KI auswerten oder nur speichern'
+  ]],
+  ['Fristen', '#ff9500', [
+    'Termin per Sprache eintragen', 'Offen / Erledigt',
+    ['Frist', ['Titel, Datum, Uhrzeit, Art, Status, Priorität, Wiederholung', 'In den Kalender (ICS mit Erinnerung 24 h und 1 h, Google Kalender)']],
+    'Steuerfristenkalender', 'Vorauszahlungen (vierteljährlich)', 'Alle Fristen als Kalenderdatei'
+  ]],
+  ['Mehr', '#8e8e93', [
+    'Betriebsprofil', 'Funktion suchen',
+    ['Geld', ['Buchhaltung', 'Steuerberater (ZIP, Sammel-PDF, Fristschreiben)', 'Alte Rechnungen (nur Archiv, falls vorhanden)']],
+    ['Unterlagen', ['Zu prüfen', 'Archiv', 'Verträge & Versicherungen', 'E-Rechnung lesen']],
+    ['Planung', ['Fristen & Aufgaben', 'Steuertermine', 'Kalender-Export']],
+    ['Einstellungen', ['Firma, Branche, Adresse, Steuernummer, Steuerberater-E-Mail', 'Buchhaltungsprogramm und Übertragungsweg', 'Erinnerungen: Vorlaufzeiten, Morgen-Erinnerung*', 'Sprache', 'Konto, Abmelden']],
+    'Infos: GoBD, Datenschutz, Startbildschirm, Mindestlohn, E-Rechnung, Kasse, Aufbewahrung, Fristen'
+  ]]
+];
+
+// Abläufe: s = Bildschirm, a = eOffis erledigt, q = Entscheidung {q, b:[[Option, [...]]]}, v = Server nötig, e = Ergebnis
+const s = (x, sub) => ({ t: 'screen', x, sub }), a = (x, sub) => ({ t: 'act', x, sub }), v = (x, sub) => ({ t: 'srv', x, sub }), e = (x, sub) => ({ t: 'end', x, sub });
+const q = (x, ...b) => ({ t: 'ask', x, b });
+const FLOWS = [
+  ['f-start', 'Erster Start', 'Vom Öffnen des Links bis zur fertigen Startseite.', [
+    s('Link öffnen (Smartphone oder PC)'),
+    q('Wie anmelden?',
+      ['Konto anlegen', [a('E-Mail + Passwort, Bestätigungsmail')]],
+      ['Anmelden', [a('E-Mail + Passwort')]],
+      ['Demo ohne Konto', [a('Testdaten, nach einigen Tagen gelöscht')]]),
+    s('Willkommen bei eOffis', 'App-Symbol und drei Kernnutzen'),
+    a('Firmenname, Branche, E-Mail des Steuerberaters'),
+    q('Tägliche Erinnerung am Morgen?',
+      ['Einschalten', [a('Mitteilungen erlauben (iPhone / Android)'), v('Jeden Morgen eine Zusammenfassung')]],
+      ['Später', [a('Karte erscheint morgen wieder')]]),
+    e('Startseite mit Überblick')
+  ]],
+  ['f-scan', 'Dokument scannen', 'Das Herzstück: vom Foto bis zur erledigten Aufgabe.', [
+    q('Wie kommt das Dokument rein?', ['Foto', [a('Seiten nacheinander, automatisch auf A4')]], ['Galerie / Datei', [a('Bild oder PDF')]], ['E-Rechnung', [a('XML-Daten direkt lesbar')]]),
+    q('„Fertig“ – mit KI auswerten?',
+      ['Ja', [a('Erklärung in einfachen Worten'), a('Absender, Betrag, IBAN, Skonto, Fristen erkannt'), a('Rechnungsprüfung § 14 UStG'), a('Fristen automatisch eingetragen')]],
+      ['Nein, nur speichern', [a('Dokument liegt im Eingang „zu prüfen“')]]),
+    q('Was für ein Dokument ist es?',
+      ['Buchhaltungsbeleg', [a('Rechnung, Quittung, Lieferschein, Kontoauszug, Gutschrift'), s('Zwei Wege anbieten → Ablauf „Buchhaltung“')]],
+      ['Vorauszahlungsbescheid', [q('Als Fristen übernehmen?', ['Ja', [e('4 Fristen, danach vierteljährlich')]], ['Nein', [a('Nur ablegen')]])]],
+      ['Vertrag / Police', [a('Partner, Laufzeit, Kündigungsfrist, Kosten'), e('Erscheint unter „Verträge“')]],
+      ['Behördenbrief u. a.', [a('Ordner-Vorschlag, z. B. Finanzamt')]]),
+    q('Ordner-Vorschlag annehmen?', ['Ja, ablegen', [e('Im richtigen Ordner')]], ['Anderer Ordner', [a('Ordner wählen')]]),
+    q('Ist eine Reaktion nötig?',
+      ['Ja', [q('Welche?', ['Antwort', []], ['Stellungnahme', []], ['Kündigung', []]), a('KI stellt Rückfragen, schreibt Brief nach DIN 5008'), e('PDF / Teilen / Drucken')]],
+      ['Nein', [e('Erledigt oder archiviert')]])
+  ]],
+  ['f-buch', 'Buchhaltung', 'eOffis bucht nicht selbst, sondern bringt Belege zuverlässig ins Buchhaltungsprogramm.', [
+    q('Buchhaltungsbeleg erkannt – was tun?',
+      ['1 · An Buchhaltungsprogramm übertragen', [
+        q('Welches Programm? (nur beim ersten Mal)',
+          ['Lexware Office', [q('Tarif XL?', ['Ja', [v('Direkt per Schnittstelle')]], ['Nein', [a('Über die Lexware-App teilen')]])]],
+          ['DATEV', [a('Upload-Mail-Adresse eintragen (Hilfe-Text)')]],
+          ['sevDesk', [a('Autobox-Adresse ist vorbelegt')]],
+          ['Anderes', [a('Adresse eintragen')]]),
+        a('Senden über das Teilen-Menü des Handys'),
+        q('Schon einmal übertragen?', ['Ja', [a('Warnung vor Doppelversand')]], ['Nein', []]),
+        e('Als „übertragen“ markiert, mit Datum und Ziel')
+      ]],
+      ['2 · In Ordner „Buchhaltung“ legen', [
+        a('Ablage nach Jahr / Monat / Belegart'),
+        a('Kopie im PC-Ordner (Chrome / Edge)'),
+        a('Bleibt hervorgehoben, bis übertragen'),
+        q('Später: was tun?', ['Alle übertragen', [a('Sammelübertragung')]], ['An Steuerberater', [s('→ Ablauf „Steuerberater“')]])
+      ]]),
+    q('Passender Lieferschein / passende Rechnung gefunden?', ['Verknüpfen', [e('Werden zusammen gesendet')]], ['Nicht verknüpfen', []])
+  ]],
+  ['f-sprache', 'Termin per Sprache', 'Auf Start oder bei den Fristen – auch ganz ohne Dokument.', [
+    s('„Termin per Sprache eintragen“'),
+    q('Mikrofon verfügbar und erlaubt?',
+      ['Ja', [a('Sprechen, z. B. „Freitag 10 Uhr Steuerberater“')]],
+      ['Nein', [a('Text eintippen')]]),
+    a('Datum, Uhrzeit, Titel und Art erkannt'),
+    s('Prüfen und anpassen'),
+    e('Als Frist gespeichert'),
+    q('In den Kalender?', ['Kalenderdatei', [e('Erinnerung 24 h und 1 h vorher')]], ['Google Kalender', [e('Termin geöffnet')]], ['Nicht nötig', []])
+  ]],
+  ['f-stb', 'Steuerberater', 'Monatlich, mit Erinnerung am 5.', [
+    a('Erinnerung am 5. jedes Monats'),
+    s('Buchhaltung: Belege des Monats auswählen'),
+    q('Wie senden?',
+      ['Teilen / ZIP', [a('ZIP nach Jahr / Monat / Belegart mit Übersicht'), e('Per Mail oder Messenger gesendet')]],
+      ['Freigabe-Link', [q('Gültig wie lange?', ['7 Tage', []], ['30 Tage', []]), v('Im Browser verschlüsselt hochgeladen'), a('Link + 6-stelliger Code (getrennt mitteilen)'), e('Steuerberater lädt mit Code herunter'), q('Später sperren?', ['Ja', [e('Link sofort ungültig')]], ['Nein', [a('Läuft automatisch ab')]])]]),
+    e('Belege als „an Steuerberater gesendet“ markiert')
+  ]],
+  ['f-vertrag', 'Verträge & Versicherungen', 'Nie wieder eine Kündigungsfrist verpassen.', [
+    s('Übersicht mit Jahreskosten, sortiert nach Kündigungsfrist'),
+    q('Daten vollständig?', ['Ja', []], ['Nein', [a('Bearbeiten: Partner, Laufzeit, Kündigungsfrist, Kosten, Leistung')]]),
+    a('Erinnerung 30 und 7 Tage vor der Kündigungsfrist'),
+    q('Kündigen?', ['Ja', [a('Kündigungsschreiben mit einem Klick'), e('Brief fertig zum Versand')]], ['Nein', [a('Vertrag verlängert sich wie vereinbart')]])
+  ]],
+  ['f-firma', 'Firma & GoBD', 'Im Ordner „Firma & Stammdaten“.', [
+    s('Checkliste: was fehlt noch?'),
+    q('Was erstellen?',
+      ['Verfahrensdokumentation', [q('Welche Fassung?', ['Einfach', [a('12 Fragen')]], ['Vollständig', [a('16 Fragen')]]), a('eOffis-Teil wird automatisch ergänzt'), e('PDF in „Firma“ + jährliche Erinnerung')]],
+      ['Firmenunterlagen als ein PDF', [a('Unterlagen auswählen'), q('Für wen? (Aufdruck)', ['Ausgefüllt', [e('„Nur zur Vorlage bei … – Datum“ auf jeder Seite')]], ['Leer', [e('PDF ohne Aufdruck')]]), a('Speichern oder teilen')]])
+  ]]
+];
+
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const srvTag = (t) => t.endsWith('*') ? esc(t.slice(0, -1)) + '<span class="tag">Server</span>' : esc(t);
+function treeItem(it) {
+  if (typeof it === 'string') return `<li>${srvTag(it)}</li>`;
+  return `<li><details open><summary>${srvTag(it[0])}</summary><ul>${it[1].map(treeItem).join('')}</ul></details></li>`;
+}
+document.getElementById('tree').innerHTML = TREE.map(([t, c, kids]) =>
+  `<li><details open><summary><span class="tab"><i style="background:${c}">${esc(t[0])}</i>${esc(t)}</span></summary><ul>${kids.map(treeItem).join('')}</ul></details></li>`).join('');
+
+function node(n) {
+  if (n.t === 'ask') return `<span class="n ask">${esc(n.x)}</span><div class="br">${n.b.map(([o, seq]) => `<div class="arm"><span class="opt">${esc(o)}</span>${seq.length ? list(seq) : '<span class="cont">weiter im Ablauf</span>'}</div>`).join('')}</div>`;
+  return `<span class="n ${n.t}">${esc(n.x)}${n.sub ? `<small>${esc(n.sub)}</small>` : ''}</span>`;
+}
+const list = (seq) => `<ol class="seq">${seq.map((n) => `<li class="${n.t === 'ask' ? 'has-ask' : ''}">${node(n)}</li>`).join('')}</ol>`;
+document.getElementById('flows').innerHTML = FLOWS.map(([id, title, sub, seq]) =>
+  `<section class="card" id="${id}"><div class="flowhead"><h2>${esc(title)}</h2><p>${esc(sub)}</p></div><div class="scroll">${list(seq)}</div></section>`).join('');
+</script>

@@ -1,0 +1,15 @@
+{
+  "v": 4,
+  "createdOnFiles": { "v": 1, "at": "2026-11-08T16:05:00Z" },
+  "lists": "css",
+  "title": "eOffis – Produktvorstellung",
+  "order": ["cover", "alltag", "kosten", "ablauf", "start", "funktionen", "buchhaltung", "ordnung", "nutzen", "sicher", "testen"],
+  "sections": {
+    "s1": { "description": "Wer wir sind und welches Problem eOffis löst", "start": "cover" },
+    "s2": { "description": "So arbeitet eOffis und was es kann", "start": "ablauf" },
+    "s3": { "description": "Nutzen, Sicherheit und Einstieg", "start": "nutzen" }
+  },
+  "faces": {
+    "inter": { "family": "Inter", "href": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" }
+  }
+}
