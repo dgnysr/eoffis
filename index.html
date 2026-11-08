@@ -4,57 +4,61 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>eOffis</title>
-<meta name="description" content="eOffis – Belege scannen, verstehen, Fristen und Rechnungen für kleine Betriebe">
-<meta name="theme-color" content="#1d7348">
+<meta name="description" content="eOffis – der digitale Büroassistent für kleine Betriebe: Post scannen, verstehen, Fristen im Blick, Belege an Buchhaltung und Steuerberater.">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="eOffis">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon-180.png">
 <link rel="stylesheet" href="host.css">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
 
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: iOS-Muster – große Titel, gruppierte Listen, Tab-Leiste mit mittigem Scan-Knopf; DATEV-artig nüchtern: weiß/grau, ein ruhiges Grün als einzige Akzentfarbe. */
 :root {
-  --paper: #f2f3f5;
+  /* Design 2026 – an Apple/Microsoft-Systemgestaltung angelehnt: Systemschrift, gruppierte Flächen ohne Rahmen, eine Markenfarbe (Petrolgrün) */
+  --paper: #f2f2f7;
   --sheet: #ffffff;
-  --ink: #15191e;
-  --muted: #646d78;
-  --line: #dfe2e6;
-  --accent: #1d7348;
+  --ink: #0f1720;
+  --muted: #6b7280;
+  --line: rgba(60, 60, 67, .14);
+  --fill: rgba(118, 118, 128, .12);
+  --accent: #0a6b5b;
   --accent-ink: #ffffff;
-  --accent-soft: #e5f1ea;
-  --stamp: #c0392b;
-  --warn: #b85c00;
-  --caution: #8a7300;
-  --ok: #1d7348;
-  --shadow: 0 1px 2px rgba(21, 25, 30, .06), 0 8px 24px rgba(21, 25, 30, .08);
-  --f-display: -apple-system, BlinkMacSystemFont, "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
-  --f-body: -apple-system, BlinkMacSystemFont, "Atkinson Hyperlegible", "Segoe UI", "Noto Sans", system-ui, sans-serif;
-  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  --r: 12px;
+  --accent-soft: #e3f3ef;
+  --stamp: #d92d20;
+  --warn: #c2540a;
+  --caution: #a16207;
+  --ok: #0a7d55;
+  --amber: #f5a524;
+  --shadow: 0 1px 2px rgba(15, 23, 32, .04), 0 4px 16px rgba(15, 23, 32, .06);
+  --shadow-lg: 0 12px 40px rgba(15, 23, 32, .18);
+  --bar: rgba(249, 249, 251, .82);
+  --f-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", Roboto, system-ui, sans-serif;
+  --f-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, "Noto Sans", system-ui, sans-serif;
+  --f-mono: ui-monospace, "SF Mono", "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
+  --r: 14px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #000000; --sheet: #1c1c1e; --ink: #f2f2f4; --muted: #9a9ca3; --line: #333438;
-    --accent: #4cc283; --accent-ink: #062314; --accent-soft: #15301f; --stamp: #ff6b5e;
-    --warn: #ffa64d; --caution: #e3c94e; --ok: #4cc283;
-    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    --paper: #000000; --sheet: #1c1c1e; --ink: #f5f5f7; --muted: #98989f; --line: rgba(84, 84, 88, .55); --fill: rgba(118, 118, 128, .24);
+    --accent: #2fbf9f; --accent-ink: #00241d; --accent-soft: #0f2f29; --stamp: #ff6961;
+    --warn: #ff9f43; --caution: #e3c94e; --ok: #30d17a; --amber: #ffb340;
+    --shadow: none; --shadow-lg: 0 12px 40px rgba(0,0,0,.6); --bar: rgba(22, 22, 24, .82);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --paper: #000000; --sheet: #1c1c1e; --ink: #f2f2f4; --muted: #9a9ca3; --line: #333438;
-  --accent: #4cc283; --accent-ink: #062314; --accent-soft: #15301f; --stamp: #ff6b5e;
-  --warn: #ffa64d; --caution: #e3c94e; --ok: #4cc283;
-  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  --paper: #000000; --sheet: #1c1c1e; --ink: #f5f5f7; --muted: #98989f; --line: rgba(84, 84, 88, .55); --fill: rgba(118, 118, 128, .24);
+  --accent: #2fbf9f; --accent-ink: #00241d; --accent-soft: #0f2f29; --stamp: #ff6961;
+  --warn: #ff9f43; --caution: #e3c94e; --ok: #30d17a; --amber: #ffb340;
+  --shadow: none; --shadow-lg: 0 12px 40px rgba(0,0,0,.6); --bar: rgba(22, 22, 24, .82);
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -301,6 +305,165 @@ h2 > svg { width: 22px; height: 22px; vertical-align: -4px; margin-inline-end: 4
 .btn.big { min-height: 72px; font-size: 1.1rem; border-radius: 16px; }
 .btn.big svg { width: 28px; height: 28px; }
 .more-opts summary { font-weight: 700; cursor: pointer; color: var(--muted); }
+
+/* =================== Design 2026 (08.11.2026) – Systemgestaltung wie bei Apple/Microsoft-Apps =================== */
+body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; -webkit-tap-highlight-color: transparent; }
+h1, h2, h3 { letter-spacing: -.015em; }
+h2 { font-size: 1.12rem; font-weight: 650; }
+.mono { font-size: .84em; }
+/* Navigationsleiste: durchscheinendes Material wie iOS/Windows 11 */
+.top { background: var(--bar); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-bottom: .5px solid var(--line); }
+body::before { background: var(--bar); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
+.top-in { min-height: 52px; gap: 6px; }
+.top h1 { font-size: 1.06rem; font-weight: 600; letter-spacing: -.01em; }
+.top h1.lt-hide { visibility: hidden; }
+.brand { display: inline-flex; align-items: center; gap: 8px; font-size: 1.12rem; font-weight: 700; color: var(--ink); letter-spacing: -.02em; flex: 1; }
+.brand img { width: 28px; height: 28px; border-radius: 7px; box-shadow: 0 1px 3px rgba(10,107,91,.35); }
+.back { background: none; color: var(--accent); min-width: 36px; height: 44px; margin-inline-start: -8px; display: grid; place-items: center; border-radius: 10px; }
+.back svg { width: 24px; height: 24px; }
+.gear { color: var(--accent); width: 40px; height: 40px; border-radius: 999px; }
+.gear:active, .back:active { background: var(--fill); }
+.gear svg { width: 22px; height: 22px; }
+.langbtn { border: 0; background: var(--fill); min-height: 32px; padding: 3px 10px 3px 8px; gap: 5px; font-weight: 600; font-size: .78rem; letter-spacing: .02em; color: var(--ink); }
+.langbtn span[aria-hidden] { font-size: 1.05rem; }
+.langbtn .ln { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.langbtn .lc { text-transform: uppercase; }
+/* Großer Titel (Large Title) auf den Hauptseiten */
+.lt { font-family: var(--f-display); font-size: 2.05rem; font-weight: 700; letter-spacing: -.025em; line-height: 1.1; margin: 2px 4px 0; }
+.lt-sub { margin: -8px 4px 0; color: var(--muted); font-size: .95rem; }
+main { padding-block: 12px 128px; }
+.wrap { gap: 16px; }
+/* Tab-Leiste */
+.tabs { background: var(--bar); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-top: .5px solid var(--line); }
+.tab { font-size: .66rem; font-weight: 600; gap: 2px; padding: 7px 2px 6px; min-height: 54px; letter-spacing: .01em; }
+.tab svg { width: 25px; height: 25px; stroke-width: 1.9; }
+.tab[aria-current="page"] svg { stroke-width: 2.3; }
+.tab.scan .sb { width: 54px; height: 54px; margin-top: -20px; border-radius: 18px; border: 0; box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 45%, transparent), 0 0 0 4px var(--paper); }
+.tab.scan .sb svg { width: 26px; height: 26px; stroke-width: 2.1; }
+.tab.scan > span:last-child { color: var(--accent); }
+/* Flächen: keine Rahmen, gruppierte Listen wie in den Systemeinstellungen */
+.card { border: 0; box-shadow: var(--shadow); border-radius: var(--r); padding: 18px; }
+.group { border: 0; border-radius: var(--r); box-shadow: var(--shadow); }
+.sec-h { font-size: .95rem; font-weight: 650; color: var(--ink); text-transform: none; letter-spacing: -.01em; padding: 8px 4px 0; margin-bottom: -8px; }
+.sec-h.row { padding-top: 10px; }
+.sec-link { font-weight: 500; font-size: .95rem; }
+.cell { min-height: 54px; padding: 10px 16px; gap: 14px; }
+.cell + .cell::before { inset-inline-start: 60px; border-top: .5px solid var(--line); }
+.cell.noicon + .cell.noicon::before { inset-inline-start: 16px; }
+.cell .ci { width: 30px; height: 30px; border-radius: 8px; }
+.cell .ci svg { width: 17px; height: 17px; stroke-width: 2.1; }
+.cell .ct { font-weight: 500; letter-spacing: -.01em; }
+.cell .cs { font-size: .82rem; margin-top: 1px; }
+.cell .cr { font-size: .92rem; }
+.cell .chev { color: color-mix(in srgb, var(--muted) 55%, transparent); font-size: 1.45rem; font-weight: 300; }
+.cell:active { background: var(--fill); }
+.cell .ci.g { background: #8e8e93; } .cell .ci.o { background: #ff9500; } .cell .ci.r { background: #ff3b30; }
+/* Ordnerfarben (eigene Farbe je Ordner – schneller wiederzuerkennen) */
+.ci.f-buchhaltung { background: #007aff; } .ci.f-firma { background: #5856d6; } .ci.f-finanzamt { background: #34a853; }
+.ci.f-bank { background: #0a6b5b; } .ci.f-versicherungen { background: #00a5c8; } .ci.f-personal { background: #ff9500; }
+.ci.f-behoerden { background: #af52de; } .ci.f-mietvertraege { background: #a2845e; } .ci.f-hygiene { background: #30b0c7; } .ci.f-sonstiges { background: #8e8e93; }
+/* Knöpfe */
+.btn { border: 0; border-radius: 14px; min-height: 50px; font-weight: 600; font-size: 1.02rem; letter-spacing: -.01em; transition: transform .12s ease, filter .12s ease, background-color .2s ease; }
+.btn:active:not([disabled]) { transform: scale(.98); filter: brightness(.94); }
+.btn.sec { background: var(--accent-soft); color: var(--accent); }
+.btn.ghost { background: var(--fill); color: var(--accent); border: 0; }
+.btn.sm { min-height: 40px; border-radius: 11px; font-size: .92rem; }
+.btn.big { min-height: 64px; border-radius: 18px; }
+.ib { border: 0; background: var(--fill); }
+/* Eingaben */
+label.f { font-size: .82rem; font-weight: 500; gap: 6px; }
+input.in, textarea.in, select.in { border: 0; background: var(--paper); border-radius: 12px; padding: 13px 14px; font-size: 1.02rem; box-shadow: inset 0 0 0 .5px var(--line); }
+.card input.in, .card textarea.in, .card select.in, .modal input.in, .modal textarea.in, .modal select.in { background: var(--paper); }
+.wrap > input.in { background: var(--fill); box-shadow: none; border-radius: 12px; padding: 11px 14px 11px 38px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238e8e93' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: 12px center; background-size: 18px; }
+[dir="rtl"] .wrap > input.in { padding: 11px 38px 11px 14px; background-position: calc(100% - 12px) center; }
+input.in:focus, textarea.in:focus, select.in:focus { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
+.check input { width: 22px; height: 22px; }
+.chip { border: 0; background: var(--fill); font-weight: 600; font-size: .88rem; padding: 8px 14px; }
+.chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.pill { border: 0; background: color-mix(in srgb, currentColor 12%, transparent); padding: 4px 10px; font-weight: 600; font-size: .78rem; }
+.banner { border-radius: 12px; font-size: .94rem; }
+.acc-open { border-inline-start: 0 !important; box-shadow: inset 3px 0 0 var(--warn); }
+.acc-bar { border: 0; box-shadow: var(--shadow-lg); top: 64px; }
+.stat, .tile { border: 0; box-shadow: var(--shadow); }
+.item { border: 0; box-shadow: var(--shadow); border-radius: var(--r); }
+.item::before { width: 4px; inset-block: 10px; border-radius: 0 4px 4px 0; }
+.meter { height: 6px; border-radius: 3px; }
+.thumb { border: 0; box-shadow: 0 1px 4px rgba(0,0,0,.18); }
+.letter { border: 0; }
+.wstep b { border-width: 1.5px; }
+.seg { background: var(--fill); border-radius: 10px; }
+.seg button { border-radius: 8px; font-weight: 600; }
+.seg button[aria-pressed="true"] { box-shadow: 0 3px 8px rgba(0,0,0,.12), 0 0 0 .5px rgba(0,0,0,.04); }
+.empty { padding: 36px 16px; }
+.empty svg { width: 52px; height: 52px; stroke-width: 1.5; opacity: .7; }
+/* Dialoge als Blatt von unten (Sheet) */
+.modal { background: rgba(0, 0, 0, .38); animation: fade .2s ease; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+.modal .card { border-radius: 22px; box-shadow: var(--shadow-lg); padding: 22px 18px 18px; animation: sheet .32s cubic-bezier(.2, .9, .25, 1); position: relative; }
+.modal .card::before { content: ""; position: absolute; top: 7px; left: 50%; width: 36px; height: 5px; margin-left: -18px; border-radius: 3px; background: var(--fill); }
+@keyframes fade { from { opacity: 0; } }
+@keyframes sheet { from { transform: translateY(40px); opacity: .4; } }
+.toast { border-radius: 999px; padding: 12px 20px; font-weight: 600; background: color-mix(in srgb, var(--ink) 92%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: var(--shadow-lg); animation: sheet .25s ease; }
+@media (prefers-reduced-motion: reduce) { .modal, .modal .card, .toast { animation: none; } .btn { transition: none; } }
+/* Start: Begrüßung, Überblick, Scan-Karte */
+.hello { display: flex; flex-direction: column; gap: 2px; margin: 4px 4px 0; }
+.hello small { color: var(--muted); font-size: .9rem; font-weight: 500; }
+.hello b { font-family: var(--f-display); font-size: 2.05rem; font-weight: 700; letter-spacing: -.025em; line-height: 1.1; }
+.hello span { color: var(--muted); font-size: .95rem; }
+.sum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.sum button { border: 0; background: var(--sheet); box-shadow: var(--shadow); border-radius: var(--r); padding: 12px 12px 11px; text-align: start; cursor: pointer; display: flex; flex-direction: column; gap: 6px; color: var(--ink); min-width: 0; }
+.sum button:active { transform: scale(.98); }
+.sum i { width: 26px; height: 26px; border-radius: 999px; display: grid; place-items: center; color: #fff; background: var(--muted); }
+.sum i svg { width: 15px; height: 15px; stroke-width: 2.4; }
+.sum b { font-family: var(--f-display); font-size: 1.6rem; font-weight: 700; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.sum span { font-size: .76rem; color: var(--muted); font-weight: 500; line-height: 1.25; }
+.sum .s-red i { background: #ff3b30; } .sum .s-orange i { background: #ff9500; } .sum .s-blue i { background: #007aff; } .sum .s-ok i { background: var(--ok); }
+.scanhero { position: relative; overflow: hidden; border-radius: 20px; padding: 20px 18px; min-height: 128px; align-items: flex-end; box-shadow: 0 10px 28px color-mix(in srgb, var(--accent) 35%, transparent);
+  background: radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, #ffffff 16%, var(--accent)) 0%, var(--accent) 55%, color-mix(in srgb, #000 22%, var(--accent)) 100%); transition: transform .15s ease; }
+.scanhero:active { transform: scale(.985); }
+.scanhero .si { background: rgba(255,255,255,.2); width: 46px; height: 46px; border-radius: 14px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.scanhero .st { z-index: 1; padding-inline-end: 96px; }
+.scanhero b { font-size: 1.25rem; letter-spacing: -.015em; }
+.scanhero small { opacity: .85; }
+.scanhero .chev { display: none; }
+.scanhero .art { position: absolute; inset-inline-end: 14px; top: 14px; width: 92px; height: 112px; transform: rotate(6deg); pointer-events: none; }
+[dir="rtl"] .scanhero .art { transform: rotate(-6deg) scaleX(-1); }
+.voicebtn { border: 0; background: var(--sheet); color: var(--ink); box-shadow: var(--shadow); border-radius: var(--r); padding: 12px 14px; }
+.voicebtn .si { width: 38px; height: 38px; border-radius: 999px; }
+.voicebtn .si svg { width: 20px; height: 20px; }
+.voicebtn b { font-size: 1rem; font-weight: 600; }
+.voicebtn .chev { color: color-mix(in srgb, var(--muted) 55%, transparent); font-weight: 300; }
+.voicebtn:active { background: var(--fill); }
+.demo-line { border-radius: 12px; }
+/* Einrichtung (erster Eindruck) */
+.welcome { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 18px 8px 6px; }
+.welcome img { width: 76px; height: 76px; border-radius: 18px; box-shadow: 0 10px 28px rgba(10,107,91,.3); }
+.welcome h1 { font-size: 1.85rem; font-weight: 700; letter-spacing: -.025em; line-height: 1.15; }
+.welcome p { color: var(--muted); max-width: 32ch; }
+.welcome ul { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; text-align: start; width: 100%; max-width: 340px; }
+.welcome li { display: flex; gap: 12px; align-items: center; font-size: .95rem; }
+.welcome li i { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: #fff; flex: none; }
+.welcome li i svg { width: 17px; height: 17px; }
+
+.scanhero { flex-direction: column; align-items: flex-start; gap: 12px; }
+.scanhero .st { padding-inline-end: 104px; }
+.prio { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 999px; background: #ff3b30; color: #fff; font-size: .72rem; font-weight: 800; margin-inline-end: 6px; vertical-align: 1px; }
+.cs .due { font-weight: 600; }
+.cs .due.c-grey { color: var(--muted); }
+.cell .cr { font-size: .85rem; }
+.dochead { display: flex; flex-direction: column; gap: 2px; margin: 0 4px; }
+.dochead h1 { font-size: 1.55rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; overflow-wrap: anywhere; }
+.dochead p { color: var(--muted); font-size: .95rem; }
+.dochead b { font-family: var(--f-display); font-size: 1.35rem; font-weight: 650; margin-top: 4px; letter-spacing: -.01em; }
+.dochead + .row { margin-top: -6px; gap: 6px; }
+
+/* Farben der Funktionssymbole im Bereich „Mehr“ (wie Systemeinstellungen) */
+.ci.h-invoice { background: #007aff; } .ci.h-box { background: #5856d6; } .ci.h-folder, .ci.h-doc { background: #34a853; } .ci.h-archive { background: #a2845e; }
+.ci.h-pen { background: #ff9500; } .ci.h-xml { background: #30b0c7; } .ci.h-clock { background: #ff3b30; } .ci.h-cal { background: #ff2d55; } .ci.h-bell { background: #ff9500; }
+.ci.h-gear { background: #8e8e93; } .ci.h-mic { background: #0a6b5b; } .ci.h-bank { background: #0a6b5b; } .ci.h-check { background: #00a5c8; } .ci.h-info { background: #8e8e93; } .ci.h-mail { background: #007aff; } .ci.h-home { background: #af52de; }
+.cell > .ib { background: none; }
+
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .scanhero { --accent: #0a6b5b; color: #fff; } :root:not([data-theme="light"]) .scanhero b, .scanhero small { color: #fff; } :root:not([data-theme="light"]) .tab.scan .sb { color: #00241d; } }
+:root[data-theme="dark"] .scanhero { --accent: #0a6b5b; color: #fff; } :root[data-theme="dark"] .scanhero b, .scanhero small { color: #fff; } :root[data-theme="dark"] .tab.scan .sb { color: #00241d; }
 </style>
 <header class="top"><div class="top-in" id="top"></div></header>
 <main><div class="wrap" id="main"></div></main>
@@ -889,7 +1052,7 @@ VIEWS.setup = {
       <div class="chips">${LANGS.map((l) => chip(t('lang.' + l), lang === l, `data-a="setupLang" data-v="${l}"`)).join('')}</div>
       ${field('s_name', t('auth.companyName'), '', 'autocomplete="organization"')}
       <div class="f" style="font-weight:700;color:var(--muted);font-size:.86rem">${esc(t('settings.industry'))}</div>
-      <div class="chips" id="s_ind">${INDUSTRIES.map((i, n) => chip(t('settings.ind_' + i), n === 0, `data-a="pickInd" data-v="${i}"`)).join('')}</div>
+      <div class="chips" id="s_ind">${INDUSTRIES.map((i, n) => chip(t('settings.ind_' + i), S.setupInd === i, `data-a="pickInd" data-v="${i}"`)).join('')}</div>
       ${field('s_mail', t('settings.advisorEmail'), '', 'type="email" autocomplete="off"')}
       <button class="btn" data-a="setupSave">${esc(t('web.start'))}</button></div>
 `;
@@ -981,7 +1144,7 @@ VIEWS.docs = {
     return `${search}
       ${review ? `<div class="group">${cell({ icon: 'doc', ic: 'o', title: t('web.uiInbox'), sub: t('web.uiInboxH'), right: String(review), attrs: 'data-a="openList" data-v="review"' })}</div>` : ''}
       ${group(FOLDERS.map((f) => { const accOpenN = f === 'buchhaltung' ? live.filter((d) => d.folder === f && !isTransferred(d)).length : 0;
-        return cell({ icon: FICON[f] || 'folder', ic: accOpenN ? 'o' : '', title: t('docs.folder_' + f), sub: f === 'firma' ? (firmaMiss ? t('web.uiFirmaMiss', { count: firmaMiss }) : t('web.uiFirmaOk')) : accOpenN ? `● ${accOpenN} ${t('acc.notTransferred')}` : '', right: String(cnt(f)), attrs: f === 'buchhaltung' ? 'data-a="openAcc"' : `data-a="openList" data-v="f:${f}"` }); }), t('web.uiFolders'))}
+        return cell({ icon: FICON[f] || 'folder', ic: accOpenN ? 'o' : 'f-' + f, title: t('docs.folder_' + f), sub: f === 'firma' ? (firmaMiss ? t('web.uiFirmaMiss', { count: firmaMiss }) : t('web.uiFirmaOk')) : accOpenN ? `● ${accOpenN} ${t('acc.notTransferred')}` : '', right: String(cnt(f)), attrs: f === 'buchhaltung' ? 'data-a="openAcc"' : `data-a="openList" data-v="f:${f}"` }); }), t('web.uiFolders'))}
       ${group([
         cell({ icon: 'pen', ic: 'g', title: t('web.contracts'), right: String(contracts), attrs: 'data-go="contracts"' }),
         cell({ icon: 'check', ic: 'g', title: t('web.done'), right: String(live.filter((d) => d.status === 'done').length), attrs: 'data-a="openList" data-v="done"' }),
@@ -1295,10 +1458,9 @@ VIEWS.doc = {
     if (S.params.analyze && !d.analyzed_at && !st.analyzing && S.sample && d.file_kind !== 'xml') { S.params.analyze = 0; setTimeout(() => analyzeDoc(d.id), 0); }
     const steps = [t('web.step1'), t('web.step2'), t('web.step3'), t('web.step4')];
     const nav = `<nav class="wsteps" aria-label="Schritte">${steps.map((l, i) => `<button class="wstep ${i + 1 < st.step ? 'done' : ''}" data-a="docStep" data-v="${i + 1}" ${st.step === i + 1 ? 'aria-current="step"' : ''}><b>${i + 1 < st.step ? '✓' : i + 1}</b>${esc(l)}</button>`).join('')}</nav>`;
-    const pills = `<div class="row">
+    const pills = `<div class="dochead"><h1>${esc(d.title)}</h1>${d.sender || d.document_date ? `<p>${esc([d.sender, d.document_date ? fmtDate(d.document_date) : ''].filter(Boolean).join(' · '))}</p>` : ''}${d.amount_gross != null ? `<b class="num">${esc(money(d.amount_gross, d.currency))}</b>` : ''}</div><div class="row">
         <span class="pill c-${d.status === 'done' ? 'green' : d.status === 'reviewed' ? 'grey' : 'yellow'}">${esc(t('docs.status_' + d.status))}</span>
         <span class="pill c-grey">${esc(t('docs.folder_' + d.folder))}</span>
-        ${d.amount_gross != null ? `<span class="pill c-grey num">${esc(money(d.amount_gross, d.currency))}</span>` : ''}
         ${d.archived ? `<span class="pill c-red">🔒 ${esc(t('docs.archived'))}</span>` : ''}
         ${d.example ? `<span class="pill c-orange">${esc(t('web.example'))}</span>` : ''}</div>`;
     const nextBtn = st.step < 4 ? `<button class="btn" data-a="docStep" data-v="${st.step + 1}">${esc(t('web.next'))}: ${esc(steps[st.step])} ›</button>` : '';
@@ -1869,7 +2031,7 @@ VIEWS.tasks = {
       ${list.length ? `<div class="group">${list.slice(0, lim('tasks')).map((x) => { const dn = x.status === 'done'; const d = dn ? null : daysUntil(x.due_date); const sv = sev(d);
         const circ = dn ? '✓' : x.status === 'in_progress' ? '◐' : '○';
         return `<div class="cell" style="padding:0;gap:0"><button class="ib" style="border:0;margin-inline-start:6px;font-size:1.3rem;color:var(--${dn ? 'ok' : sv === 'red' ? 'stamp' : sv === 'orange' || sv === 'yellow' ? 'warn' : 'muted'})" data-a="taskCycle" data-v="${x.id}" aria-label="${esc(t('tasks.tapStatus'))}: ${esc(t('tasks.status_' + x.status))}">${circ}</button>
-          <button class="cell" style="flex:1" data-go="task" data-id="${x.id}"><span class="cx"><span class="ct" ${dn ? 'style="text-decoration:line-through;color:var(--muted)"' : ''}>${esc((x.priority === 'high' && !dn ? '● ' : '') + x.title)}</span><span class="cs" style="display:block">${esc([fmtDate(x.due_date) + (x.due_time ? ' ' + x.due_time : ''), t('tasks.kind_' + x.kind), t('tasks.status_' + x.status), x.recur ? '↻ ' + t('tasks.recur_' + x.recur) : ''].filter(Boolean).join(' · '))}</span></span><span class="cr">${esc(dn ? '' : dueLabel(d))}</span><span class="chev">›</span></button></div>`; }).join('')}</div>`
+          <button class="cell" style="flex:1" data-go="task" data-id="${x.id}"><span class="cx"><span class="ct" ${dn ? 'style="text-decoration:line-through;color:var(--muted)"' : ''}>${x.priority === 'high' && !dn ? `<span class="prio" aria-label="${esc(t('tasks.prio_high'))}">!</span>` : ''}${esc(x.title)}</span><span class="cs" style="display:block">${dn ? '' : `<b class="due c-${sv}">${esc(dueLabel(d))}</b> · `}${esc([fmtDate(x.due_date) + (x.due_time ? ' ' + x.due_time : ''), t('tasks.kind_' + x.kind), x.status === 'in_progress' ? t('tasks.status_' + x.status) : '', x.recur ? '↻ ' + t('tasks.recur_' + x.recur) : ''].filter(Boolean).join(' · '))}</span></span><span class="chev">›</span></button></div>`; }).join('')}</div>`
         : `<div class="empty">${ico('clock')}<p class="muted">${esc(t('tasks.empty'))}</p></div>`}${moreBtn('tasks', list.length)}
       ${group([cell({ icon: 'cal', ic: 'g', title: t('tasks.taxCalendar'), attrs: 'data-go="tax"' })].concat(S.tasks.some((x) => x.status !== 'done' && x.due_date) ? [cell({ icon: 'bell', ic: 'g', title: t('web.icsExport'), sub: t('web.icsHint'), attrs: 'data-a="icsExport"' })] : []))}
       <p class="muted small">${esc(t('tax.stateNote'))}</p>`;
@@ -2271,7 +2433,7 @@ VIEWS.more = {
     const groups = HUB().map(([g, items]) => [g, items.filter(([, l, h]) => !q || (t(l) + ' ' + t(h)).toLowerCase().includes(q))]).filter(([, items]) => items.length);
     return `<div class="group">${cell({ icon: 'gear', title: p.company_name || '–', sub: `${t('settings.ind_' + (p.industry || 'sonstiges'))} · ${store.space === 'demo' ? 'Demo' : t('web.test')}`, attrs: 'data-go="settings"' })}</div>
       <input class="in" id="hubq" type="search" value="${esc(S.hubQ || '')}" placeholder="${esc(t('home.searchFeatures'))}" aria-label="${esc(t('common.search'))}">
-      ${groups.map(([g, items]) => group(items.map(([icon, l, h, attrs]) => cell({ icon, title: t(l), sub: t(h), attrs })), t(g))).join('') || `<p class="muted">–</p>`}
+      ${groups.map(([g, items]) => group(items.map(([icon, l, h, attrs]) => cell({ icon, ic: 'h-' + icon, title: t(l), sub: t(h), attrs })), t(g))).join('') || `<p class="muted">–</p>`}
       ${store.space === 'demo' ? group([cell({ icon: 'flask', ic: 'o', title: t('web.demoReset'), attrs: 'data-a="resetDemo"' }), cell({ icon: 'flask', ic: 'g', title: t('web.demoLeave'), attrs: 'data-a="leaveDemo"' })], t('web.uiDemoShort')) : ''}
       <div class="sec-h">${esc(t('web.infoTitle'))}</div>
       <div class="group">${[['gobdTitle', 'gobd'], ['privacyTitle', 'privacy'], ['homeScreen', 'homeScreenH']].map(([k, h]) => `<details class="cell-d"><summary class="cell"><span class="ci g">${ico('info')}</span><span class="cx"><span class="ct">${esc(t('web.' + k))}</span></span><span class="chev">›</span></summary><div class="dbody">${esc(t('web.' + h))}</div></details>`).join('')}
@@ -2381,7 +2543,7 @@ document.addEventListener('click', async (e) => {
     case 'setupSave': {
       const name = val('s_name').trim(); if (!name) { $('#s_name').focus(); return toast(t('auth.companyName')); }
       return guard(async () => {
-        const p = { company_name: name, industry: S.setupInd || 'gastro', language: lang, tax_advisor_email: val('s_mail').trim() || null, address: '', tax_number: '', vat_id: '', iban: '', invoice_prefix: 'RE-', next_invoice_no: 1, dauerfrist: false, created_at: nowIso() };
+        const p = { company_name: name, industry: S.setupInd || 'sonstiges', language: lang, tax_advisor_email: val('s_mail').trim() || null, address: '', tax_number: '', vat_id: '', iban: '', invoice_prefix: 'RE-', next_invoice_no: 1, dauerfrist: false, created_at: nowIso() };
         await store.setProfile(p); S.profile = p; go('home');
       });
     }
@@ -3824,7 +3986,7 @@ function vdSections(A, kind) {
     `Bank: ${vdVal(A, 'bank')}.`,
   ]];
   const S3 = ['3. Technische Systemdokumentation', [
-    'eOffis (Web-App im Browser, auch als Startbildschirm-App). Daten im eOffis-Konto auf Servern in der EU (Supabase, Rechenzentrum Frankfurt); Zugriff nur nach Anmeldung, Datenbank mit Zeilensicherheit je Konto.',
+    'eOffis (Web-App im Browser, auch als Startbildschirm-App). Daten im eOffis-Konto auf Servern in der EU (Supabase); Zugriff nur nach Anmeldung, Datenbank mit Zeilensicherheit je Konto.',
     'Belegauswertung mit KI (Claude, Anthropic) nur zum Vorschlagen von Angaben; alle Angaben werden vom Betrieb geprüft.',
     kind === 'full' ? `Eingesetzte Geräte: ${vdVal(A, 'hw')}.` : '',
     `Datensicherung: ${vdVal(A, 'backup')}.`,
@@ -3883,8 +4045,8 @@ VIEWS.contracts = {
       <div class="group">${list.map((d) => { const dl = d.cancellation_date ? daysUntil(d.cancellation_date) : null;
         return cell({ icon: d.folder === 'versicherungen' ? 'check' : 'pen', ic: dl !== null && dl < 0 ? '' : dl !== null && dl <= 30 ? 'r' : dl !== null && dl <= 90 ? 'o' : 'g',
           title: d.contract_party || d.sender || d.title,
-          sub: [d.contract_number, d.cancellation_date ? t('unt.ctrCancelBy', { date: fmtDate(d.cancellation_date) }) : d.contract_end ? t('unt.ctrEnds', { date: fmtDate(d.contract_end) }) : '', d.auto_renew ? '↻ ' + t('unt.ctrAuto') : '', d.coverage].filter(Boolean).join(' · '),
-          right: d.cost_amount != null ? `${money(d.cost_amount)} ${t('unt.iv_' + (d.cost_interval || 'monthly'))}` : dl !== null && dl >= 0 && dl <= 90 ? dueLabel(dl) : '', attrs: `data-go="contract" data-id="${d.id}"` }); }).join('')}</div>`;
+          sub: [d.cost_amount != null ? t('unt.iv_' + (d.cost_interval || 'monthly')) : '', d.contract_number, d.cancellation_date ? t('unt.ctrCancelBy', { date: fmtDate(d.cancellation_date) }) : d.contract_end ? t('unt.ctrEnds', { date: fmtDate(d.contract_end) }) : '', d.auto_renew ? '↻ ' + t('unt.ctrAuto') : '', d.coverage].filter(Boolean).join(' · '),
+          right: d.cost_amount != null ? money(d.cost_amount) : dl !== null && dl >= 0 && dl <= 90 ? dueLabel(dl) : '', attrs: `data-go="contract" data-id="${d.id}"` }); }).join('')}</div>`;
   },
 };
 VIEWS.contract = {
@@ -4092,6 +4254,69 @@ document.addEventListener('click', (e) => {
   const d = getDoc(a.dataset.v); if (!d) return;
   guard(() => saveFile(`Verfahrensdokumentation_${safeName((S.profile && S.profile.company_name) || '')}_${(d.created_at || '').slice(0, 10)}.pdf`, vdPdf(d.vdoc_answers || {}, d.vdoc_kind, d.created_at)));
 });
+
+/* =================== Design 2026 (08.11.2026): Navigationsleiste, große Titel, Start mit Begrüßung und Überblick, Willkommensseite =================== */
+const DS_TEXT = {
+  de: { gM: 'Guten Morgen', gD: 'Guten Tag', gE: 'Guten Abend', sDue: 'Fristen in 7 Tagen', sRev: 'Zu prüfen', sAcc: 'Nicht übertragen', wT: 'Willkommen bei eOffis', wS: 'Dein digitaler Büroassistent – eingerichtet in einer Minute.', w1: 'Post fotografieren – die KI erklärt sie', w2: 'Keine Frist mehr verpassen', w3: 'Belege an Buchhaltung und Steuerberater', allDone: 'Alles erledigt' },
+  tr: { gM: 'Günaydın', gD: 'İyi günler', gE: 'İyi akşamlar', sDue: '7 gün içinde süreler', sRev: 'Kontrol edilecek', sAcc: 'Aktarılmadı', wT: 'eOffis’e hoş geldin', wS: 'Dijital büro asistanın – bir dakikada hazır.', w1: 'Postayı fotoğrafla – yapay zekâ açıklasın', w2: 'Hiçbir süreyi kaçırma', w3: 'Belgeler muhasebeye ve muhasebeciye', allDone: 'Hepsi tamam' },
+  pl: { gM: 'Dzień dobry', gD: 'Dzień dobry', gE: 'Dobry wieczór', sDue: 'Terminy w 7 dni', sRev: 'Do sprawdzenia', sAcc: 'Nieprzekazane', wT: 'Witaj w eOffis', wS: 'Twój cyfrowy asystent biurowy – gotowy w minutę.', w1: 'Zrób zdjęcie poczty – AI ją wyjaśni', w2: 'Nie przegap żadnego terminu', w3: 'Dokumenty do księgowości i doradcy', allDone: 'Wszystko zrobione' },
+  ru: { gM: 'Доброе утро', gD: 'Добрый день', gE: 'Добрый вечер', sDue: 'Сроки за 7 дней', sRev: 'На проверку', sAcc: 'Не передано', wT: 'Добро пожаловать в eOffis', wS: 'Ваш цифровой офисный помощник – настройка за минуту.', w1: 'Сфотографируйте почту – ИИ объяснит', w2: 'Ни одного пропущенного срока', w3: 'Документы в бухгалтерию и консультанту', allDone: 'Всё сделано' },
+  ar: { gM: 'صباح الخير', gD: 'نهارك سعيد', gE: 'مساء الخير', sDue: 'مواعيد خلال 7 أيام', sRev: 'للمراجعة', sAcc: 'لم تُنقل', wT: 'مرحبًا بك في eOffis', wS: 'مساعدك المكتبي الرقمي – جاهز خلال دقيقة.', w1: 'صوّر البريد – ويشرحه الذكاء الاصطناعي', w2: 'لن يفوتك أي موعد', w3: 'المستندات إلى المحاسبة والمستشار', allDone: 'كل شيء منجز' },
+  ro: { gM: 'Bună dimineața', gD: 'Bună ziua', gE: 'Bună seara', sDue: 'Termene în 7 zile', sRev: 'De verificat', sAcc: 'Netransferate', wT: 'Bun venit la eOffis', wS: 'Asistentul tău digital de birou – gata într-un minut.', w1: 'Fotografiază poșta – AI o explică', w2: 'Niciun termen ratat', w3: 'Documente la contabilitate și consultant', allDone: 'Totul rezolvat' },
+};
+for (const l of Object.keys(DS_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].ds = Object.assign({}, I18N[l].ds || {}, DS_TEXT[l]); }
+ICON.chevL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
+const APP_ICON = 'icon.svg';
+// Dokument-Illustration auf der Scan-Karte (Blatt mit Scan-Ecken)
+const SCAN_ART = `<svg class="art" viewBox="0 0 92 112" aria-hidden="true"><rect x="8" y="6" width="76" height="100" rx="8" fill="#fff" opacity=".96"/><path d="M62 6v14a6 6 0 0 0 6 6h16" fill="none" stroke="rgba(10,107,91,.25)" stroke-width="2"/>
+  <rect x="18" y="34" width="40" height="5" rx="2.5" fill="#0a6b5b"/><rect x="18" y="46" width="56" height="4" rx="2" fill="#0a6b5b" opacity=".35"/><rect x="18" y="56" width="50" height="4" rx="2" fill="#0a6b5b" opacity=".35"/><rect x="18" y="66" width="30" height="4" rx="2" fill="#0a6b5b" opacity=".35"/>
+  <rect x="52" y="82" width="22" height="12" rx="3" fill="#f5a524"/><g fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".9"><path d="M2 18V6a4 4 0 0 1 4-4h12M74 2h12a4 4 0 0 1 4 4v12M90 94v12a4 4 0 0 1-4 4H74M18 110H6a4 4 0 0 1-4-4V94"/></g></svg>`;
+const LARGE_TITLE = new Set(['docs', 'tasks', 'more']);
+
+renderTop = function () {
+  const v = VIEWS[S.view] || VIEWS.home;
+  const title = v.title ? v.title() : '';
+  const showBack = !ROOTS.has(S.view) && S.view !== 'setup' || (S.view === 'more' && S.stack.length);
+  const plus = S.loaded && v.topPlus ? `<button class="gear plus" ${v.topPlus} aria-label="${esc(t('web.uiNew'))}">${ico('plus')}</button>` : '';
+  const gear = S.loaded && S.view !== 'setup' && S.view !== 'more' && ROOTS.has(S.view) ? `<button class="gear" data-a="openSearch" aria-label="${esc(t('common.search'))}">${ico('search')}</button>` : '';
+  const lg = S.loaded ? langButton().replace('<span class="ln">', `<span class="lc" aria-hidden="true">${esc(lang)}</span><span class="ln">`) : '';
+  const big = LARGE_TITLE.has(S.view) && !showBack || S.view === 'doc';
+  $('#top').innerHTML = (showBack ? `<button class="back" data-a="back" aria-label="${esc(t('common.back'))}">${ICON.chevL}</button>` : '') +
+    (S.view === 'home' || S.view === 'setup' ? `<span class="brand"><img src="${APP_ICON}" alt="">eOffis</span>`
+      : `<h1 class="${big ? 'lt-hide' : ''}">${esc(title)}</h1>`) + plus + gear + lg;
+};
+// Große Titel auf den Hauptseiten (wie Mail, Dateien, Einstellungen)
+for (const k of LARGE_TITLE) {
+  const r = VIEWS[k].render;
+  VIEWS[k].render = function () { const h = r.apply(this, arguments); const showBack = S.view === 'more' && S.stack.length; return (showBack ? '' : `<h1 class="lt">${esc(VIEWS[k].title())}</h1>`) + h; };
+}
+// Start: Begrüßung + Überblick in drei Zahlen + Scan-Karte mit Illustration
+{
+  const homeRender = VIEWS.home.render;
+  VIEWS.home.render = function () {
+    let h = homeRender.apply(this, arguments);
+    const p = S.profile; if (!p) return h;
+    const hr = new Date().getHours(), greet = hr < 11 ? t('ds.gM') : hr < 18 ? t('ds.gD') : t('ds.gE');
+    const due = S.tasks.filter((x) => x.status !== 'done' && x.due_date && daysUntil(x.due_date) <= 7);
+    const over = due.some((x) => daysUntil(x.due_date) < 0);
+    const rev = S.docs.filter((d) => !d.archived && d.status === 'saved').length;
+    const acc = typeof isTransferred === 'function' ? S.docs.filter((d) => !d.archived && d.folder === 'buchhaltung' && !isTransferred(d)).length : 0;
+    const tile = (n, label, cls, icon, attrs) => `<button class="${n ? cls : 's-ok'}" ${attrs}><i>${ico(n ? icon : 'check')}</i><b>${n}</b><span>${esc(label)}</span></button>`;
+    const hello = `<div class="hello"><small>${esc(fmtDate(todayISO()))}</small><b>${esc(greet)}</b><span>${esc(p.company_name || '')}</span></div>
+      <div class="sum">${tile(due.length, t('ds.sDue'), over ? 's-red' : 's-orange', 'clock', 'data-go="tasks"')}${tile(rev, t('ds.sRev'), 's-blue', 'doc', 'data-a="openList" data-v="review"')}${tile(acc, t('ds.sAcc'), 's-orange', 'invoice', 'data-a="openAcc"')}</div>`;
+    h = h.replace(/<p class="muted company">[\s\S]*?<\/p>/, hello);
+    return h.replace('<button class="scanhero" data-go="scan">', `<button class="scanhero" data-go="scan">${SCAN_ART}`);
+  };
+}
+// Einrichtung: Willkommensseite mit App-Symbol und drei Kernnutzen
+{
+  const setupRender = VIEWS.setup.render;
+  VIEWS.setup.render = function () {
+    const li = (icon, color, txt) => `<li><i style="background:${color}">${ico(icon)}</i><span>${esc(txt)}</span></li>`;
+    return `<div class="welcome"><img src="${APP_ICON}" alt=""><h1>${esc(t('ds.wT'))}</h1><p>${esc(t('ds.wS'))}</p>
+      <ul>${li('camera', '#0a6b5b', t('ds.w1'))}${li('clock', '#ff9500', t('ds.w2'))}${li('invoice', '#007aff', t('ds.w3'))}</ul></div>` + setupRender.apply(this, arguments);
+  };
+}
 
 boot();
 

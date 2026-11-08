@@ -27,7 +27,7 @@
     if (!el) { el = document.createElement('div'); el.id = 'eoAuth'; document.body.appendChild(el); }
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     el.innerHTML = `<div class="eoA-card" role="dialog" aria-labelledby="eoA-t">
-      <div class="eoA-logo">eOffis</div>
+      <div class="eoA-logo"><img src="icon.svg" alt="" width="56" height="56"><span>eOffis</span></div>
       <h1 id="eoA-t">${esc(mode === 'reset' ? T.newPw : T.title)}</h1>
       ${mode === 'reset' ? '' : `<p class="eoA-sub">${esc(T.sub)}</p>`}
       ${note ? `<p class="eoA-note${isError ? ' err' : ''}" role="status">${esc(note)}</p>` : ''}

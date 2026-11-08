@@ -3,7 +3,7 @@ import os, re
 here = os.path.dirname(os.path.abspath(__file__)); os.chdir(here)
 shell = open('shell.html').read(); app = open('app.js').read()
 # Zusatzmodule (Paket 1–3) vor dem Start-Aufruf einfügen – sie nutzen I18N, VIEWS, Hilfsfunktionen aus app.js
-MODULES = [m for m in ['buchhaltung.js', 'heute.js', 'unterlagen.js'] if os.path.exists(m)]
+MODULES = [m for m in ['buchhaltung.js', 'heute.js', 'unterlagen.js', 'design.js'] if os.path.exists(m)]
 extra = ''.join('\n' + open(m).read() for m in MODULES)
 assert app.rstrip().endswith('boot();'), 'app.js muss mit boot(); enden'
 app = app.rstrip()[:-len('boot();')] + extra + '\nboot();\n'

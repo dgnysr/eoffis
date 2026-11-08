@@ -251,7 +251,7 @@ function vdSections(A, kind) {
     `Bank: ${vdVal(A, 'bank')}.`,
   ]];
   const S3 = ['3. Technische Systemdokumentation', [
-    'eOffis (Web-App im Browser, auch als Startbildschirm-App). Daten im eOffis-Konto auf Servern in der EU (Supabase, Rechenzentrum Frankfurt); Zugriff nur nach Anmeldung, Datenbank mit Zeilensicherheit je Konto.',
+    'eOffis (Web-App im Browser, auch als Startbildschirm-App). Daten im eOffis-Konto auf Servern in der EU (Supabase); Zugriff nur nach Anmeldung, Datenbank mit Zeilensicherheit je Konto.',
     'Belegauswertung mit KI (Claude, Anthropic) nur zum Vorschlagen von Angaben; alle Angaben werden vom Betrieb geprüft.',
     kind === 'full' ? `Eingesetzte Geräte: ${vdVal(A, 'hw')}.` : '',
     `Datensicherung: ${vdVal(A, 'backup')}.`,
@@ -310,8 +310,8 @@ VIEWS.contracts = {
       <div class="group">${list.map((d) => { const dl = d.cancellation_date ? daysUntil(d.cancellation_date) : null;
         return cell({ icon: d.folder === 'versicherungen' ? 'check' : 'pen', ic: dl !== null && dl < 0 ? '' : dl !== null && dl <= 30 ? 'r' : dl !== null && dl <= 90 ? 'o' : 'g',
           title: d.contract_party || d.sender || d.title,
-          sub: [d.contract_number, d.cancellation_date ? t('unt.ctrCancelBy', { date: fmtDate(d.cancellation_date) }) : d.contract_end ? t('unt.ctrEnds', { date: fmtDate(d.contract_end) }) : '', d.auto_renew ? '↻ ' + t('unt.ctrAuto') : '', d.coverage].filter(Boolean).join(' · '),
-          right: d.cost_amount != null ? `${money(d.cost_amount)} ${t('unt.iv_' + (d.cost_interval || 'monthly'))}` : dl !== null && dl >= 0 && dl <= 90 ? dueLabel(dl) : '', attrs: `data-go="contract" data-id="${d.id}"` }); }).join('')}</div>`;
+          sub: [d.cost_amount != null ? t('unt.iv_' + (d.cost_interval || 'monthly')) : '', d.contract_number, d.cancellation_date ? t('unt.ctrCancelBy', { date: fmtDate(d.cancellation_date) }) : d.contract_end ? t('unt.ctrEnds', { date: fmtDate(d.contract_end) }) : '', d.auto_renew ? '↻ ' + t('unt.ctrAuto') : '', d.coverage].filter(Boolean).join(' · '),
+          right: d.cost_amount != null ? money(d.cost_amount) : dl !== null && dl >= 0 && dl <= 90 ? dueLabel(dl) : '', attrs: `data-go="contract" data-id="${d.id}"` }); }).join('')}</div>`;
   },
 };
 VIEWS.contract = {

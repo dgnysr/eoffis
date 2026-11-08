@@ -107,7 +107,7 @@ const CAPTURE = (cfg) => {
 };
 
 async function newPage(browser, store, cfg) {
-  const ctx = await browser.newContext(Object.assign({ viewport: { width: 400, height: 860 }, permissions: ['clipboard-read', 'clipboard-write'] }, cfg.ua ? { userAgent: cfg.ua } : {}));
+  const ctx = await browser.newContext(Object.assign({ viewport: { width: 400, height: 860 }, permissions: ['clipboard-read', 'clipboard-write'] }, cfg.ua ? { userAgent: cfg.ua } : {}, cfg.dpr ? { deviceScaleFactor: cfg.dpr } : {}, cfg.dark ? { colorScheme: 'dark' } : {}));
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push('PAGEERR ' + e.message));

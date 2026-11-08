@@ -572,7 +572,7 @@ VIEWS.setup = {
       <div class="chips">${LANGS.map((l) => chip(t('lang.' + l), lang === l, `data-a="setupLang" data-v="${l}"`)).join('')}</div>
       ${field('s_name', t('auth.companyName'), '', 'autocomplete="organization"')}
       <div class="f" style="font-weight:700;color:var(--muted);font-size:.86rem">${esc(t('settings.industry'))}</div>
-      <div class="chips" id="s_ind">${INDUSTRIES.map((i, n) => chip(t('settings.ind_' + i), n === 0, `data-a="pickInd" data-v="${i}"`)).join('')}</div>
+      <div class="chips" id="s_ind">${INDUSTRIES.map((i, n) => chip(t('settings.ind_' + i), S.setupInd === i, `data-a="pickInd" data-v="${i}"`)).join('')}</div>
       ${field('s_mail', t('settings.advisorEmail'), '', 'type="email" autocomplete="off"')}
       <button class="btn" data-a="setupSave">${esc(t('web.start'))}</button></div>
 `;
@@ -664,7 +664,7 @@ VIEWS.docs = {
     return `${search}
       ${review ? `<div class="group">${cell({ icon: 'doc', ic: 'o', title: t('web.uiInbox'), sub: t('web.uiInboxH'), right: String(review), attrs: 'data-a="openList" data-v="review"' })}</div>` : ''}
       ${group(FOLDERS.map((f) => { const accOpenN = f === 'buchhaltung' ? live.filter((d) => d.folder === f && !isTransferred(d)).length : 0;
-        return cell({ icon: FICON[f] || 'folder', ic: accOpenN ? 'o' : '', title: t('docs.folder_' + f), sub: f === 'firma' ? (firmaMiss ? t('web.uiFirmaMiss', { count: firmaMiss }) : t('web.uiFirmaOk')) : accOpenN ? `● ${accOpenN} ${t('acc.notTransferred')}` : '', right: String(cnt(f)), attrs: f === 'buchhaltung' ? 'data-a="openAcc"' : `data-a="openList" data-v="f:${f}"` }); }), t('web.uiFolders'))}
+        return cell({ icon: FICON[f] || 'folder', ic: accOpenN ? 'o' : 'f-' + f, title: t('docs.folder_' + f), sub: f === 'firma' ? (firmaMiss ? t('web.uiFirmaMiss', { count: firmaMiss }) : t('web.uiFirmaOk')) : accOpenN ? `● ${accOpenN} ${t('acc.notTransferred')}` : '', right: String(cnt(f)), attrs: f === 'buchhaltung' ? 'data-a="openAcc"' : `data-a="openList" data-v="f:${f}"` }); }), t('web.uiFolders'))}
       ${group([
         cell({ icon: 'pen', ic: 'g', title: t('web.contracts'), right: String(contracts), attrs: 'data-go="contracts"' }),
         cell({ icon: 'check', ic: 'g', title: t('web.done'), right: String(live.filter((d) => d.status === 'done').length), attrs: 'data-a="openList" data-v="done"' }),
@@ -978,10 +978,9 @@ VIEWS.doc = {
     if (S.params.analyze && !d.analyzed_at && !st.analyzing && S.sample && d.file_kind !== 'xml') { S.params.analyze = 0; setTimeout(() => analyzeDoc(d.id), 0); }
     const steps = [t('web.step1'), t('web.step2'), t('web.step3'), t('web.step4')];
     const nav = `<nav class="wsteps" aria-label="Schritte">${steps.map((l, i) => `<button class="wstep ${i + 1 < st.step ? 'done' : ''}" data-a="docStep" data-v="${i + 1}" ${st.step === i + 1 ? 'aria-current="step"' : ''}><b>${i + 1 < st.step ? '✓' : i + 1}</b>${esc(l)}</button>`).join('')}</nav>`;
-    const pills = `<div class="row">
+    const pills = `<div class="dochead"><h1>${esc(d.title)}</h1>${d.sender || d.document_date ? `<p>${esc([d.sender, d.document_date ? fmtDate(d.document_date) : ''].filter(Boolean).join(' · '))}</p>` : ''}${d.amount_gross != null ? `<b class="num">${esc(money(d.amount_gross, d.currency))}</b>` : ''}</div><div class="row">
         <span class="pill c-${d.status === 'done' ? 'green' : d.status === 'reviewed' ? 'grey' : 'yellow'}">${esc(t('docs.status_' + d.status))}</span>
         <span class="pill c-grey">${esc(t('docs.folder_' + d.folder))}</span>
-        ${d.amount_gross != null ? `<span class="pill c-grey num">${esc(money(d.amount_gross, d.currency))}</span>` : ''}
         ${d.archived ? `<span class="pill c-red">🔒 ${esc(t('docs.archived'))}</span>` : ''}
         ${d.example ? `<span class="pill c-orange">${esc(t('web.example'))}</span>` : ''}</div>`;
     const nextBtn = st.step < 4 ? `<button class="btn" data-a="docStep" data-v="${st.step + 1}">${esc(t('web.next'))}: ${esc(steps[st.step])} ›</button>` : '';
@@ -1552,7 +1551,7 @@ VIEWS.tasks = {
       ${list.length ? `<div class="group">${list.slice(0, lim('tasks')).map((x) => { const dn = x.status === 'done'; const d = dn ? null : daysUntil(x.due_date); const sv = sev(d);
         const circ = dn ? '✓' : x.status === 'in_progress' ? '◐' : '○';
         return `<div class="cell" style="padding:0;gap:0"><button class="ib" style="border:0;margin-inline-start:6px;font-size:1.3rem;color:var(--${dn ? 'ok' : sv === 'red' ? 'stamp' : sv === 'orange' || sv === 'yellow' ? 'warn' : 'muted'})" data-a="taskCycle" data-v="${x.id}" aria-label="${esc(t('tasks.tapStatus'))}: ${esc(t('tasks.status_' + x.status))}">${circ}</button>
-          <button class="cell" style="flex:1" data-go="task" data-id="${x.id}"><span class="cx"><span class="ct" ${dn ? 'style="text-decoration:line-through;color:var(--muted)"' : ''}>${esc((x.priority === 'high' && !dn ? '● ' : '') + x.title)}</span><span class="cs" style="display:block">${esc([fmtDate(x.due_date) + (x.due_time ? ' ' + x.due_time : ''), t('tasks.kind_' + x.kind), t('tasks.status_' + x.status), x.recur ? '↻ ' + t('tasks.recur_' + x.recur) : ''].filter(Boolean).join(' · '))}</span></span><span class="cr">${esc(dn ? '' : dueLabel(d))}</span><span class="chev">›</span></button></div>`; }).join('')}</div>`
+          <button class="cell" style="flex:1" data-go="task" data-id="${x.id}"><span class="cx"><span class="ct" ${dn ? 'style="text-decoration:line-through;color:var(--muted)"' : ''}>${x.priority === 'high' && !dn ? `<span class="prio" aria-label="${esc(t('tasks.prio_high'))}">!</span>` : ''}${esc(x.title)}</span><span class="cs" style="display:block">${dn ? '' : `<b class="due c-${sv}">${esc(dueLabel(d))}</b> · `}${esc([fmtDate(x.due_date) + (x.due_time ? ' ' + x.due_time : ''), t('tasks.kind_' + x.kind), x.status === 'in_progress' ? t('tasks.status_' + x.status) : '', x.recur ? '↻ ' + t('tasks.recur_' + x.recur) : ''].filter(Boolean).join(' · '))}</span></span><span class="chev">›</span></button></div>`; }).join('')}</div>`
         : `<div class="empty">${ico('clock')}<p class="muted">${esc(t('tasks.empty'))}</p></div>`}${moreBtn('tasks', list.length)}
       ${group([cell({ icon: 'cal', ic: 'g', title: t('tasks.taxCalendar'), attrs: 'data-go="tax"' })].concat(S.tasks.some((x) => x.status !== 'done' && x.due_date) ? [cell({ icon: 'bell', ic: 'g', title: t('web.icsExport'), sub: t('web.icsHint'), attrs: 'data-a="icsExport"' })] : []))}
       <p class="muted small">${esc(t('tax.stateNote'))}</p>`;
@@ -1954,7 +1953,7 @@ VIEWS.more = {
     const groups = HUB().map(([g, items]) => [g, items.filter(([, l, h]) => !q || (t(l) + ' ' + t(h)).toLowerCase().includes(q))]).filter(([, items]) => items.length);
     return `<div class="group">${cell({ icon: 'gear', title: p.company_name || '–', sub: `${t('settings.ind_' + (p.industry || 'sonstiges'))} · ${store.space === 'demo' ? 'Demo' : t('web.test')}`, attrs: 'data-go="settings"' })}</div>
       <input class="in" id="hubq" type="search" value="${esc(S.hubQ || '')}" placeholder="${esc(t('home.searchFeatures'))}" aria-label="${esc(t('common.search'))}">
-      ${groups.map(([g, items]) => group(items.map(([icon, l, h, attrs]) => cell({ icon, title: t(l), sub: t(h), attrs })), t(g))).join('') || `<p class="muted">–</p>`}
+      ${groups.map(([g, items]) => group(items.map(([icon, l, h, attrs]) => cell({ icon, ic: 'h-' + icon, title: t(l), sub: t(h), attrs })), t(g))).join('') || `<p class="muted">–</p>`}
       ${store.space === 'demo' ? group([cell({ icon: 'flask', ic: 'o', title: t('web.demoReset'), attrs: 'data-a="resetDemo"' }), cell({ icon: 'flask', ic: 'g', title: t('web.demoLeave'), attrs: 'data-a="leaveDemo"' })], t('web.uiDemoShort')) : ''}
       <div class="sec-h">${esc(t('web.infoTitle'))}</div>
       <div class="group">${[['gobdTitle', 'gobd'], ['privacyTitle', 'privacy'], ['homeScreen', 'homeScreenH']].map(([k, h]) => `<details class="cell-d"><summary class="cell"><span class="ci g">${ico('info')}</span><span class="cx"><span class="ct">${esc(t('web.' + k))}</span></span><span class="chev">›</span></summary><div class="dbody">${esc(t('web.' + h))}</div></details>`).join('')}
@@ -2064,7 +2063,7 @@ document.addEventListener('click', async (e) => {
     case 'setupSave': {
       const name = val('s_name').trim(); if (!name) { $('#s_name').focus(); return toast(t('auth.companyName')); }
       return guard(async () => {
-        const p = { company_name: name, industry: S.setupInd || 'gastro', language: lang, tax_advisor_email: val('s_mail').trim() || null, address: '', tax_number: '', vat_id: '', iban: '', invoice_prefix: 'RE-', next_invoice_no: 1, dauerfrist: false, created_at: nowIso() };
+        const p = { company_name: name, industry: S.setupInd || 'sonstiges', language: lang, tax_advisor_email: val('s_mail').trim() || null, address: '', tax_number: '', vat_id: '', iban: '', invoice_prefix: 'RE-', next_invoice_no: 1, dauerfrist: false, created_at: nowIso() };
         await store.setProfile(p); S.profile = p; go('home');
       });
     }

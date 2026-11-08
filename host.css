@@ -1,20 +1,31 @@
-/* Anmeldeseite der Web-App – gleiche Farbwelt wie eOffis */
-#eoAuth { position: fixed; inset: 0; z-index: 1000; overflow-y: auto; background: #eef3ef; display: flex; justify-content: center; align-items: flex-start;
+/* Anmeldeseite – gleiche Gestaltung wie die App (Design 2026: Systemschrift, Petrolgrün, ruhige Flächen) */
+#eoAuth { position: fixed; inset: 0; z-index: 1000; overflow-y: auto; background: #f2f2f7; display: flex; justify-content: center; align-items: flex-start;
   padding: max(24px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
-  font-family: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #17221c; }
-#eoAuth .eoA-card { width: 100%; max-width: 420px; background: #fff; border-radius: 20px; padding: 24px 20px; box-shadow: 0 10px 30px rgba(23,34,28,.08); display: flex; flex-direction: column; gap: 12px; margin-top: 4vh; }
-#eoAuth .eoA-logo { font-weight: 700; font-size: 1.6rem; color: #1d7348; letter-spacing: -.01em; }
-#eoAuth h1 { font-size: 1.35rem; margin: 0; }
-#eoAuth .eoA-sub { margin: 0; color: #5d6b63; }
-#eoAuth label { display: flex; flex-direction: column; gap: 6px; font-weight: 700; font-size: .9rem; color: #3e4c44; }
-#eoAuth input { font: inherit; font-size: 16px; padding: 14px; border-radius: 12px; border: 1.5px solid #cfdad3; background: #fbfdfc; color: #17221c; }
-#eoAuth input:focus { outline: 3px solid #9fd3b6; border-color: #1d7348; }
-#eoAuth .eoA-btn { font: inherit; font-weight: 700; font-size: 1.05rem; padding: 15px; border-radius: 14px; border: 0; background: #1d7348; color: #fff; cursor: pointer; }
-#eoAuth .eoA-btn.sec { background: #e3f1e9; color: #155a37; }
-#eoAuth .eoA-btn.ghost { background: transparent; border: 1.5px solid #1d7348; color: #1d7348; width: 100%; }
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, system-ui, sans-serif; color: #0f1720; -webkit-font-smoothing: antialiased; }
+#eoAuth .eoA-card { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 12px; margin-top: 6vh; }
+#eoAuth .eoA-logo { display: flex; flex-direction: column; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; color: #0a6b5b; letter-spacing: -.01em; margin-bottom: 4px; }
+#eoAuth .eoA-logo img { width: 72px; height: 72px; border-radius: 17px; box-shadow: 0 8px 24px rgba(10,107,91,.28); }
+#eoAuth h1 { font-size: 1.75rem; margin: 0; text-align: center; letter-spacing: -.02em; line-height: 1.15; }
+#eoAuth .eoA-sub { margin: 0 0 8px; color: #6b7280; text-align: center; }
+#eoAuth label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: .85rem; color: #6b7280; }
+#eoAuth input { font: inherit; font-size: 17px; padding: 14px 16px; border-radius: 12px; border: 0; background: #fff; color: #0f1720; box-shadow: 0 0 0 1px rgba(15,23,32,.08); }
+#eoAuth input:focus { outline: none; box-shadow: 0 0 0 2px #0a6b5b; }
+#eoAuth .eoA-btn { font: inherit; font-weight: 600; font-size: 1.05rem; min-height: 52px; padding: 14px; border-radius: 14px; border: 0; background: #0a6b5b; color: #fff; cursor: pointer; transition: transform .12s ease, filter .12s ease; }
+#eoAuth .eoA-btn:active { transform: scale(.98); filter: brightness(.95); }
+#eoAuth .eoA-btn.sec { background: #fff; color: #0a6b5b; box-shadow: 0 0 0 1px rgba(15,23,32,.08); }
+#eoAuth .eoA-btn.ghost { background: transparent; color: #0a6b5b; width: 100%; }
 #eoAuth .eoA-btn:disabled { opacity: .55; }
-#eoAuth .eoA-link { background: none; border: 0; color: #1d7348; font: inherit; text-decoration: underline; cursor: pointer; padding: 4px; align-self: center; }
-#eoAuth .eoA-demo { border-top: 1px solid #e1e8e3; padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
-#eoAuth .eoA-demo p { margin: 0; color: #5d6b63; font-size: .88rem; }
-#eoAuth .eoA-note { margin: 0; padding: 10px 12px; border-radius: 12px; background: #e3f1e9; color: #155a37; }
+#eoAuth .eoA-link { background: none; border: 0; color: #0a6b5b; font: inherit; font-size: .95rem; cursor: pointer; padding: 6px; align-self: center; }
+#eoAuth .eoA-demo { border-top: 1px solid rgba(15,23,32,.08); padding-top: 14px; margin-top: 8px; display: flex; flex-direction: column; gap: 6px; text-align: center; }
+#eoAuth .eoA-demo p { margin: 0; color: #6b7280; font-size: .85rem; }
+#eoAuth .eoA-note { margin: 0; padding: 12px 14px; border-radius: 12px; background: #e3f3ef; color: #075246; }
 #eoAuth .eoA-note.err { background: #fdecea; color: #8c1d18; }
+@media (prefers-color-scheme: dark) {
+  #eoAuth { background: #000; color: #f5f5f7; }
+  #eoAuth input { background: #1c1c1e; color: #f5f5f7; box-shadow: 0 0 0 1px rgba(255,255,255,.1); }
+  #eoAuth .eoA-btn { background: #2fbf9f; color: #00241d; }
+  #eoAuth .eoA-btn.sec { background: #1c1c1e; color: #5fd8bd; box-shadow: 0 0 0 1px rgba(255,255,255,.1); }
+  #eoAuth .eoA-btn.ghost, #eoAuth .eoA-link, #eoAuth .eoA-logo { color: #5fd8bd; }
+  #eoAuth .eoA-demo { border-color: rgba(255,255,255,.1); }
+  #eoAuth .eoA-note { background: #0f2f29; color: #9fe8d6; }
+}
