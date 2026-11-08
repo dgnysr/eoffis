@@ -1,17 +1,30 @@
 # Entwicklungsstand eOffis Web-App
 
-**Aktueller Stand:** Stand 08.11.2026 – Paket 1 + 2 (Branch `main`) – live unter https://dgnysr.github.io/eoffis/
+**Aktueller Stand:** Stand 08.11.2026 – Paket 1–3, Design 2026, Sicherheit (Paket A) und Probezeit (Paket B) (Branch `main`) – live unter https://dgnysr.github.io/eoffis/
 
 ## Weiterentwickeln (Ausgangspunkt für jede neue Sitzung)
 1. Repository `dgnysr/eoffis` klonen – **immer auf dem neuesten Stand von `main` aufbauen**.
-2. Quellcode ändern in `src/app.js`, `src/buchhaltung.js` (Paket 1), `src/heute.js` (Paket 2), `src/shell.html` (CSS), `src/i18n.json` (Texte, 6 Sprachen). Zusatzmodule fügt `build_site.py` vor `boot();` ein.
-3. `cd src && python3 build_site.py` erzeugt `index.html`.
-4. Tests (`tests/`): Funktionstest `SITE=1 node functional.js`, Paket 1 `node paket1.js`, Paket 2 `node paket2.js`, Anmeldung `node site_auth.js`, Dateiauswahl `node picker.js`.
+2. Quellcode ändern in `src/app.js`, `src/buchhaltung.js` (Paket 1), `src/heute.js` (Paket 2), `src/unterlagen.js` (Paket 3), `src/design.js` (Design 2026), `src/konto.js` (Probezeit, Speicher, Abo), `src/shell.html` (CSS), `src/i18n.json` (Texte, 6 Sprachen). Zusatzmodule fügt `build_site.py` vor `boot();` ein.
+3. `cd src && python3 build_site.py` erzeugt `index.html` + `eoffis-app.js` (mit Prüfsummen und Sicherheitsrichtlinie).
+4. Tests: **`bash tests/run_all.sh`** (Datenbank, Server-Funktionen, Oberfläche, echte Bibliotheken unter CSP).
 5. Commit + Push auf `main` → GitHub Pages veröffentlicht automatisch (1–2 Min.).
+6. Bibliotheken nie von fremden Servern laden: Version in `vendor/VERSIONS` ändern → Workflow „Bibliotheken bereitstellen“ holt sie aus npm und schreibt `vendor/SHA384SUMS`.
 
-Backend: Supabase-Projekt `lqohxlxemawzrtdqjnci` (Tabelle `kv`, `supabase/schema.sql`), KI-Funktion `smooth-processor` (Code: `supabase/functions/ai/index.ts`, „Verify JWT“ aus), Server-Funktion `eoffis-api` (Code: `supabase/functions/eoffis-api/index.ts`, „Verify JWT“ aus; noch einzurichten – bis dahin fällt die Lexware-Direktübertragung auf „Teilen“ zurück). Schlüssel: nur der öffentliche Publishable Key steht in `config.js`.
+Backend: Supabase-Projekt `lqohxlxemawzrtdqjnci` (`supabase/schema.sql`), KI-Funktion `smooth-processor` (Code: `supabase/functions/ai/index.ts`, „Verify JWT“ aus), Server-Funktion `eoffis-api` (Code: `supabase/functions/eoffis-api/index.ts`, „Verify JWT“ aus). Schlüssel: nur der öffentliche Publishable Key steht in `config.js`. Einrichtungsschritte siehe `README.md` → „Einrichtung Sicherheit & Probezeit“.
 
 ## Änderungsverlauf
+### 08.11.2026 – Paket A (Sicherheit) und Paket B (Probezeit)
+- **KI-Zähler** nur noch über den Service-Schlüssel (`ai_take(p_owner, …)`, `ai_give_back(p_owner)`); Nutzer können ihn nicht mehr zurücksetzen.
+- **KI-Anfragen begrenzt:** höchstens 20 Seiten, 100.000 Zeichen, 1,5 MB je Seitenbild, nur JPEG/PNG, Antwort ≤ 6.000 Token; nach Ablauf der Probezeit keine KI.
+- **Speicherlimit** je Konto: 200 MB (ohne E-Mail 20 MB), gezählt in `kv_usage` per Trigger; Hinweis ab 80 %/95 %, bei „voll“ Erklärung mit „Platz freimachen“/„Konto sichern“.
+- **Lexware-Schlüssel** nur noch verschlüsselt (AES-GCM, Secret `EOFFIS_ENC_KEY`) in `secrets` auf dem Server; App speichert nur „gespeichert“ + letzte 4 Zeichen; alte Schlüssel werden beim Öffnen automatisch umgestellt.
+- **Bibliotheken** aus `vendor/` (per GitHub-Workflow aus npm), jedes Skript mit Prüfsumme (`integrity`), Sicherheitsrichtlinie (CSP) in `index.html`, `freigabe.html`, `setup.html`; App-Code in `eoffis-app.js`, Skripte von `freigabe.html`/`setup.html` ausgelagert; `setup.html` lädt immer die aktuellen Dateien.
+- **Testzugang neu:** Start „Kostenlos testen“ ohne E-Mail (anonym, eigener Bereich `main`), optional Roboter-Prüfung (Cloudflare Turnstile, `turnstileSiteKey`), Apple/Google (`oauth`); 5 KI-Auswertungen/Tag ohne E-Mail.
+- **E-Mail im passenden Moment:** nach der ersten erkannten Frist (höchstens alle 3 Tage), beim KI-Limit, bei vollem Speicher, in Einstellungen/Abo; Daten bleiben erhalten (`updateUser({ email })` bzw. `linkIdentity`); nach dem Bestätigungslink optional Passwort festlegen.
+- **Probezeit:** 28 Tage voller Umfang → Nachricht „endet in 7 Tagen“ → nach 35 Tagen letzte Nachricht mit Abo-Knopf → 30 Tage nur lesen (Trigger `kv_guard_write`) → Löschung (Warnung 7 Tage vorher). Nachrichten per Push und E-Mail (Brevo), in der Sprache des Kunden; täglicher Lauf `daily` in `eoffis-api`. Abo-Seite (`?abo=1`) mit „Abo anfragen“ bis zum Bezahlsystem.
+- Morgen-Erinnerung: seitenweise und parallel (getestet mit 2.500 Geräten).
+- Tests neu: `tests/db_test.sh` (52 Prüfungen auf echtem PostgreSQL), `tests/functions_test.js` (34), `tests/paket4.js` (15), `tests/csp_libs.js` (8), `tests/run_all.sh`; bestehende Tests angepasst.
+
 ### 08.11.2026 – Gesamttest und Sicherheitsprüfung (kein App-Code geändert)
 - Alle Tests grün: functional.js 25/25, site_auth.js 15/15, picker.js 7/7 (mit siteharness), paket1.js 23/23, paket2.js 12/12, paket3.js 13/13
 - Angriffstest der Datenbank-Regeln (schema.sql auf lokalem PostgreSQL, Konto A gegen B und ohne Anmeldung): Daten sauber getrennt

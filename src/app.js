@@ -790,7 +790,7 @@ async function importFiles(files) {
       } else toast(`${f.name}: ${t('scan.unsupported')}`);
     }
     await persistDraft();
-  } catch (e) { toast(t('web.saveFailed', { msg: errText(e) })); }
+  } catch (e) { await guard(() => { throw e; }); }
   S.busy = null; render();
 }
 /* Die Claude-App für Android gibt Datei-Auswahl und Kamera nicht an Links weiter (Diagnose 05.11.2026:

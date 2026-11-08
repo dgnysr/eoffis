@@ -466,7 +466,26 @@ let ACC_SECRET = null;
 async function accSecret() {
   if (ACC_SECRET) return ACC_SECRET;
   try { ACC_SECRET = (await store.one('meta', 'accsecret')) || { id: 'accsecret' }; } catch { ACC_SECRET = { id: 'accsecret' }; }
+  // Übergang: früher im Konto gespeicherten Schlüssel einmalig verschlüsselt an den Server geben und hier löschen
+  if (ACC_SECRET.lexKey && accKeyServer()) { try { await accKeySave(ACC_SECRET.lexKey); } catch (e) { console.warn('Lexware-Schlüssel bleibt vorerst lokal', e); } }
   return ACC_SECRET;
+}
+/* Lexware-Schlüssel: in der Web-App nur verschlüsselt auf dem Server (eoffis-api), im Konto steht nur „gespeichert“ + letzte 4 Zeichen */
+const accKeyServer = () => !!(window.EOFFIS_HOST && window.EOFFIS_HOST.fn);
+const accHasKey = (sec) => !!(sec && (sec.lexKeySet || sec.lexKey));
+async function accKeySave(k) {
+  const sec = await accSecret();
+  if (accKeyServer()) {
+    const r = await window.EOFFIS_HOST.fn('eoffis-api', { action: 'lexware_key_set', key: k });
+    delete sec.lexKey; sec.lexKeySet = true; sec.lexKeyHint = (r && r.hint) || '…' + k.slice(-4);
+  } else sec.lexKey = k;
+  await store.put('meta', sec);
+}
+async function accKeyDelete() {
+  const sec = await accSecret();
+  if (accKeyServer()) await window.EOFFIS_HOST.fn('eoffis-api', { action: 'lexware_key_delete' });
+  delete sec.lexKey; delete sec.lexKeySet; delete sec.lexKeyHint;
+  await store.put('meta', sec);
 }
 async function saveAccProfile(patch) {
   S.profile = Object.assign({}, S.profile, { acc: Object.assign({}, accProfile(), patch) });
@@ -479,7 +498,7 @@ async function accNextStep(M) {
   if (!P.program) return 'program';
   if (P.program === 'lexware' && P.xl === undefined) return 'xl';
   const m = accMethod(P, M);
-  if (m === 'api' && !(await accSecret()).lexKey) return 'key';
+  if (m === 'api' && !accHasKey(await accSecret())) return 'key';
   if (m === 'mail' && !P.email) return 'addr';
   return 'send';
 }
@@ -603,9 +622,10 @@ async function accApi() {
   if (!host || !host.fn) { M.err = t('acc.apiMissing'); return accModal(); }
   M.busy = t('acc.apiBusy'); M.err = null; accModal();
   try {
-    const key = (await accSecret()).lexKey;
+    const sec = await accSecret();
     for (const f of M.files) {
-      const r = await host.fn('eoffis-api', { action: 'lexware_upload', key, filename: f.name, mime: f.type, data: await blobToB64(f) });
+      // Der Server nimmt den verschlüsselt gespeicherten Schlüssel; nur ein noch nicht übertragener Alt-Schlüssel wird mitgeschickt
+      const r = await host.fn('eoffis-api', Object.assign({ action: 'lexware_upload', filename: f.name, mime: f.type, data: await blobToB64(f) }, sec.lexKey ? { key: sec.lexKey } : {}));
       if (!r || !r.id) throw Object.assign(new Error((r && r.error) || '–'), { code: r && r.code });
     }
     M.busy = null;
@@ -665,13 +685,13 @@ VIEWS.acc = {
 /* ---------- Einstellungen: Buchhaltungsprogramm ---------- */
 function accSettingsHtml() {
   const P = accProfile(), sec = ACC_SECRET || {};
-  const desc = !P.program ? t('acc.settingsNone') : [progName(P), P.program === 'lexware' ? (P.xl ? 'XL' : t('acc.no') + ' XL') : '', P.email || '', P.program === 'lexware' && P.xl && sec.lexKey ? '✓ ' + t('acc.keySaved') : ''].filter(Boolean).join(' · ');
+  const desc = !P.program ? t('acc.settingsNone') : [progName(P), P.program === 'lexware' ? (P.xl ? 'XL' : t('acc.no') + ' XL') : '', P.email || '', P.program === 'lexware' && P.xl && accHasKey(sec) ? '✓ ' + t('acc.keySaved') + (sec.lexKeyHint ? ' (' + sec.lexKeyHint + ')' : '') : ''].filter(Boolean).join(' · ');
   return `<div class="sec-h">${esc(t('acc.settingsTitle'))}</div><div class="card">
     <p class="small">${esc(desc)}</p>
     <div class="chips">${ACC_PROGS.map((k) => chip(t('acc.prog_' + k), P.program === k, `data-a="accSetProg" data-v="${k}"`)).join('')}</div>
     ${P.program === 'lexware' ? `<div class="chips">${chip('XL: ' + t('acc.yes'), P.xl === true, 'data-a="accSetXl" data-v="1"')}${chip('XL: ' + t('acc.no'), P.xl === false, 'data-a="accSetXl" data-v="0"')}</div>` : ''}
     ${P.program && P.program !== 'lexware' || (P.program === 'lexware' && P.xl) ? `${P.program === 'other' ? field('acc_s_name', t('acc.otherName'), P.name || '') : ''}${field('acc_s_addr', P.program === 'datev' ? t('acc.addrDatev') : P.program === 'sevdesk' ? t('acc.addrSev') : P.program === 'lexware' ? t('acc.addrLex') : t('acc.addrOther'), P.email || (P.program === 'sevdesk' ? SEVDESK_MAIL : ''), 'type="email" inputmode="email"')}` : ''}
-    ${P.program === 'lexware' && P.xl ? `${field('acc_s_key', t('acc.lexKey') + (sec.lexKey ? ' (✓)' : ''), '', 'type="password" autocomplete="off" placeholder="••••••"')}${sec.lexKey ? `<button class="btn sm ghost" data-a="accKeyDel">${esc(t('acc.keyDel'))}</button>` : ''}` : ''}
+    ${P.program === 'lexware' && P.xl ? `${field('acc_s_key', t('acc.lexKey') + (accHasKey(sec) ? ' (✓)' : ''), '', 'type="password" autocomplete="off" placeholder="••••••"')}${accHasKey(sec) ? `<button class="btn sm ghost" data-a="accKeyDel">${esc(t('acc.keyDel'))}</button>` : ''}` : ''}
     ${P.program ? `<button class="btn sec" data-a="accSettingsSave">${esc(t('common.save'))}</button>` : ''}
     ${pcSupported() ? `<p class="small muted">${esc(S.pcName ? t('acc.pcFolder', { name: S.pcName }) : t('acc.pcPickH'))}</p><button class="btn sm ghost" data-a="accPcPick">${esc(t('acc.pcPick'))}</button>` : ''}</div>`;
 }
@@ -706,7 +726,7 @@ document.addEventListener('click', async (e) => {
     case 'accUseMail': M.forceMail = true; M.step = await accNextStep(M); return accModal();
     case 'accForceShare': M.forceShare = true; M.err = null; M.step = await accNextStep(M); return accModal();
     case 'accKeySave': { const k = val('acc_key').trim(); if (k.length < 10) { $('#acc_key').focus(); return toast(t('acc.lexKey')); }
-      return guard(async () => { const sec = await accSecret(); sec.lexKey = k; await store.put('meta', sec); M.step = await accNextStep(M); accModal(); }); }
+      return guard(async () => { try { await accKeySave(k); } catch (e) { M.err = e.code === 'bad_key' ? t('acc.apiKeyBad') : e.code === 'not_configured' ? t('acc.apiMissing') : t('acc.apiFail', { msg: errText(e) }); return accModal(); } M.err = null; M.step = await accNextStep(M); accModal(); }); }
     case 'accAddrSave': { const addr = val('acc_addr').trim(); if (!validMail(addr)) { toast(t('acc.addrBad')); $('#acc_addr').focus(); return; }
       return guard(async () => {
         if (M.mode === 'advisor') { S.profile = Object.assign({}, S.profile, { tax_advisor_email: addr }); await store.setProfile(S.profile); }
@@ -734,9 +754,9 @@ document.addEventListener('click', async (e) => {
       if ($('#acc_s_name')) patch.name = val('acc_s_name').trim();
       await saveAccProfile(patch);
       const k = $('#acc_s_key') ? val('acc_s_key').trim() : '';
-      if (k) { const sec = await accSecret(); sec.lexKey = k; await store.put('meta', sec); }
+      if (k) await accKeySave(k);
       toast(t('web.toastSaved')); render(); void P;
     });
-    case 'accKeyDel': return guard(async () => { const sec = await accSecret(); delete sec.lexKey; await store.put('meta', sec); render(); });
+    case 'accKeyDel': return guard(async () => { await accKeyDelete(); render(); });
   }
 });

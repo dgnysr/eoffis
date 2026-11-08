@@ -1,12 +1,17 @@
 // Supabase Edge Function „ai“ für die eOffis Web-App – einzige Stelle mit dem Claude-API-Schlüssel.
 // Einrichten: Supabase → Edge Functions → Secrets: ANTHROPIC_API_KEY (Pflicht), optional ANTHROPIC_MODEL,
-// AI_DAILY_LIMIT (Standard 150), AI_DEMO_DAILY_LIMIT (Standard 30). Dann Funktion „ai“ mit diesem Code anlegen
+// AI_DAILY_LIMIT (Standard 150), AI_DEMO_DAILY_LIMIT (Standard 5, Konten ohne E-Mail). Dann Funktion „ai“ mit diesem Code anlegen
 // und „Verify JWT“ AUSschalten – die Funktion prüft die Anmeldung selbst (auth.getUser), das funktioniert auch mit den neuen API-Schlüsseln.
+// Sicherheit (08.11.2026): KI-Zähler nur über den Service-Schlüssel; Anfragen auf den Bedarf von eOffis begrenzt;
+// nach der Probezeit (nur lesen) keine KI-Auswertungen mehr.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const MODEL = Deno.env.get('ANTHROPIC_MODEL') ?? 'claude-sonnet-5-5';
 const API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
-const MAX_IMAGES = 20;
+const MAX_IMAGES = 20;               // eOffis wertet höchstens 20 Seiten je Dokument aus
+const MAX_PROMPT = 100000;           // Zeichen (E-Rechnung bis 60.000 + Anweisungen)
+const MAX_IMAGE_B64 = 1_500_000;     // je Seitenbild (eOffis speichert Seiten unter 240 KB)
+const MAX_TOKENS = 6000;
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -19,7 +24,7 @@ const RETRY = new Set([408, 429, 500, 502, 503, 504, 529]);
 type Img = { type: string; data: string };
 
 async function callClaude(prompt: string, images: Img[], wantJson: boolean, maxTokens: number): Promise<string> {
-  const content: Record<string, unknown>[] = images.slice(0, MAX_IMAGES).map((i) => ({
+  const content: Record<string, unknown>[] = images.map((i) => ({
     type: 'image', source: { type: 'base64', media_type: i.type === 'image/png' ? 'image/png' : 'image/jpeg', data: i.data },
   }));
   content.push({ type: 'text', text: prompt });
@@ -72,23 +77,46 @@ Deno.serve(async (req) => {
   const supa = createClient(Deno.env.get('SUPABASE_URL')!, (Deno.env.get('SUPABASE_ANON_KEY') ?? Deno.env.get('SUPABASE_PUBLISHABLE_KEY'))!, { global: { headers: { Authorization: auth } } });
   const { data: u } = await supa.auth.getUser();
   if (!u.user) return json({ error: 'Nicht angemeldet', code: 'not_granted' }, 401);
+  // Zähler und Kontostatus nur mit dem Service-Schlüssel (Nutzer haben darauf keinen Zugriff)
+  const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
-  let body: { prompt?: string; images?: Img[]; json?: boolean; max_tokens?: number };
+  let body: { prompt?: unknown; images?: unknown; json?: unknown; max_tokens?: unknown };
   try { body = await req.json(); } catch { return json({ error: 'Ungültige Anfrage' }, 400); }
   if (!body.prompt || typeof body.prompt !== 'string') return json({ error: 'Kein Text' }, 400);
+  if (body.prompt.length > MAX_PROMPT) return json({ error: 'Anfrage zu groß', code: 'too_large' }, 413);
+  const images: Img[] = [];
+  if (body.images !== undefined) {
+    if (!Array.isArray(body.images) || body.images.length > MAX_IMAGES) return json({ error: `Höchstens ${MAX_IMAGES} Seiten je Auswertung`, code: 'too_large' }, 413);
+    for (const i of body.images as Img[]) {
+      if (!i || typeof i.data !== 'string' || !/^image\/(jpeg|png)$/.test(String(i.type || 'image/jpeg'))) return json({ error: 'Nur JPEG- oder PNG-Bilder', code: 'bad_input' }, 400);
+      if (i.data.length > MAX_IMAGE_B64) return json({ error: 'Seitenbild zu groß', code: 'too_large' }, 413);
+      images.push({ type: String(i.type || 'image/jpeg'), data: i.data });
+    }
+  }
+  const wantJson = body.json === true;
+  const maxTokens = Math.max(256, Math.min(MAX_TOKENS, Number(body.max_tokens) || (wantJson ? 6000 : 4000)));
 
-  const { data: quota, error: qErr } = await supa.rpc('ai_take', {
+  const { data: acc } = await admin.rpc('eoffis_account', { p_owner: u.user.id });
+  if (acc && (acc.state === 'readonly' || acc.state === 'expired')) {
+    return json({ error: 'Deine Probezeit ist abgelaufen. Mit einem Abo geht es weiter.', code: 'read_only' }, 403);
+  }
+  const { data: quota, error: qErr } = await admin.rpc('ai_take', {
+    p_owner: u.user.id,
     p_limit: Number(Deno.env.get('AI_DAILY_LIMIT') ?? 150),
-    p_demo_limit: Number(Deno.env.get('AI_DEMO_DAILY_LIMIT') ?? 30),
+    p_demo_limit: Number(Deno.env.get('AI_DEMO_DAILY_LIMIT') ?? 5),
   });
   if (qErr) return json({ error: 'Kontingent nicht prüfbar: ' + qErr.message }, 503);
-  if (!quota?.ok) return json({ error: `Tageslimit für KI-Auswertungen erreicht (${quota?.limit}). Morgen geht es weiter.`, code: 'rate_limited' }, 429);
+  if (!quota?.ok) {
+    return json(quota?.anon
+      ? { error: `Ohne E-Mail sind ${quota?.limit} KI-Auswertungen pro Tag möglich. Mit deiner E-Mail-Adresse nutzt du den vollen Umfang.`, code: 'rate_limited', anon: true }
+      : { error: `Tageslimit für KI-Auswertungen erreicht (${quota?.limit}). Morgen geht es weiter.`, code: 'rate_limited' }, 429);
+  }
 
   try {
-    const text = await callClaude(body.prompt.slice(0, 200000), Array.isArray(body.images) ? body.images : [], !!body.json, Math.min(8000, body.max_tokens ?? (body.json ? 6000 : 4000)));
-    return json(body.json ? { value: parseJson(text) } : { text });
+    const text = await callClaude(body.prompt, images, wantJson, maxTokens);
+    return json(wantJson ? { value: parseJson(text) } : { text });
   } catch (e) {
-    try { await supa.rpc('ai_give_back'); } catch { /* egal */ }
+    try { await admin.rpc('ai_give_back', { p_owner: u.user.id }); } catch { /* egal */ }
     const code = (e as { code?: string }).code;
     return json({ error: (e as Error).message, code: code ?? 'unavailable' }, code === 'busy' ? 503 : 502);
   }

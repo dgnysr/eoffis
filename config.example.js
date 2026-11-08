@@ -6,4 +6,6 @@ window.EOFFIS_CONFIG = {
   aiFunction: 'ai',
   vapidPublicKey: '', // öffentlicher VAPID-Schlüssel für die Morgen-Erinnerung (siehe supabase/functions/eoffis-api)
   shares: false, // Freigabe-Links: true, sobald Bucket und Tabelle „shares“ angelegt sind (supabase/schema.sql)
+  turnstileSiteKey: '', // Roboter-Prüfung (Cloudflare Turnstile, „Site Key“); leer = aus. Gleichzeitig in Supabase → Authentication → Bot Protection einschalten
+  oauth: [], // Anmeldung per Fingertipp, z. B. ['apple', 'google'] – erst eintragen, wenn der Anbieter in Supabase eingerichtet ist
 };

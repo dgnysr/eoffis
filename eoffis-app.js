@@ -1,0 +1,4195 @@
+/* eOffis – erzeugt von src/build_site.py, nicht von Hand ändern */
+'use strict';
+/* =================== Übersetzungen =================== */
+const I18N = JSON.parse(document.getElementById('i18n').textContent);
+const EXTRA = {
+  tasks: { kind_hygiene: 'Hygiene', kind_personnel: 'Personal', kind_permit: 'Genehmigung', recur: 'Wiederholen', recur_none: 'Nie', recur_monthly: 'Monatlich', recur_quarterly: 'Vierteljährlich', recur_yearly: 'Jährlich', nextCreated: 'Nächster Termin angelegt: {{date}}', tapStatus: 'Status wechseln' },
+  web: {
+    setupTitle: 'Betrieb einrichten',
+    setupIntro: 'Lege einmal deine Betriebsdaten an. Alles, was du speicherst, liegt privat in deinem Claude-Konto – nur du siehst es.',
+    start: 'Los geht’s',
+    demoOn: 'Demo-Modus: getrennte Beispieldaten. Deine echten Daten bleiben unberührt.',
+    demoLeave: 'Demo verlassen', demoReset: 'Alle Testdaten löschen', demoResetDone: 'Testdaten gelöscht.',
+    localMode: 'Diese Ansicht kann nicht im Konto speichern. Daten bleiben nur in diesem Browser.',
+    noAi: 'Die KI ist in dieser Ansicht nicht verfügbar. Öffne den Link angemeldet in claude.ai.',
+    aiDeclined: 'Die KI-Nutzung wurde nicht erlaubt. Beim nächsten Öffnen der Seite kannst du sie erlauben.',
+    aiRate: 'Gerade zu viele KI-Anfragen. Bitte in einer Minute erneut tippen.',
+    aiFail: 'Die KI konnte nicht antworten. Bitte erneut versuchen.',
+    aiJson: 'Die KI-Antwort war unvollständig. Bitte erneut versuchen.',
+    thinking: 'KI denkt nach …',
+    cropTitle: 'Zuschnitt auf A4', cropHint: 'Gelben Rahmen auf das Blatt schieben, Größe mit dem Regler anpassen.',
+    frameSize: 'Rahmengröße', useCrop: 'Zuschnitt übernehmen', useFull: 'Ganzes Foto verwenden',
+    downloadPdf: 'PDF herunterladen', downloadXml: 'XML herunterladen', copyText: 'Text kopieren', copied: 'In die Zwischenablage kopiert.',
+    mailApp: 'In Mail-App öffnen', mailNote: 'Falls sich keine Mail-App öffnet: „Text kopieren“ und in deine Mail einfügen.',
+    pagesSent: 'Die KI liest die ersten {{count}} Seiten.', saveFailed: 'Speichern fehlgeschlagen: {{msg}}',
+    downloadDeclined: 'Download abgebrochen.', downloadUnavailable: 'Downloads sind in dieser Ansicht nicht möglich.',
+    pageOf: 'Seite {{n}} von {{count}}', example: 'Beispiel', loadingStore: 'Daten werden geladen …',
+    storeSlow: 'Die Daten lassen sich gerade nicht laden. Bitte Verbindung prüfen.',
+    pdfRender: 'PDF wird gelesen …', pdfFail: 'Diese PDF-Datei konnte nicht gelesen werden.',
+    history: 'Änderungsprotokoll', created: 'angelegt', changed: 'geändert',
+    pages: 'Seiten', advisorMailHint: 'Lade das ZIP herunter und hänge es an eine Mail an {{mail}}.',
+    zipDone: 'ZIP erstellt.', demoTitle: 'Demo ausprobieren', demoIntro: 'Schau dir eOffis mit Beispieldaten an, bevor du eigene Belege erfasst.',
+    toTasks: 'Zu den Fristen', toastSaved: 'Gespeichert.', toastTaken: 'Als Frist übernommen.',
+    finalized: 'Finalisiert am {{date}}', invoiceNo: 'Rechnungsnummer', exportCount: '{{count}} Belege ausgewählt',
+    xmlNote: 'E-Rechnung (XML) – Inhalt wird als Text an die KI gegeben.',
+    camera: 'Foto aufnehmen', retake: 'Weiteres Foto', test: 'Testversion',
+    docs_one: '{{count}} Beleg', docs_other: '{{count}} Belege',
+    nextDeadline: 'Nächste Frist', noDeadline: 'Keine offenen Fristen', recent: 'Letzte Dokumente', reminders: 'Jetzt erinnern',
+    open: 'Offen', done: 'Erledigt', more: 'Mehr',
+    step1: 'Zusammenfassung', step2: 'Das ist zu tun', step3: 'Reaktion', step4: 'Ablegen',
+    next: 'Weiter', makeTask: 'Als Aufgabe', taskMade: 'Aufgabe angelegt', noTodo: 'Kein Handlungsbedarf erkannt.',
+    suggestNone: 'Eine Antwort ist nicht nötig. Du kannst trotzdem ein Schreiben erstellen.',
+    yesWrite: 'Ja, Entwurf schreiben', noNeed: 'Nein, nicht nötig', otherKind: 'Andere Art von Schreiben',
+    checked: 'Angaben geprüft', editFields: 'Angaben bearbeiten', fileDone: 'Erledigt & ablegen', filed: 'Abgelegt.',
+    erech: 'E-Rechnung', erechIntro: 'XRechnung (XML) oder ZUGFeRD/Factur-X (PDF mit eingebetteter XML) hochladen. eOffis liest die Rechnungsdaten direkt aus der Datei – ohne KI und ohne Abtippen.',
+    erechPick: 'E-Rechnung auswählen', erechNone: 'In dieser Datei wurde keine E-Rechnung (XRechnung/ZUGFeRD) gefunden.',
+    erechTake: 'Ins Archiv übernehmen', erechTaken: 'E-Rechnung übernommen.', positions: 'Positionen', seller: 'Rechnungssteller', buyer: 'Rechnungsempfänger',
+    format: 'Format', issueDate: 'Rechnungsdatum', dueDate: 'Fällig am',
+    remTitle: 'Erinnerungen', remInApp: 'Erinnerungen auf der Startseite zeigen', remContract: 'Verträge & Kündigungen (Tage vorher)', remSkonto: 'Skonto (Tage vorher)', remOther: 'Andere Fristen (Tage vorher)',
+    icsExport: 'Fristen in Handy-Kalender übernehmen', icsHint: 'Lädt eine Kalenderdatei (.ics) mit allen offenen Fristen. Öffne sie auf dem Handy – dein Kalender erinnert dich dann zu den eingestellten Zeitpunkten, auch wenn eOffis geschlossen ist.',
+    tabPrebook: 'Vorbuchhaltung', tabDeadline: 'Fristschreiben', forward: 'Weiterleiten', forwardText: 'Mailtext kopieren',
+    forwardHint: 'PDF herunterladen und mit dem kopierten Text an deinen Steuerberater senden.',
+    infoTitle: 'Gesetzliche Hinweise',
+    info_mindest_t: 'Mindestlohn', info_mindest: 'Seit 01.01.2026 gilt ein gesetzlicher Mindestlohn von 13,90 € je Stunde, ab 01.01.2027 sind es 14,60 €. Die Minijob-Grenze steigt jeweils mit.',
+    info_erech_t: 'E-Rechnungspflicht', info_erech: 'Seit 01.01.2025 müssen alle Betriebe E-Rechnungen empfangen können. Ausstellen wird Pflicht ab 2027 (Vorjahresumsatz über 800.000 €) und ab 2028 für alle.',
+    info_kasse_t: 'Kassen & Belege', info_kasse: 'Elektronische Kassen brauchen eine TSE, jeder Verkauf einen Beleg (Belegausgabepflicht). Seit 2025 müssen elektronische Kassen dem Finanzamt gemeldet werden. Eine allgemeine Kassenpflicht ist geplant, aber noch nicht beschlossen.',
+    info_aufb_t: 'Aufbewahrung', info_aufb: 'Rechnungen und Buchungsbelege 8 Jahre, Bücher und Jahresabschlüsse 10 Jahre, Geschäftsbriefe 6 Jahre.',
+    info_frist_t: 'Fristen am Wochenende', info_frist: 'Fällt eine Steuerfrist auf ein Wochenende oder einen Feiertag, gilt der nächste Werktag.',
+    infoStand: 'Stand: November 2026 · allgemeine Information, keine Rechts- oder Steuerberatung.',
+    contracts: 'Verträge',
+    street: 'Straße und Hausnummer', zip: 'PLZ', city: 'Ort', buyerMail: 'E-Mail des Kunden', buyerRef: 'Käuferreferenz / Leitweg-ID', buyerRefPh: 'z. B. Bestellnummer oder Leitweg-ID', dates: 'Daten', note: 'Hinweis auf der Rechnung', recalc: 'Summen aktualisieren',
+    sellerMail: 'E-Mail des Betriebs', contactPhone: 'Ansprechpartner und Telefon', missingBase: 'Fehlt für die Rechnung', missingE: 'Für XRechnung/ZUGFeRD fehlt noch', eReady: 'Alle Angaben für XRechnung und ZUGFeRD vorhanden',
+    confirmFinal: 'Ich habe Empfänger, Positionen und Beträge geprüft.', eNote: 'XML nach EN 16931 (XRechnung 3.0 / ZUGFeRD). Vor dem Versand an Behörden mit einem Validator prüfen; das PDF ist nicht als PDF/A-3 zertifiziert.',
+    eNotReady: 'XRechnung/ZUGFeRD nicht verfügbar: Bei Finalisierung fehlten Pflichtangaben (z. B. E-Mail, Ansprechpartner, Käuferreferenz).',
+    dun1: 'Zahlungserinnerung', dunN: '{{n}}. Mahnung', dunUntil: 'Zahlungsfrist bis', dunCreate: 'Mahnschreiben erstellen', dunNotDue: 'Noch nicht fällig – Mahnung erst nach Fälligkeit möglich.',
+    contact: 'Ansprechpartner', phone: 'Telefon', companyMail: 'E-Mail für Rechnungen',
+    datevIntro: 'Erzeugt einen DATEV-Buchungsstapel (EXTF, Format 700) deiner finalisierten Ausgangsrechnungen. Die Kontenzuordnung stimmst du mit deinem Steuerberater ab.',
+    datevProfile: 'Berater- und Kontendaten', datevAdvisorL: 'Beraternummer', datevClientL: 'Mandantennummer', datevYear: 'Wirtschaftsjahr', datevLen: 'Sachkontenlänge', datevR7: 'Erlöskonto 7 %', datevR19: 'Erlöskonto 19 %',
+    datevSaveP: 'Kontenzuordnung speichern', datevBatch: 'Stapel erstellen', from: 'Von', to: 'Bis', datevApply: 'Zeitraum übernehmen', datevDebtorL: 'Debitorenkonto', datevTaxDate: 'Steuerperiode (Datum)',
+    datevNoInv: 'Keine finalisierten Rechnungen in diesem Zeitraum.', datevExport: 'Buchungsstapel herunterladen', datevHistory: 'Exportverlauf',
+    datevNote: 'Zeichensatz Windows-1252, ein Stapel je Wirtschaftsjahr. Den Import prüft dein Steuerberater in DATEV.',
+    datevAdvisor: 'Beraternummer: 4–7 Ziffern (ab 1001)', datevClient: 'Mandantennummer: 1–5 Ziffern', datevAccounts: 'Erlöskonten müssen genau die Sachkontenlänge haben', datevRange: 'Zeitraum muss im Wirtschaftsjahr liegen',
+    datevDebtor: 'Debitor braucht {{n}} Stellen', datevNumber: 'Rechnungsnummer enthält Zeichen, die DATEV nicht annimmt', datevNone: 'Keine Buchungen', datevChar: 'Zeichen „{{ch}}“ ist im DATEV-Zeichensatz nicht erlaubt.',
+    assign: 'Selbst zuordnen', assignDo: 'Zuordnung übernehmen', uploadMissing: 'Fehlenden Beleg scannen', pastStatements: 'Gespeicherte Kontoauszüge',
+    sortedPdf: 'Alle als ein PDF (sortiert)', sortedHint: 'Ein PDF mit allen ausgewählten Belegen, sortiert nach Ordner und Datum – zum Ausdrucken oder Mailen.',
+    photoOrFile: 'Foto aus Galerie oder Kamera', cameraHint: 'Öffnet sich die Kamera nicht, nimm „Foto aus Galerie oder Kamera“ – dort kannst du ebenfalls „Foto aufnehmen“ wählen.', imageFail: 'Dieses Bild konnte nicht geöffnet werden. Bitte als JPG/PNG oder neu fotografieren.',
+    numberBusy: 'Rechnungsnummer wird gerade auf einem anderen Gerät vergeben. Bitte gleich noch einmal tippen.', numberTaken: 'Nummer {{number}} ist bereits vergeben – bitte erneut finalisieren.',
+    ruleTitle: 'Eigene Steuerregel', ruleHint: 'Für Termine, die oben fehlen – z. B. vierteljährliche Voranmeldung oder kommunale Abgaben.',
+    ruleFirst: 'Erster Monat (1–12)', ruleDay: 'Tag im Monat', ruleOffset: 'Fällig Monate danach', ruleWeekend: 'Wochenende/Feiertag → nächster Werktag', ruleHolidays: 'Eigene Feiertage (z. B. Landesfeiertage)', rulePreview: 'Termine anzeigen',
+    cancelBy: 'Kündigung muss zugehen bis', contractEnd: 'Vertragsende', contract: 'Vertrag', contractNo: 'Vertrags-/Kundennummer', contractTerms: 'Vertragsbedingungen',
+    checksTitle: 'Rechnungsprüfung (§ 14 UStG)', checksNote: 'KI-Prüfung der Pflichtangaben – keine rechtsverbindliche Freigabe.', st_present: 'vorhanden', st_missing: 'fehlt', st_unclear: 'unklar',
+    discount: 'Skonto', discountUntil: 'bis', service: 'Leistung erhalten?', svc_yes: 'Ja', svc_no: 'Nein', svc_unknown: 'Noch unklar',
+    retainUntil: 'Aufbewahren mindestens bis', archiveNotice: 'Archivierte Belege werden nicht gelöscht. Original und Prüfsumme bleiben unverändert.',
+    suggestedTask: 'Vorgeschlagene Aufgabe', email: 'E-Mail des Empfängers', fullText: 'Volltext',
+    hubMoney: 'Geld', hubRecords: 'Unterlagen', hubPlanning: 'Planung', hubQuick: 'Schnell',
+    hubSales: 'Ausgangsrechnungen', hubSalesH: 'Rechnungen schreiben, finalisieren, Zahlungen', hubPay: 'Zahlungen & Kontoauszug', hubPayH: 'Kontoauszug lesen und Belegen zuordnen',
+    hubDun: 'Mahnungen', hubDunH: 'Überfällige eigene Rechnungen', hubReview: 'Zu prüfen', hubReviewH: 'Neue Belege durchsehen', hubArchive: 'Archiv', hubArchiveH: 'Erledigte und archivierte Belege',
+    hubContracts: 'Verträge', hubContractsH: 'Laufzeiten und Kündigungsfristen', hubDates: 'Fristen & Aufgaben', hubDatesH: 'Alle Termine im Blick', hubTax: 'Steuertermine', hubTaxH: 'Wiederkehrende Steuerfristen',
+    hubExport: 'Steuerberater', hubExportH: 'ZIP, Sammel-PDF, Fristschreiben', hubDatev: 'DATEV-Export', hubDatevH: 'Buchungsstapel eigener Rechnungen', hubErech: 'E-Rechnung lesen', hubErechH: 'XRechnung und ZUGFeRD öffnen',
+    hubRem: 'Erinnerungen', hubRemH: 'Vorlaufzeiten und Kalender', hubSettings: 'Einstellungen', hubSettingsH: 'Betrieb, Sprache, Bankdaten',
+    gobdTitle: 'GoBD & Aufbewahrung', gobd: 'Belege unverändert aufbewahren: eOffis speichert das Original mit Prüfsumme und Änderungsprotokoll. Ob deine Ablage insgesamt GoBD-konform ist, klärst du mit deinem Steuerberater (Verfahrensdokumentation).',
+    privacyTitle: 'Datenschutz', privacy: 'Deine Daten liegen privat in deinem Claude-Konto. Für die KI-Auswertung werden Belegbilder an Claude übertragen. Belege mit Gesundheits- oder Personaldaten nur scannen, wenn das nötig ist.',
+    homeScreen: 'Auf den Home-Bildschirm', homeScreenH: 'iPhone: in Safari auf „Teilen“ tippen, dann „Zum Home-Bildschirm“. Android: im Chrome-Menü „Zum Startbildschirm hinzufügen“.',
+  },
+};
+for (const k of Object.keys(EXTRA)) I18N.de[k] = Object.assign({}, I18N.de[k] || {}, EXTRA[k]);
+const LANGS = ['de', 'tr', 'pl', 'ru', 'ar', 'ro'];
+const LANG_NAMES = { de: 'Deutsch', tr: 'Türkisch', pl: 'Polnisch', ru: 'Russisch', ar: 'Arabisch', ro: 'Rumänisch' };
+let lang = 'de';
+/* Mehrseitiger Scan, Fristen → Kalender (alle Sprachen) */
+const NEW_TEXT = {
+  de: { pagesDone: '{{count}} Seite(n) erfasst', morePage: 'Weitere Seite scannen', finishAi: 'Fertig – mit KI analysieren ({{count}} S.)', saveOnly: 'Nur speichern, ohne KI', moreHint: 'Mehrseitiges Schreiben? Einfach jede Seite nacheinander fotografieren – erst danach auf „Fertig“ tippen.', otherSources: 'Andere Quelle hinzufügen', calTitle: '{{count}} Frist(en) erkannt', calAuto: 'Sie stehen jetzt unter „Fristen“.', calAsk: 'Auch in den Kalender deines Handys eintragen? Erinnerung 1 Woche und 1 Tag vorher.', calYes: 'In Handy-Kalender eintragen', calNo: 'Nein, danke', calHow: 'Es wird eine Kalenderdatei (.ics) geöffnet bzw. heruntergeladen. Antippen → „Hinzufügen“ bzw. mit deiner Kalender-App öffnen. iPhone übernimmt beide Erinnerungen automatisch.', calGoogle: 'Einzeln in Google Kalender', calGoogleHint: 'Android mit Google Kalender: falls die Datei nicht aufgeht, hier je Frist eintragen (Erinnerungen dann im Kalender auf 1 Woche und 1 Tag stellen).', calDone: 'Kalenderdatei erstellt', calOne: 'In Kalender' },
+  tr: { pagesDone: '{{count}} sayfa alındı', morePage: 'Sonraki sayfayı tara', finishAi: 'Bitti – yapay zekâ ile analiz et ({{count}} s.)', saveOnly: 'Sadece kaydet, analiz yok', moreHint: 'Çok sayfalı mektup mu? Her sayfayı sırayla fotoğraflayın – sonra „Bitti“ye dokunun.', otherSources: 'Başka kaynak ekle', calTitle: '{{count}} süre tespit edildi', calAuto: 'Artık „Süreler“ altında listeleniyor.', calAsk: 'Telefon takvimine de eklensin mi? 1 hafta ve 1 gün önce hatırlatma.', calYes: 'Telefon takvimine ekle', calNo: 'Hayır, teşekkürler', calHow: 'Bir takvim dosyası (.ics) açılır veya indirilir. Dokunun → „Ekle“ ya da takvim uygulamanızla açın.', calGoogle: 'Google Takvim’e tek tek', calGoogleHint: 'Dosya açılmazsa her süreyi buradan ekleyin (hatırlatmaları takvimde 1 hafta ve 1 gün olarak ayarlayın).', calDone: 'Takvim dosyası oluşturuldu', calOne: 'Takvime' },
+  pl: { pagesDone: 'Zeskanowano stron: {{count}}', morePage: 'Skanuj kolejną stronę', finishAi: 'Gotowe – analizuj z AI ({{count}} str.)', saveOnly: 'Tylko zapisz, bez AI', moreHint: 'Pismo wielostronicowe? Fotografuj kolejno każdą stronę – dopiero potem dotknij „Gotowe”.', otherSources: 'Dodaj z innego źródła', calTitle: 'Wykryte terminy: {{count}}', calAuto: 'Są teraz na liście „Terminy”.', calAsk: 'Dodać też do kalendarza w telefonie? Przypomnienie tydzień i dzień wcześniej.', calYes: 'Dodaj do kalendarza telefonu', calNo: 'Nie, dziękuję', calHow: 'Otworzy się lub pobierze plik kalendarza (.ics). Dotknij → „Dodaj” lub otwórz aplikacją kalendarza.', calGoogle: 'Pojedynczo w Kalendarzu Google', calGoogleHint: 'Jeśli plik się nie otworzy, dodaj tu każdy termin (przypomnienia ustaw w kalendarzu na tydzień i dzień).', calDone: 'Utworzono plik kalendarza', calOne: 'Do kalendarza' },
+  ru: { pagesDone: 'Страниц снято: {{count}}', morePage: 'Сканировать ещё страницу', finishAi: 'Готово – анализ ИИ ({{count}} стр.)', saveOnly: 'Только сохранить, без ИИ', moreHint: 'Многостраничное письмо? Снимите каждую страницу по очереди – затем нажмите «Готово».', otherSources: 'Добавить из другого источника', calTitle: 'Найдено сроков: {{count}}', calAuto: 'Они уже в разделе «Сроки».', calAsk: 'Добавить и в календарь телефона? Напоминание за неделю и за день.', calYes: 'Добавить в календарь телефона', calNo: 'Нет, спасибо', calHow: 'Откроется или скачается файл календаря (.ics). Нажмите → «Добавить» или откройте приложением календаря.', calGoogle: 'По одному в Google Календарь', calGoogleHint: 'Если файл не открывается, добавьте каждый срок здесь (напоминания в календаре: за неделю и за день).', calDone: 'Файл календаря создан', calOne: 'В календарь' },
+  ar: { pagesDone: 'تم التقاط {{count}} صفحة', morePage: 'مسح صفحة أخرى', finishAi: 'تم – التحليل بالذكاء الاصطناعي ({{count}} ص)', saveOnly: 'حفظ فقط بدون تحليل', moreHint: 'رسالة من عدة صفحات؟ صوّر كل صفحة على حدة ثم اضغط „تم“.', otherSources: 'إضافة من مصدر آخر', calTitle: 'تم العثور على {{count}} موعد', calAuto: 'أصبحت الآن ضمن „المواعيد“.', calAsk: 'إضافتها أيضًا إلى تقويم الهاتف؟ تذكير قبل أسبوع وقبل يوم.', calYes: 'إضافة إلى تقويم الهاتف', calNo: 'لا، شكرًا', calHow: 'سيتم فتح أو تنزيل ملف تقويم (.ics). اضغط عليه ← „إضافة“ أو افتحه بتطبيق التقويم.', calGoogle: 'كل موعد في تقويم Google', calGoogleHint: 'إن لم يُفتح الملف، أضف كل موعد من هنا (واضبط التذكير في التقويم قبل أسبوع ويوم).', calDone: 'تم إنشاء ملف التقويم', calOne: 'إلى التقويم' },
+  ro: { pagesDone: '{{count}} pagină(i) scanate', morePage: 'Scanează pagina următoare', finishAi: 'Gata – analizează cu AI ({{count}} p.)', saveOnly: 'Doar salvează, fără AI', moreHint: 'Scrisoare cu mai multe pagini? Fotografiază pe rând fiecare pagină – apoi apasă „Gata”.', otherSources: 'Adaugă din altă sursă', calTitle: '{{count}} termen(e) găsite', calAuto: 'Sunt acum în lista „Termene”.', calAsk: 'Le adaugi și în calendarul telefonului? Memento cu o săptămână și o zi înainte.', calYes: 'Adaugă în calendarul telefonului', calNo: 'Nu, mulțumesc', calHow: 'Se deschide sau se descarcă un fișier de calendar (.ics). Atinge → „Adaugă” sau deschide-l cu aplicația de calendar.', calGoogle: 'Pe rând în Google Calendar', calGoogleHint: 'Dacă fișierul nu se deschide, adaugă aici fiecare termen (setează în calendar memento cu o săptămână și o zi).', calDone: 'Fișier de calendar creat', calOne: 'În calendar' },
+};
+for (const l of Object.keys(NEW_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].web = Object.assign({}, I18N[l].web || {}, NEW_TEXT[l]); }
+/* Oberfläche 06.11.2026: reduzierte Startseite, Tab „Mehr“, Scan-Seite */
+const UI_TEXT = {"de": {"uiScanTab": "Scannen", "uiScanHero": "Dokument scannen", "uiScanHeroSub": "Foto aufnehmen – die KI erkennt Absender, Beträge und Fristen", "uiNextDeadlines": "Nächste Fristen", "uiNoDeadlines": "Keine offenen Fristen", "uiRecent": "Zuletzt gescannt", "uiReviewN": "{{count}} zu prüfen", "uiToReview": "zu prüfen", "uiAll": "Alle", "uiGallery": "Galerie", "uiFile": "Datei", "uiMoreOptions": "Weitere Optionen", "uiDemoShort": "Test ohne Konto", "uiNew": "Neu", "uiAblage": "Ablage", "uiSearchAll": "Alle Unterlagen durchsuchen …", "uiInbox": "Eingang – zu prüfen", "uiInboxH": "Neu gescannt, noch nicht durchgesehen", "uiFolders": "Ordner", "uiSmart": "Ansichten", "uiAllDocs": "Alle Dokumente", "uiFirmaMiss": "{{count}} wichtige Unterlagen fehlen noch", "uiFirmaOk": "Alle wichtigen Unterlagen vorhanden", "uiChecklist": "Checkliste Firmenunterlagen", "uiChecklistH": "Diese Unterlagen sollte jeder Betrieb griffbereit haben. Fehlende einfach nachscannen – eOffis sortiert sie hier ein.", "uiMissing": "fehlt – jetzt scannen", "uiCk_gewerbe": "Gewerbeanmeldung", "uiCk_hr": "Handelsregisterauszug", "uiCk_ausweis": "Ausweis des Inhabers", "uiCk_stnr": "Steuernummer (Finanzamt)", "uiCk_ustid": "USt-IdNr.", "uiCk_vertrag": "Gesellschaftsvertrag / Satzung", "uiCk_haftpflicht": "Betriebshaftpflicht"}, "tr": {"uiScanTab": "Tara", "uiScanHero": "Belge tara", "uiScanHeroSub": "Fotoğraf çek – yapay zekâ göndereni, tutarları ve süreleri tanır", "uiNextDeadlines": "Yaklaşan süreler", "uiNoDeadlines": "Açık süre yok", "uiRecent": "Son taranan", "uiReviewN": "{{count}} kontrol edilecek", "uiToReview": "kontrol edilecek", "uiAll": "Tümü", "uiGallery": "Galeri", "uiFile": "Dosya", "uiMoreOptions": "Diğer seçenekler", "uiDemoShort": "Hesapsız test", "uiNew": "Yeni", "uiAblage": "Arşiv", "uiSearchAll": "Tüm belgelerde ara …", "uiInbox": "Gelen – kontrol edilecek", "uiInboxH": "Yeni tarandı, henüz incelenmedi", "uiFolders": "Klasörler", "uiSmart": "Görünümler", "uiAllDocs": "Tüm belgeler", "uiFirmaMiss": "{{count}} önemli belge eksik", "uiFirmaOk": "Tüm önemli belgeler mevcut", "uiChecklist": "Şirket belgeleri kontrol listesi", "uiChecklistH": "Her işletmenin elinde olması gereken belgeler. Eksik olanları tara – eOffis buraya yerleştirir.", "uiMissing": "eksik – şimdi tara", "uiCk_gewerbe": "İşletme kaydı (Gewerbeanmeldung)", "uiCk_hr": "Ticaret sicili kaydı", "uiCk_ausweis": "İşletme sahibinin kimliği", "uiCk_stnr": "Vergi numarası (Finanzamt)", "uiCk_ustid": "KDV kimlik no. (USt-IdNr.)", "uiCk_vertrag": "Şirket sözleşmesi / tüzük", "uiCk_haftpflicht": "İşletme sorumluluk sigortası"}, "pl": {"uiScanTab": "Skanuj", "uiScanHero": "Skanuj dokument", "uiScanHeroSub": "Zrób zdjęcie – AI rozpozna nadawcę, kwoty i terminy", "uiNextDeadlines": "Najbliższe terminy", "uiNoDeadlines": "Brak otwartych terminów", "uiRecent": "Ostatnio zeskanowane", "uiReviewN": "{{count}} do sprawdzenia", "uiToReview": "do sprawdzenia", "uiAll": "Wszystkie", "uiGallery": "Galeria", "uiFile": "Plik", "uiMoreOptions": "Więcej opcji", "uiDemoShort": "Test bez konta", "uiNew": "Nowy", "uiAblage": "Archiwum", "uiSearchAll": "Szukaj we wszystkich dokumentach …", "uiInbox": "Przychodzące – do sprawdzenia", "uiInboxH": "Nowo zeskanowane, jeszcze nieprzejrzane", "uiFolders": "Foldery", "uiSmart": "Widoki", "uiAllDocs": "Wszystkie dokumenty", "uiFirmaMiss": "Brakuje jeszcze {{count}} ważnych dokumentów", "uiFirmaOk": "Wszystkie ważne dokumenty są", "uiChecklist": "Lista dokumentów firmy", "uiChecklistH": "Te dokumenty każda firma powinna mieć pod ręką. Brakujące po prostu zeskanuj – eOffis je tu przyporządkuje.", "uiMissing": "brak – zeskanuj teraz", "uiCk_gewerbe": "Zgłoszenie działalności (Gewerbeanmeldung)", "uiCk_hr": "Odpis z rejestru handlowego", "uiCk_ausweis": "Dowód osobisty właściciela", "uiCk_stnr": "Numer podatkowy (Finanzamt)", "uiCk_ustid": "NIP UE (USt-IdNr.)", "uiCk_vertrag": "Umowa spółki / statut", "uiCk_haftpflicht": "Ubezpieczenie OC firmy"}, "ru": {"uiScanTab": "Скан", "uiScanHero": "Сканировать документ", "uiScanHeroSub": "Сделайте фото – ИИ распознает отправителя, суммы и сроки", "uiNextDeadlines": "Ближайшие сроки", "uiNoDeadlines": "Нет открытых сроков", "uiRecent": "Недавно отсканировано", "uiReviewN": "{{count}} на проверку", "uiToReview": "на проверку", "uiAll": "Все", "uiGallery": "Галерея", "uiFile": "Файл", "uiMoreOptions": "Другие варианты", "uiDemoShort": "Тест без аккаунта", "uiNew": "Новый", "uiAblage": "Архив", "uiSearchAll": "Искать во всех документах …", "uiInbox": "Входящие – на проверку", "uiInboxH": "Недавно отсканировано, ещё не просмотрено", "uiFolders": "Папки", "uiSmart": "Подборки", "uiAllDocs": "Все документы", "uiFirmaMiss": "Не хватает {{count}} важных документов", "uiFirmaOk": "Все важные документы на месте", "uiChecklist": "Чек-лист документов фирмы", "uiChecklistH": "Эти документы должны быть под рукой у каждого предприятия. Недостающие просто отсканируйте – eOffis разложит их сюда.", "uiMissing": "нет – отсканировать", "uiCk_gewerbe": "Регистрация промысла (Gewerbeanmeldung)", "uiCk_hr": "Выписка из торгового реестра", "uiCk_ausweis": "Удостоверение личности владельца", "uiCk_stnr": "Налоговый номер (Finanzamt)", "uiCk_ustid": "Номер плательщика НДС (USt-IdNr.)", "uiCk_vertrag": "Договор об учреждении / устав", "uiCk_haftpflicht": "Страхование ответственности"}, "ar": {"uiScanTab": "مسح", "uiScanHero": "مسح مستند", "uiScanHeroSub": "التقط صورة – يتعرّف الذكاء الاصطناعي على المرسل والمبالغ والمواعيد", "uiNextDeadlines": "المواعيد القادمة", "uiNoDeadlines": "لا توجد مواعيد مفتوحة", "uiRecent": "آخر ما تم مسحه", "uiReviewN": "{{count}} للمراجعة", "uiToReview": "للمراجعة", "uiAll": "الكل", "uiGallery": "المعرض", "uiFile": "ملف", "uiMoreOptions": "خيارات أخرى", "uiDemoShort": "تجربة بدون حساب", "uiNew": "جديد", "uiAblage": "الأرشيف", "uiSearchAll": "البحث في كل المستندات …", "uiInbox": "الوارد – للمراجعة", "uiInboxH": "تم مسحه حديثًا ولم تتم مراجعته بعد", "uiFolders": "المجلدات", "uiSmart": "طرق العرض", "uiAllDocs": "كل المستندات", "uiFirmaMiss": "ما زال ينقص {{count}} من المستندات المهمة", "uiFirmaOk": "كل المستندات المهمة موجودة", "uiChecklist": "قائمة مستندات المنشأة", "uiChecklistH": "ينبغي أن تكون هذه المستندات في متناول كل منشأة. امسح الناقص منها – وسيرتّبه eOffis هنا.", "uiMissing": "ناقص – امسحه الآن", "uiCk_gewerbe": "تسجيل النشاط التجاري", "uiCk_hr": "مستخرج السجل التجاري", "uiCk_ausweis": "هوية المالك", "uiCk_stnr": "الرقم الضريبي (Finanzamt)", "uiCk_ustid": "رقم ضريبة القيمة المضافة (USt-IdNr.)", "uiCk_vertrag": "عقد الشركة / النظام الأساسي", "uiCk_haftpflicht": "تأمين المسؤولية للمنشأة"}, "ro": {"uiScanTab": "Scanează", "uiScanHero": "Scanează document", "uiScanHeroSub": "Fă o fotografie – AI recunoaște expeditorul, sumele și termenele", "uiNextDeadlines": "Termene apropiate", "uiNoDeadlines": "Niciun termen deschis", "uiRecent": "Scanate recent", "uiReviewN": "{{count}} de verificat", "uiToReview": "de verificat", "uiAll": "Toate", "uiGallery": "Galerie", "uiFile": "Fișier", "uiMoreOptions": "Alte opțiuni", "uiDemoShort": "Test fără cont", "uiNew": "Nou", "uiAblage": "Arhivă", "uiSearchAll": "Caută în toate documentele …", "uiInbox": "Intrări – de verificat", "uiInboxH": "Scanate recent, încă neverificate", "uiFolders": "Dosare", "uiSmart": "Vizualizări", "uiAllDocs": "Toate documentele", "uiFirmaMiss": "Lipsesc încă {{count}} documente importante", "uiFirmaOk": "Toate documentele importante există", "uiChecklist": "Listă documente firmă", "uiChecklistH": "Aceste documente ar trebui să fie la îndemâna oricărei firme. Scanează-le pe cele lipsă – eOffis le pune aici.", "uiMissing": "lipsește – scanează acum", "uiCk_gewerbe": "Înregistrarea activității (Gewerbeanmeldung)", "uiCk_hr": "Extras din registrul comerțului", "uiCk_ausweis": "Actul de identitate al proprietarului", "uiCk_stnr": "Cod fiscal (Finanzamt)", "uiCk_ustid": "Cod TVA (USt-IdNr.)", "uiCk_vertrag": "Contract de societate / statut", "uiCk_haftpflicht": "Asigurare de răspundere civilă"}};
+for (const l of Object.keys(UI_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].web = Object.assign({}, I18N[l].web || {}, UI_TEXT[l]); }
+const FOLDER_TEXT = {"de": {"folder_firma": "Firma & Stammdaten", "folder_bank": "Bank & Kredite", "folder_versicherungen": "Versicherungen"}, "tr": {"folder_firma": "Firma ve temel bilgiler", "folder_bank": "Banka ve krediler", "folder_versicherungen": "Sigortalar"}, "pl": {"folder_firma": "Firma i dane podstawowe", "folder_bank": "Bank i kredyty", "folder_versicherungen": "Ubezpieczenia"}, "ru": {"folder_firma": "Фирма и основные данные", "folder_bank": "Банк и кредиты", "folder_versicherungen": "Страхование"}, "ar": {"folder_firma": "المنشأة والبيانات الأساسية", "folder_bank": "البنك والقروض", "folder_versicherungen": "التأمينات"}, "ro": {"folder_firma": "Firmă și date de bază", "folder_bank": "Bancă și credite", "folder_versicherungen": "Asigurări"}};
+for (const l of Object.keys(FOLDER_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].docs = Object.assign({}, I18N[l].docs || {}, FOLDER_TEXT[l]); }
+/* Eigenständige Web-App (Supabase): Texte, die sich sonst auf Claude beziehen */
+const HOST_TEXT = {"de": {"setupIntro": "Lege einmal deine Betriebsdaten an. Alles, was du speicherst, liegt geschützt in deinem eOffis-Konto – nur du siehst es.", "privacy": "Deine Daten liegen geschützt in deinem eOffis-Konto (Supabase, Server in der EU). Für die KI-Auswertung werden Belegbilder an Claude (Anthropic) übertragen.", "privacyText": "Testphase: Daten liegen in der Supabase-Datenbank dieses Projekts. Vor der Nutzung mit echten Daten Speicherort, Dienstleister (Supabase, Anthropic) und Auftragsverarbeitung prüfen – bis dahin nur Beispieldaten verwenden.", "storeQuota": "Der Speicher ist voll. Bitte ältere Belege exportieren und löschen.", "pickWhy": "Dieser Browser gibt Kamera und Dateiauswahl nicht frei (oft in Apps eingebaute Browser). In Chrome oder Safari funktioniert es – deine Daten bleiben dieselben.", "pickStep2": "In Chrome oder Safari einfügen und mit deinem eOffis-Konto anmelden", "account": "Konto", "logout": "Abmelden", "demoAccount": "Demo ohne Konto – Daten werden nach einigen Tagen gelöscht."}, "tr": {"setupIntro": "İşletme bilgilerini bir kez gir. Kaydettiğin her şey eOffis hesabında korunur – yalnızca sen görürsün.", "privacy": "Verilerin eOffis hesabında korunur (Supabase, AB sunucuları). Yapay zekâ analizi için belge görüntüleri Claude’a (Anthropic) gönderilir.", "privacyText": "Test aşaması: Veriler bu projenin Supabase veritabanında. Gerçek verilerle kullanmadan önce depolama yerini, hizmet sağlayıcıları (Supabase, Anthropic) ve veri işleme sözleşmesini kontrol et – o zamana kadar yalnızca örnek veriler kullan.", "storeQuota": "Depolama dolu. Lütfen eski belgeleri dışa aktarıp sil.", "pickWhy": "Bu tarayıcı kamerayı ve dosya seçimini açmıyor (genellikle uygulama içi tarayıcılar). Chrome veya Safari’de çalışır – verilerin aynı kalır.", "pickStep2": "Chrome veya Safari’ye yapıştır ve eOffis hesabınla giriş yap", "account": "Hesap", "logout": "Çıkış yap", "demoAccount": "Hesapsız demo – veriler birkaç gün sonra silinir."}, "pl": {"setupIntro": "Podaj raz dane firmy. Wszystko, co zapiszesz, jest chronione na Twoim koncie eOffis – widzisz to tylko Ty.", "privacy": "Twoje dane są chronione na koncie eOffis (Supabase, serwery w UE). Do analizy AI obrazy dokumentów są przesyłane do Claude (Anthropic).", "privacyText": "Faza testów: dane są w bazie Supabase tego projektu. Przed użyciem prawdziwych danych sprawdź miejsce przechowywania, usługodawców (Supabase, Anthropic) i umowę powierzenia – do tego czasu tylko przykładowe dane.", "storeQuota": "Pamięć jest pełna. Wyeksportuj i usuń starsze dokumenty.", "pickWhy": "Ta przeglądarka nie udostępnia aparatu ani wyboru plików (często przeglądarki wbudowane w aplikacje). W Chrome lub Safari działa – dane pozostają te same.", "pickStep2": "Wklej w Chrome lub Safari i zaloguj się kontem eOffis", "account": "Konto", "logout": "Wyloguj", "demoAccount": "Demo bez konta – dane zostaną usunięte po kilku dniach."}, "ru": {"setupIntro": "Один раз укажите данные предприятия. Всё сохранённое защищено в вашем аккаунте eOffis – видите только вы.", "privacy": "Ваши данные защищены в аккаунте eOffis (Supabase, серверы в ЕС). Для анализа ИИ изображения документов передаются в Claude (Anthropic).", "privacyText": "Тестовый этап: данные хранятся в базе Supabase этого проекта. Перед работой с реальными данными проверьте место хранения, поставщиков (Supabase, Anthropic) и договор обработки – до этого только примеры.", "storeQuota": "Хранилище заполнено. Экспортируйте и удалите старые документы.", "pickWhy": "Этот браузер не даёт доступ к камере и выбору файлов (часто встроенные в приложения браузеры). В Chrome или Safari работает – данные остаются теми же.", "pickStep2": "Вставьте в Chrome или Safari и войдите в аккаунт eOffis", "account": "Аккаунт", "logout": "Выйти", "demoAccount": "Демо без аккаунта – данные удаляются через несколько дней."}, "ar": {"setupIntro": "أدخل بيانات منشأتك مرة واحدة. كل ما تحفظه محمي في حساب eOffis الخاص بك – لا يراه غيرك.", "privacy": "بياناتك محمية في حساب eOffis (Supabase، خوادم في الاتحاد الأوروبي). لتحليل الذكاء الاصطناعي تُرسل صور المستندات إلى Claude (Anthropic).", "privacyText": "مرحلة الاختبار: البيانات في قاعدة بيانات Supabase لهذا المشروع. قبل استخدام بيانات حقيقية تحقّق من مكان التخزين ومقدّمي الخدمة (Supabase وAnthropic) وعقد المعالجة – حتى ذلك الحين بيانات تجريبية فقط.", "storeQuota": "مساحة التخزين ممتلئة. يرجى تصدير المستندات القديمة وحذفها.", "pickWhy": "هذا المتصفح لا يتيح الكاميرا واختيار الملفات (غالبًا المتصفحات المدمجة في التطبيقات). في Chrome أو Safari يعمل – وتبقى بياناتك نفسها.", "pickStep2": "الصقه في Chrome أو Safari وسجّل الدخول بحساب eOffis", "account": "الحساب", "logout": "تسجيل الخروج", "demoAccount": "عرض تجريبي بدون حساب – تُحذف البيانات بعد بضعة أيام."}, "ro": {"setupIntro": "Introdu o singură dată datele firmei. Tot ce salvezi este protejat în contul tău eOffis – doar tu vezi.", "privacy": "Datele tale sunt protejate în contul eOffis (Supabase, servere în UE). Pentru analiza AI, imaginile documentelor sunt trimise la Claude (Anthropic).", "privacyText": "Faza de test: datele sunt în baza Supabase a acestui proiect. Înainte de date reale verifică locul de stocare, furnizorii (Supabase, Anthropic) și contractul de prelucrare – până atunci doar date exemplu.", "storeQuota": "Spațiul este plin. Exportă și șterge documentele mai vechi.", "pickWhy": "Acest browser nu permite camera și alegerea fișierelor (adesea browserele integrate în aplicații). În Chrome sau Safari funcționează – datele rămân aceleași.", "pickStep2": "Lipește în Chrome sau Safari și conectează-te cu contul eOffis", "account": "Cont", "logout": "Deconectare", "demoAccount": "Demo fără cont – datele se șterg după câteva zile."}};
+if (window.EOFFIS_HOST) for (const l of Object.keys(HOST_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].web = Object.assign({}, I18N[l].web || {}, HOST_TEXT[l]); }
+function t(key, vars) {
+  const get = (d) => key.split('.').reduce((o, k) => (o && o[k] !== undefined ? o[k] : undefined), d);
+  let s = get(I18N[lang]);
+  if (typeof s !== 'string') s = get(I18N.de);
+  if (typeof s !== 'string') return key;
+  if (vars) s = s.replace(/\{\{(\w+)\}\}/g, (_, v) => (vars[v] !== undefined ? vars[v] : ''));
+  return s;
+}
+const tn = (key, count) => t(`${key}_${count === 1 ? 'one' : 'other'}`, { count });
+function setLang(l) {
+  lang = LANGS.includes(l) ? l : 'de';
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+}
+
+/* =================== Hilfen =================== */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2)).replace(/[^a-zA-Z0-9-]/g, '');
+const nowIso = () => new Date().toISOString();
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const money = (n, cur = 'EUR') => (n === null || n === undefined || isNaN(n) ? '–' : new Intl.NumberFormat('de-DE', { style: 'currency', currency: cur || 'EUR' }).format(n));
+function parseMoney(s) {
+  const c = String(s ?? '').replace(/[€\s]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.');
+  if (!c) return null;
+  const n = Number(c);
+  return isFinite(n) ? n : null;
+}
+const numStr = (n) => (n === null || n === undefined ? '' : String(n).replace('.', ','));
+const fmtIban = (s) => String(s || '').replace(/\s+/g, '').replace(/(.{4})/g, '$1 ').trim();
+function safeName(s) {
+  return String(s || 'Dokument').normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^\w.\- ]+/g, '').trim().replace(/\s+/g, '_').slice(0, 80) || 'Dokument';
+}
+async function sha256(text) {
+  try {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  } catch { return sha256js(new TextEncoder().encode(String(text))); }
+}
+/** Ersatz, falls crypto.subtle fehlt (ältere WebViews, unsichere Kontexte) */
+function sha256js(bytes) {
+  const K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
+  const H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+  const l = bytes.length, n = ((l + 9 + 63) >> 6) << 6, m = new Uint8Array(n); m.set(bytes); m[l] = 0x80;
+  const dv = new DataView(m.buffer); dv.setUint32(n - 4, (l * 8) >>> 0); dv.setUint32(n - 8, Math.floor(l / 0x20000000));
+  const w = new Uint32Array(64), r = (x, k) => (x >>> k) | (x << (32 - k));
+  for (let o = 0; o < n; o += 64) {
+    for (let i = 0; i < 16; i++) w[i] = dv.getUint32(o + i * 4);
+    for (let i = 16; i < 64; i++) { const s0 = r(w[i - 15], 7) ^ r(w[i - 15], 18) ^ (w[i - 15] >>> 3), s1 = r(w[i - 2], 17) ^ r(w[i - 2], 19) ^ (w[i - 2] >>> 10); w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0; }
+    let [a, b, c, d, e, f, g, h] = H;
+    for (let i = 0; i < 64; i++) { const t1 = (h + (r(e, 6) ^ r(e, 11) ^ r(e, 25)) + ((e & f) ^ (~e & g)) + K[i] + w[i]) | 0, t2 = ((r(a, 2) ^ r(a, 13) ^ r(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) | 0; h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0; }
+    H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0; H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+  }
+  return H.map((x) => (x >>> 0).toString(16).padStart(8, '0')).join('');
+}
+function dataUrlToBlob(d) {
+  const [h, b] = d.split(',');
+  const mime = (h.match(/data:([^;]+)/) || [])[1] || 'image/jpeg';
+  const bin = atob(b);
+  const u = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return new Blob([u], { type: mime });
+}
+
+/* =================== Datum & Steuerfristen =================== */
+const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const fromISO = (s) => { const [y, m, d] = s.slice(0, 10).split('-').map(Number); return new Date(y, m - 1, d); };
+const todayISO = () => toISO(new Date());
+function fmtDate(iso) { if (!iso) return '–'; const [y, m, d] = String(iso).slice(0, 10).split('-'); return `${d}.${m}.${y}`; }
+function parseDate(input) {
+  const s = String(input || '').trim();
+  let y, m, d, mm;
+  if ((mm = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/))) [d, m, y] = [+mm[1], +mm[2], +mm[3]];
+  else if ((mm = s.match(/^(\d{4})-(\d{2})-(\d{2})$/))) [y, m, d] = [+mm[1], +mm[2], +mm[3]];
+  else return null;
+  const dt = new Date(y, m - 1, d);
+  if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) return null;
+  return toISO(dt);
+}
+const addDays = (iso, n) => { const d = fromISO(iso); d.setDate(d.getDate() + n); return toISO(d); };
+const daysUntil = (iso) => (iso ? Math.round((fromISO(iso) - fromISO(todayISO())) / 86400000) : null);
+function easter(y) {
+  const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
+  return toISO(new Date(y, month - 1, day));
+}
+const holCache = {};
+function holidays(y) {
+  if (holCache[y]) return holCache[y];
+  const e = easter(y);
+  return (holCache[y] = new Set([`${y}-01-01`, addDays(e, -2), addDays(e, 1), `${y}-05-01`, addDays(e, 39), addDays(e, 50), `${y}-10-03`, `${y}-12-25`, `${y}-12-26`]));
+}
+const isWorkday = (iso) => { const d = fromISO(iso); const w = d.getDay(); return w !== 0 && w !== 6 && !holidays(d.getFullYear()).has(iso); };
+const shiftWork = (iso) => { let c = iso; while (!isWorkday(c)) c = addDays(c, 1); return c; };
+function thirdLastBankday(y, m0) { let d = toISO(new Date(y, m0 + 1, 0)), n = 0; for (;;) { if (isWorkday(d) && ++n === 3) return d; d = addDays(d, -1); } }
+function monthly(day, offset) {
+  return (from, months, dfv) => {
+    const s = fromISO(from), out = [];
+    for (let i = -1; i < months; i++) {
+      const p = new Date(s.getFullYear(), s.getMonth() + i - 1, 1);
+      const iso = shiftWork(toISO(new Date(p.getFullYear(), p.getMonth() + offset(dfv), day)));
+      if (iso >= from) out.push(iso);
+    }
+    return out;
+  };
+}
+function fixedDays(days) {
+  return (from, months) => {
+    const s = fromISO(from), end = new Date(s.getFullYear(), s.getMonth() + months, s.getDate()), out = [];
+    for (let y = s.getFullYear(); y <= end.getFullYear(); y++) for (const [m, d] of days) { const dt = new Date(y, m - 1, d); if (dt >= s && dt < end) out.push(shiftWork(toISO(dt))); }
+    return out;
+  };
+}
+const TAX = [
+  { key: 'ust_va', title: 'tax.t_ustva', dates: monthly(10, (df) => (df ? 2 : 1)) },
+  { key: 'lst', title: 'tax.t_lst', dates: monthly(10, () => 1) },
+  { key: 'sv', title: 'tax.t_sv', dates: (from, months) => { const s = fromISO(from), o = []; for (let i = 0; i < months; i++) { const d = thirdLastBankday(s.getFullYear(), s.getMonth() + i); if (d >= from) o.push(d); } return o; } },
+  { key: 'est_vz', title: 'tax.t_estvz', dates: fixedDays([[3, 10], [6, 10], [9, 10], [12, 10]]) },
+  { key: 'gewst_vz', title: 'tax.t_gewst', dates: fixedDays([[2, 15], [5, 15], [8, 15], [11, 15]]) },
+  { key: 'grundst', title: 'tax.t_grundst', dates: fixedDays([[2, 15], [5, 15], [8, 15], [11, 15]]) },
+  { key: 'sondervz', title: 'tax.t_sondervz', dates: fixedDays([[2, 10]]) },
+];
+function dueLabel(d) {
+  if (d === null) return t('tasks.noDate');
+  if (d < 0) return t('tasks.overdue', { count: -d });
+  if (d === 0) return t('tasks.today');
+  return t('tasks.inDays', { count: d });
+}
+const sev = (d) => (d === null ? 'grey' : d < 0 ? 'red' : d <= 3 ? 'orange' : d <= 14 ? 'yellow' : 'green');
+
+/* =================== Speicher (Konto-DB oder Browser) =================== */
+const HOLDER = 'dev-' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+const COLS = ['docs', 'pages', 'tasks', 'invoices', 'replies', 'meta'];
+const store = {
+  db: null, uid: null, space: 'main', mode: 'local', mem: {},
+  base() { return this.db.doc(`data/users/${this.uid}/${this.space}`); },
+  lsKey(col) { return `eoffis.${this.space}.${col}`; },
+  lsRead(col) { try { return JSON.parse(localStorage.getItem(this.lsKey(col)) || '{}'); } catch { return this.mem[this.lsKey(col)] || {}; } },
+  lsWrite(col, map) { this.mem[this.lsKey(col)] = map; try { localStorage.setItem(this.lsKey(col), JSON.stringify(map)); } catch { /* Speicher voll oder gesperrt – bleibt im Arbeitsspeicher */ if (!this.full) { this.full = true; setTimeout(() => { try { render(); } catch {} }, 0); } } },
+  async getProfile() {
+    if (this.mode === 'db') { const s = await this.base().get(); return s.exists ? clone(s.data()) : null; }
+    const p = this.lsRead('profile'); return p && p.company_name !== undefined ? p : null;
+  },
+  async setProfile(p) {
+    if (this.mode === 'db') return this.base().set(clone(p));
+    this.lsWrite('profile', clone(p));
+  },
+  async all(col) {
+    if (this.mode === 'db') {
+      // Seitenweise lesen: eine Abfrage liefert höchstens 1000 Dokumente
+      const out = new Map(); let last = null;
+      for (let round = 0; round < 500; round++) {
+        let q = this.base().collection(col).orderBy('created_at');
+        if (last) q = q.where('created_at', '>=', last);
+        const s = await q.limit(1000).get();
+        let added = 0;
+        for (const d of s.docs) if (!out.has(d.id)) { out.set(d.id, Object.assign({ id: d.id }, clone(d.data()))); added++; }
+        if (s.size < 1000 || !added) break;
+        last = s.docs[s.docs.length - 1].data().created_at;
+      }
+      return [...out.values()];
+    }
+    return Object.entries(this.lsRead(col)).map(([id, v]) => Object.assign({ id }, v));
+  },
+  async where(col, field, val) {
+    if (this.mode === 'db') { const s = await this.base().collection(col).where(field, '==', val).limit(200).get(); return s.docs.map((d) => Object.assign({ id: d.id }, clone(d.data()))); }
+    return (await this.all(col)).filter((x) => x[field] === val);
+  },
+  async one(col, id) {
+    if (this.mode === 'db') { const s = await this.base().collection(col).doc(id).get(); return s.exists ? Object.assign({ id }, clone(s.data())) : null; }
+    const v = this.lsRead(col)[id]; return v ? Object.assign({ id }, v) : null;
+  },
+  async put(col, obj) {
+    const { id, ...body } = obj;
+    if (!body.created_at) body.created_at = new Date().toISOString();
+    if (this.mode === 'db') return this.base().collection(col).doc(id).set(clone(body));
+    const m = this.lsRead(col); m[id] = clone(body); this.lsWrite(col, m);
+  },
+  async del(col, id) {
+    if (this.mode === 'db') return this.base().collection(col).doc(id).delete();
+    const m = this.lsRead(col); delete m[id]; this.lsWrite(col, m);
+  },
+};
+
+/* =================== Zustand =================== */
+const S = {
+  view: 'home', params: {}, stack: [], profile: null, docs: [], tasks: [], invoices: [], replies: [],
+  loaded: false, loadError: false, sample: null, sampleLimits: null, downloads: null, busy: null,
+  scan: null, crop: null, filters: { q: '', f: 'open', folder: null, contracts: false }, invFilter: 'all', showDone: false,
+};
+const FOLDERS = ['buchhaltung', 'firma', 'finanzamt', 'bank', 'versicherungen', 'personal', 'behoerden', 'mietvertraege', 'hygiene', 'sonstiges'];
+const KINDS = ['payment', 'reply', 'contract', 'cancellation', 'skonto', 'tax', 'hygiene', 'personnel', 'permit', 'other'];
+const INDUSTRIES = ['gastro', 'handwerk', 'friseur', 'reinigung', 'einzelhandel', 'sonstiges'];
+
+function addHistory(rec, action, note) {
+  rec.history = (rec.history || []).concat([{ at: nowIso(), action, note: note || '' }]).slice(-40);
+}
+/** Speichert mit Versionsprüfung gegen unbemerktes Überschreiben */
+async function saveVersioned(col, rec, note) {
+  // Im Konto-Speicher: Datensatz kurz sperren, damit zwei Geräte nicht gleichzeitig dieselbe Version überschreiben
+  if (store.mode === 'db') {
+    let ok = false;
+    for (let i = 0; i < 15 && !ok; i++) {
+      try { const l = await store.base().collection(col).doc(rec.id).acquire({ holder: HOLDER, ttlMs: 2000 }); ok = !l || l.acquired !== false; } catch { ok = true; }
+      if (!ok) await new Promise((r) => setTimeout(r, 200 + Math.random() * 200));
+    }
+    if (!ok) { const e = new Error('conflict'); e.conflict = true; throw e; }
+  }
+  const current = await store.one(col, rec.id);
+  if (current && (current.version || 0) !== (rec.version || 0)) {
+    const e = new Error('conflict'); e.conflict = true; e.current = current; throw e;
+  }
+  const next = Object.assign({}, rec, { version: (rec.version || 0) + 1, updated_at: nowIso() });
+  addHistory(next, current ? 'changed' : 'created', note);
+  await store.put(col, next);
+  return next;
+}
+function upsertLocal(listName, rec) {
+  const list = S[listName];
+  const i = list.findIndex((x) => x.id === rec.id);
+  if (i >= 0) list[i] = rec; else list.unshift(rec);
+}
+
+/* =================== Oberfläche: Grundgerüst =================== */
+const ICON = {
+  home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
+  invoice: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+  folder: '<path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  more: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  camera: '<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>',
+  clip: '<path d="M20 11l-8 8a5 5 0 0 1-7-7l9-9a3.5 3.5 0 0 1 5 5l-9 9a2 2 0 0 1-3-3l8-8"/>',
+  pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+  cal: '<rect x="3" y="5" width="18" height="16" rx="1"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  bank: '<path d="M3 10l9-6 9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18"/>',
+  box: '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+  archive: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/>',
+  spark: '<path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/>',
+  flask: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/>',
+  xml: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13l-2 2 2 2M14 13l2 2-2 2"/>',
+  bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  check: '<path d="M5 12l5 5 9-10"/>',
+  lang: '<path d="M4 5h9M8.5 3v2M6 5c0 4 3 7 6 8M11 5c0 3-3 7-7 8M13 21l4-9 4 9M14.5 18h5"/>',
+  doc: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
+  dots: '<circle cx="12" cy="12" r="9"/><path d="M8 12h.01M12 12h.01M16 12h.01" stroke-width="3"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+};
+const ico = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n] || ''}</svg>`;
+
+const TABS = [['home', 'tabs.start', 'home'], ['docs', 'web.uiAblage', 'folder'], ['scan', 'home.scan', 'camera'], ['tasks', 'tabs.deadlines', 'clock'], ['more', 'tabs.more', 'menu']];
+const ROOTS = new Set(['home', 'docs', 'tasks', 'invoices', 'more']);
+
+function go(view, params = {}, opts = {}) {
+  if (!opts.replace && !ROOTS.has(view)) S.stack.push({ view: S.view, params: S.params });
+  if (ROOTS.has(view)) S.stack = [];
+  S.view = view; S.params = params;
+  render();
+  window.scrollTo(0, 0);
+}
+function back() {
+  const prev = S.stack.pop();
+  if (prev) { S.view = prev.view; S.params = prev.params; } else { S.view = 'home'; S.params = {}; }
+  render();
+}
+
+function toast(msg) {
+  document.querySelectorAll('.toast').forEach((x) => x.remove());
+  const el = document.createElement('div');
+  el.className = 'toast'; el.setAttribute('role', 'status'); el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2600);
+}
+function ask(message, okLabel, danger) {
+  return new Promise((resolve) => {
+    const layer = $('#layer');
+    layer.innerHTML = `<div class="modal" role="dialog" aria-modal="true"><div class="card"><p>${esc(message)}</p>
+      <div class="grid2"><button class="btn ghost" id="askNo">${esc(t('common.cancel'))}</button>
+      <button class="btn ${danger ? 'danger' : ''}" id="askYes">${esc(okLabel || t('common.confirm'))}</button></div></div></div>`;
+    const done = (v) => { layer.innerHTML = ''; resolve(v); };
+    $('#askNo').onclick = () => done(false);
+    $('#askYes').onclick = () => done(true);
+    $('#askYes').focus();
+  });
+}
+function showModal(html) {
+  $('#layer').innerHTML = `<div class="modal" role="dialog" aria-modal="true" id="modalBg"><div class="card">${html}
+    <button class="btn ghost" data-a="closeModal">${esc(t('common.close'))}</button></div></div>`;
+}
+function errText(e) { return e && e.message ? e.message : String(e && e.code ? e.code : e); }
+/** Lange Listen seitenweise zeigen (je 100), damit auch 10.000+ Einträge flüssig bleiben */
+const PAGE = 100;
+const lim = (k) => (S.lim && S.lim[k]) || PAGE;
+const moreBtn = (k, total) => (total > lim(k) ? `<button class="btn sec" data-a="showMore" data-v="${k}">${esc(t('web.showMore', { count: Math.min(PAGE, total - lim(k)), total }))}</button>` : '');
+async function guard(fn) {
+  try { return await fn(); } catch (e) {
+    if (e && e.conflict) { toast(t('doc.conflict')); await reloadAll(); render(); return; }
+    console.error(e);
+    const m = String((e && e.message) || '');
+    if (e && e.code === 'quota_exceeded') toast(t('web.storeQuota'));
+    else if (e && e.code === 'resource_exhausted') toast(t('web.busy'));
+    else if (/too large|document size|256/i.test(m)) toast(t('web.tooLarge'));
+    else toast(t('web.saveFailed', { msg: errText(e) }));
+  }
+}
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); toast(t('web.copied')); }
+  catch { showModal(`<textarea class="in" style="min-height:220px" readonly id="copyBox">${esc(text)}</textarea>`); const b = $('#copyBox'); b.focus(); b.select(); }
+}
+async function saveFile(filename, data) {
+  if (!S.downloads) { toast(t('web.downloadUnavailable')); return; }
+  try { await S.downloads.save({ filename, data }); }
+  catch (e) { toast(e && e.code === 'declined' ? t('web.downloadDeclined') : t('web.saveFailed', { msg: errText(e) })); }
+}
+
+/* =================== KI (Claude über das eigene Konto) =================== */
+function aiError(e) {
+  const c = e && e.code;
+  if (c === 'not_granted' || c === 'sampling_disabled' || c === 'not_declared' || c === 'capability_disabled') return t('web.aiDeclined');
+  if (c === 'rate_limited') return window.EOFFIS_HOST && e.message ? e.message : t('web.aiRate');
+  if (window.EOFFIS_HOST && (c === 'not_configured' || c === 'busy') && e.message) return e.message;
+  if (c === 'invalid_json') return t('web.aiJson');
+  return t('web.aiFail');
+}
+async function pagesAsBlobs(docId) {
+  const pages = (await store.where('pages', 'docId', docId)).sort((a, b) => a.idx - b.idx);
+  return pages.filter((p) => p.dataUrl).map((p) => dataUrlToBlob(p.dataUrl));
+}
+async function aiInputFor(doc) {
+  if (doc.file_kind === 'xml') {
+    const pages = await store.where('pages', 'docId', doc.id);
+    const xml = (pages[0] && pages[0].xml) || '';
+    return { text: `Inhalt der E-Rechnung (XML):\n\n${xml.slice(0, 60000)}`, images: [] };
+  }
+  const blobs = await pagesAsBlobs(doc.id);
+  const max = (S.sampleLimits && S.sampleLimits.images && S.sampleLimits.images.maxCount) || 20;
+  return { text: `Die Bilder zeigen das Dokument, Seite für Seite (${Math.min(blobs.length, max)} von ${blobs.length} Seiten).`, images: blobs.slice(0, max), cut: blobs.length > max ? max : 0 };
+}
+function companyLine() {
+  const p = S.profile || {};
+  return `Betrieb des Nutzers: ${p.company_name || '–'} (Branche: ${t('settings.ind_' + (p.industry || 'sonstiges'))})${p.address ? `, Anschrift:\n${p.address}` : ''}.`;
+}
+async function aiJson(prompt, images) {
+  const opts = {};
+  if (images && images.length) opts.images = images;
+  return S.sample.json(prompt, opts);
+}
+
+/* =================== Start: Konto, Speicher, KI verbinden =================== */
+async function boot() {
+  setLang('de');
+  render();
+  const c = window.claude;
+  const timer = setTimeout(() => { if (!S.loaded) { S.loadError = true; render(); } }, 12000);
+  try {
+    if (c && c.use) {
+      const [db, user, sample, downloads] = await Promise.all([c.use('db'), c.use('user'), c.use('sample'), c.use('downloads')]);
+      S.sample = sample; S.downloads = downloads;
+      if (sample) S.sampleLimits = await sample.limits().catch(() => null);
+      const id = user ? await user.id().catch(() => null) : null;
+      if (db && id) { store.db = db; store.uid = id; store.mode = 'db'; }
+    }
+  } catch (e) { console.warn(e); }
+  try { const sp = localStorage.getItem('eoffis.space'); if (sp === 'demo') store.space = 'demo'; } catch {}
+  await reloadAll().catch((e) => { console.error(e); S.loadError = true; });
+  // Früher automatisch angelegte Beispielunterlagen entfernen – jeder sieht nur seine eigenen Unterlagen
+  if (!S.loadError) { try { if (await purgeExamples()) await reloadAll(); } catch (e) { console.error(e); } }
+  clearTimeout(timer);
+  if (!S.loadError) { try { await accSecret(); await ensureAdvisorTask(); } catch (e) { console.warn(e); } }
+  S.loaded = true;
+  if (!S.profile) S.view = 'setup';
+  render();
+}
+async function reloadAll() {
+  S.profile = await store.getProfile();
+  if (isSeedProfile(S.profile)) S.profile = null; // Beispiel-Betrieb „Demo Bistro“ → eigene Betriebsdaten anlegen
+  if (S.profile && S.profile.language) setLang(S.profile.language);
+  const [docs, tasks, invoices, replies] = await Promise.all(['docs', 'tasks', 'invoices', 'replies'].map((c) => store.all(c)));
+  S.docs = docs.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')).map(normalizeDoc);
+  S.tasks = tasks; S.invoices = invoices.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')); S.replies = replies;
+  S.loadError = false;
+}
+
+/** Ältere Belege an die neue Ablage anpassen (nur im Speicher; gespeichert wird beim nächsten Ändern) */
+function normalizeDoc(d) {
+  if (d.folder === 'rechnungen') d.folder = 'buchhaltung';
+  if (d.folder === 'bank' && /kontoauszug/i.test(d.doc_type || '')) d.folder = 'buchhaltung';
+  if (!d.filed_at && d.status && d.status !== 'saved') d.filed_at = d.reviewed_at || d.done_at || d.created_at;
+  return d;
+}
+
+/* =================== Render =================== */
+function render() {
+  renderTop(); renderTabs();
+  const main = $('#main');
+  if (!S.loaded) {
+    main.innerHTML = `<div class="card"><div class="spin"></div><p class="muted" style="text-align:center">${esc(S.loadError ? t('web.storeSlow') : t('web.loadingStore'))}</p></div>`;
+    return;
+  }
+  const v = VIEWS[S.view] || VIEWS.home;
+  main.innerHTML = banners() + v.render();
+  if (v.after) v.after();
+}
+function banners() {
+  let h = '';
+  if (store.space === 'demo') h += `<div class="demo-line"><span>${ico('flask')}${esc(t('web.uiDemoShort'))}</span><button data-a="leaveDemo">${esc(t('web.demoLeave'))}</button></div>`;
+  if (store.mode === 'local') h += `<div class="banner">${esc(t('web.localMode'))}</div>`;
+  if (store.full) h += `<div class="banner warn">${esc(t('web.storageFull'))}</div>`;
+  return h;
+}
+function renderTop() {
+  const v = VIEWS[S.view] || VIEWS.home;
+  const title = v.title ? v.title() : '';
+  const showBack = !ROOTS.has(S.view) && S.view !== 'setup' || (S.view === 'more' && S.stack.length);
+  const plus = S.loaded && v.topPlus ? `<button class="gear plus" ${v.topPlus} aria-label="${esc(t('web.uiNew'))}">${ico('plus')}</button>` : '';
+  const gear = S.loaded && S.view !== 'setup' && S.view !== 'more' && ROOTS.has(S.view) ? `<button class="gear" data-a="openSearch" aria-label="${esc(t('common.search'))}">${ico('search')}</button>` : '';
+  const lg = S.loaded ? langButton() : '';
+  $('#top').innerHTML = (showBack ? `<button class="back" data-a="back" aria-label="${esc(t('common.back'))}">←</button>` : '') +
+    (S.view === 'home' || S.view === 'setup' ? `<span class="brand">eOffis</span><h1 class="muted" style="font-size:1rem;font-weight:600">${esc(title)}</h1>` : `<h1>${esc(title)}</h1>`) + plus + gear + lg;
+}
+function renderTabs() {
+  const tabs = $('#tabs');
+  if (S.view === 'setup' || !S.loaded) { tabs.hidden = true; return; }
+  tabs.hidden = false;
+  const root = ROOTS.has(S.view) ? S.view : (S.stack.find((s) => ROOTS.has(s.view)) || { view: '' }).view;
+  tabs.innerHTML = `<div class="tabs-in">${TABS.map(([v, k, i]) => v === 'scan'
+    ? `<button class="tab scan" data-go="scan" aria-label="${esc(t(k))}"><span class="sb">${ico(i)}</span><span>${esc(t('web.uiScanTab'))}</span></button>`
+    : `<button class="tab" data-go="${v}" ${root === v ? 'aria-current="page"' : ''}>${ico(i)}<span>${esc(t(k))}</span></button>`).join('')}</div>`;
+}
+/** iOS-Listenzeile */
+function cell({ icon, ic, title, sub, right, attrs, chevron = true }) {
+  return `<button class="cell ${icon ? '' : 'noicon'}" ${attrs || ''}>${icon ? `<span class="ci ${ic || ''}">${ico(icon)}</span>` : ''}<span class="cx"><span class="ct">${esc(title)}</span>${sub ? `<span class="cs" style="display:block">${esc(sub)}</span>` : ''}</span>${right ? `<span class="cr">${esc(right)}</span>` : ''}${chevron ? '<span class="chev" aria-hidden="true">›</span>' : ''}</button>`;
+}
+const group = (cells, head) => `${head ? `<div class="sec-h">${esc(head)}</div>` : ''}<div class="group">${cells.join('')}</div>`;
+const seg = (opts, cur, action) => `<div class="seg" role="group">${opts.map(([k, l]) => `<button aria-pressed="${cur === k}" data-a="${action}" data-v="${k}">${esc(l)}</button>`).join('')}</div>`;
+const chip = (label, pressed, attrs) => `<button class="chip" aria-pressed="${pressed ? 'true' : 'false'}" ${attrs}>${esc(label)}</button>`;
+const field = (id, label, value, extra = '') => `<label class="f" for="${id}">${esc(label)}<input class="in" id="${id}" value="${esc(value)}" ${extra}></label>`;
+const area = (id, label, value, extra = '') => `<label class="f" for="${id}">${esc(label)}<textarea class="in" id="${id}" ${extra}>${esc(value)}</textarea></label>`;
+const val = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+const busyCard = (msg) => `<div class="card"><div class="spin"></div><p class="muted" style="text-align:center">${esc(msg)}</p></div>`;
+function item({ title, sub, right, sevc, attrs }) {
+  return `<button class="item ${sevc ? 'sev-' + sevc : ''}" ${attrs || ''}><div><div class="t">${esc(title)}</div>${sub ? `<div class="s">${esc(sub)}</div>` : ''}</div>${right ? `<div class="r">${esc(right)}</div>` : ''}</button>`;
+}
+
+/* =================== Ansichten =================== */
+const VIEWS = {};
+
+/* ---------- Einrichtung ---------- */
+VIEWS.setup = {
+  title: () => t('web.setupTitle'),
+  render() {
+    return `<div class="card"><h2>${esc(t('web.setupTitle'))}</h2><p class="muted">${esc(t('web.setupIntro'))}</p>
+      <div class="chips">${LANGS.map((l) => chip(t('lang.' + l), lang === l, `data-a="setupLang" data-v="${l}"`)).join('')}</div>
+      ${field('s_name', t('auth.companyName'), '', 'autocomplete="organization"')}
+      <div class="f" style="font-weight:700;color:var(--muted);font-size:.86rem">${esc(t('settings.industry'))}</div>
+      <div class="chips" id="s_ind">${INDUSTRIES.map((i, n) => chip(t('settings.ind_' + i), S.setupInd === i, `data-a="pickInd" data-v="${i}"`)).join('')}</div>
+      ${field('s_mail', t('settings.advisorEmail'), '', 'type="email" autocomplete="off"')}
+      <button class="btn" data-a="setupSave">${esc(t('web.start'))}</button></div>
+`;
+  },
+};
+
+/* ---------- Start / Mein Büro ---------- */
+const FEATURES = () => [
+  ['camera', t('home.scan'), 'scan', {}],
+  ['xml', t('web.erech'), 'erech', {}],
+  ['clock', t('home.newTask'), 'task', { id: 'new' }],
+  ['clip', t('home.import'), 'scan', { pick: 1 }],
+  ['cal', t('tax.title'), 'tax', {}],
+  ['box', t('more.export'), 'export', {}],
+  ['folder', t('docs.title'), 'docs', {}],
+  ['archive', t('more.archive'), 'docs', { archived: 1 }],
+  ['gear', t('settings.title'), 'settings', {}],
+];
+const REM_DEFAULT = { inApp: true, contract: [30, 7], skonto: [3, 1], other: [3, 1] };
+const remCfg = () => Object.assign({}, REM_DEFAULT, (S.profile && S.profile.reminders) || {});
+function offsetsFor(kind) {
+  const c = remCfg();
+  return kind === 'contract' || kind === 'cancellation' ? c.contract : kind === 'skonto' ? c.skonto : c.other;
+}
+/** Offene Fristen, für die heute eine Erinnerung fällig ist (eingestellte Vorlaufzeiten) oder die überfällig sind */
+function dueReminders() {
+  return S.tasks.filter((x) => x.status !== 'done' && x.due_date).map((x) => ({ x, d: daysUntil(x.due_date) }))
+    .filter(({ x, d }) => d < 0 || d <= Math.max(0, ...offsetsFor(x.kind))).sort((a, b) => a.d - b.d);
+}
+const INFO = ['mindest', 'erech', 'kasse', 'aufb', 'frist'];
+VIEWS.home = {
+  title: () => t('home.title'),
+  render() {
+    const p = S.profile;
+    if (!p && store.space !== 'demo') return VIEWS.setup.render();
+    const docs = S.docs.filter((d) => !d.archived);
+    const review = docs.filter((d) => d.status === 'saved').length;
+    const head = (label, to, n) => `<div class="sec-h row between"><span>${esc(label)}</span>${n ? `<button class="sec-link" data-go="${to}">${esc(t('web.uiAll'))} (${n}) ›</button>` : ''}</div>`;
+    const rc = docs.slice(0, 3).map((d) => cell({ icon: d.file_kind === 'xml' ? 'xml' : 'doc', ic: d.status === 'saved' ? 'o' : d.status === 'done' ? '' : 'g', title: d.title, sub: [fmtDate(d.created_at), d.status === 'saved' ? t('web.uiToReview') : t('docs.status_' + d.status)].join(' · '), right: d.amount_gross != null ? money(d.amount_gross, d.currency) : '', attrs: `data-go="doc" data-id="${d.id}"` }));
+    return `${p ? `<p class="muted company">${esc(p.company_name)}</p>` : ''}
+      <button class="scanhero" data-go="scan"><span class="si">${ico('camera')}</span><span class="st"><b>${esc(t('web.uiScanHero'))}</b><small>${esc(t('web.uiScanHeroSub'))}</small></span><span class="chev" aria-hidden="true">›</span></button>
+      ${voiceButton()}
+      ${todayHtml()}
+      ${pushCard(false)}
+      ${head(t('web.uiRecent') + (review ? ' · ' + t('web.uiReviewN', { count: review }) : ''), 'docs', docs.length)}
+      ${rc.length ? `<div class="group">${rc.join('')}</div>` : `<div class="group">${cell({ icon: 'doc', title: t('docs.empty'), attrs: 'data-go="scan"' })}</div>`}
+`;
+  },
+};
+
+/* ---------- Belege ---------- */
+/* Ablage: Ordnerübersicht (wie „Dateien“ am iPhone) → Ordner → Dokumente */
+const FICON = { buchhaltung: 'invoice', firma: 'gear', finanzamt: 'cal', rechnungen: 'invoice', bank: 'bank', versicherungen: 'check', personal: 'pen', behoerden: 'info', mietvertraege: 'home', hygiene: 'flask', sonstiges: 'folder' };
+const CHECK_FIRMA = [
+  ['gewerbe', /gewerbe(an|um|ab)?meldung|gewerbeschein|gewerbeerlaubnis/],
+  ['hr', /handelsregister/],
+  ['ausweis', /personalausweis|reisepass|ausweis/],
+  ['stnr', /steuernummer|erfassungsbogen|steuerliche erfassung/],
+  ['ustid', /umsatzsteuer-identifikationsnummer|ust-?id/],
+  ['vertrag', /gesellschaftsvertrag|satzung|gesellschafterliste/],
+  ['haftpflicht', /betriebshaftpflicht|haftpflichtversicherung/],
+];
+const docText = (d) => [d.title, d.sender, d.invoice_number, d.doc_type, d.explanation, d.ocr_text, d.contract_number].filter(Boolean).join(' ').toLowerCase();
+function docRows(list) {
+  const repl = new Set(S.replies.map((r) => r.docId));
+  return `${list.length > PAGE ? `<p class="muted small">${esc(tn('web.docs', list.length))}</p>` : ''}${list.length ? group(list.slice(0, lim('docs')).map((d) => cell({
+    icon: d.file_kind === 'xml' ? 'xml' : 'doc', ic: d.status === 'done' ? '' : d.status === 'reviewed' ? 'g' : 'o',
+    title: d.title,
+    sub: [fmtDate(d.created_at), d.analyzed_at ? t('docs.folder_' + d.folder) : t('docs.notAnalyzed'), t('docs.status_' + d.status), repl.has(d.id) ? '✉ ' + t('docs.withReply') : '', d.example ? t('web.example') : ''].filter(Boolean).join(' · '),
+    right: d.amount_gross != null ? money(d.amount_gross, d.currency) : '',
+    attrs: `data-go="doc" data-id="${d.id}"`,
+  }))) + moreBtn('docs', list.length) : `<div class="empty">${ico('folder')}<p class="muted">${esc(t('docs.empty'))}</p><button class="btn" data-go="scan">${ico('camera')}${esc(t('docs.scanImport'))}</button></div>`}`;
+}
+function docSearchAfter() {
+  const q = $('#dq'); if (!q) return;
+  let tm; q.oninput = () => { clearTimeout(tm); tm = setTimeout(() => { S.filters.q = q.value; S.lim = null; const pos = q.selectionStart; render(); const n = $('#dq'); n.focus(); n.setSelectionRange(pos, pos); }, 250); };
+}
+VIEWS.docs = {
+  title: () => t('web.uiAblage'),
+  render() {
+    const F = S.filters, q = F.q.trim().toLowerCase();
+    const search = `<input class="in" id="dq" type="search" value="${esc(F.q)}" placeholder="${esc(t('web.uiSearchAll'))}" autocomplete="off" aria-label="${esc(t('common.search'))}">`;
+    if (q) return search + `<div id="dlist">${docRows(S.docs.filter((d) => docText(d).includes(q)))}</div>`;
+    const live = S.docs.filter((d) => !d.archived);
+    const review = live.filter((d) => d.status === 'saved').length;
+    const cnt = (f) => live.filter((d) => d.folder === f).length;
+    const contracts = live.filter((d) => d.is_contract || d.contract_end || d.cancellation_date).length;
+    const firmaMiss = CHECK_FIRMA.filter(([, re]) => !S.docs.some((d) => re.test(docText(d)))).length;
+    return `${search}
+      ${review ? `<div class="group">${cell({ icon: 'doc', ic: 'o', title: t('web.uiInbox'), sub: t('web.uiInboxH'), right: String(review), attrs: 'data-a="openList" data-v="review"' })}</div>` : ''}
+      ${group(FOLDERS.map((f) => { const accOpenN = f === 'buchhaltung' ? live.filter((d) => d.folder === f && !isTransferred(d)).length : 0;
+        return cell({ icon: FICON[f] || 'folder', ic: accOpenN ? 'o' : 'f-' + f, title: t('docs.folder_' + f), sub: f === 'firma' ? (firmaMiss ? t('web.uiFirmaMiss', { count: firmaMiss }) : t('web.uiFirmaOk')) : accOpenN ? `● ${accOpenN} ${t('acc.notTransferred')}` : '', right: String(cnt(f)), attrs: f === 'buchhaltung' ? 'data-a="openAcc"' : `data-a="openList" data-v="f:${f}"` }); }), t('web.uiFolders'))}
+      ${group([
+        cell({ icon: 'pen', ic: 'g', title: t('web.contracts'), right: String(contracts), attrs: 'data-go="contracts"' }),
+        cell({ icon: 'check', ic: 'g', title: t('web.done'), right: String(live.filter((d) => d.status === 'done').length), attrs: 'data-a="openList" data-v="done"' }),
+        cell({ icon: 'archive', ic: 'g', title: t('docs.archived'), right: String(S.docs.filter((d) => d.archived).length), attrs: 'data-a="openList" data-v="archived"' }),
+        cell({ icon: 'folder', ic: 'g', title: t('web.uiAllDocs'), right: String(live.length), attrs: 'data-a="openList" data-v="all"' }),
+      ], t('web.uiSmart'))}`;
+  },
+  after: docSearchAfter,
+};
+VIEWS.doclist = {
+  title: () => { const F = S.filters; return F.folder ? t('docs.folder_' + F.folder) : F.contracts ? t('web.contracts') : F.review ? t('web.uiInbox') : F.f === 'archived' ? t('docs.archived') : F.f === 'done' ? t('web.done') : t('web.uiAllDocs'); },
+  render() {
+    const F = S.filters, q = F.q.trim().toLowerCase();
+    const list = S.docs.filter((d) => {
+      if (F.f === 'archived' ? !d.archived : d.archived) return false;
+      if (F.f === 'open' && d.status === 'done') return false;
+      if (F.f === 'done' && d.status !== 'done') return false;
+      if (F.review && d.status !== 'saved') return false;
+      if (F.contracts && !d.is_contract && !d.contract_end && !d.cancellation_date) return false;
+      if (F.folder && d.folder !== F.folder) return false;
+      return !q || docText(d).includes(q);
+    });
+    const firma = F.folder === 'firma' ? `<div class="card"><h2>${esc(t('web.uiChecklist'))}</h2><p class="muted small">${esc(t('web.uiChecklistH'))}</p>
+      <div class="group">${CHECK_FIRMA.map(([k, re]) => { const hit = S.docs.find((d) => re.test(docText(d)));
+        return hit ? cell({ icon: 'check', ic: 'g', title: t('web.uiCk_' + k), sub: hit.title, attrs: `data-go="doc" data-id="${hit.id}"` })
+          : cell({ icon: 'camera', ic: 'o', title: t('web.uiCk_' + k), sub: t('web.uiMissing'), attrs: 'data-go="scan"' }); }).join('')}</div></div>${typeof firmaExtraHtml === 'function' ? firmaExtraHtml() : ''}` : '';
+    return `${firma}<input class="in" id="dq" type="search" value="${esc(F.q)}" placeholder="${esc(t('common.search') + ': ' + t('docs.searchPh'))}" autocomplete="off" aria-label="${esc(t('common.search'))}">
+      <div id="dlist">${firma && !list.length ? '' : docRows(list)}</div>`;
+  },
+  after: docSearchAfter,
+};
+
+/* ---------- Scannen & Importieren ---------- */
+const MAX_PAGES = 50, MAX_BYTES = 25 * 1024 * 1024;
+async function loadDraft() {
+  if (S.scan) return S.scan;
+  // Entwurf liegt in einem eigenen Dokument (nicht im Profil – das bliebe sonst bei 50 Seiten nicht unter 256 KB)
+  let dr = null; try { dr = await store.one('meta', 'draft'); } catch (e) { console.warn(e); }
+  const p = S.profile || {};
+  const items = (dr && dr.items) || (p.draft && p.draft.items) || [];
+  S.scan = { items, open: true, restored: !!items.length };
+  return S.scan;
+}
+async function persistDraft() {
+  const p = S.profile || (S.profile = { company_name: '', industry: 'sonstiges', language: lang, created_at: nowIso() });
+  await store.put('meta', { id: 'draft', items: S.scan.items, updated_at: nowIso() });
+  if (p.draft) { delete p.draft; await store.setProfile(p); }
+}
+function draftProblem(items) {
+  if (items.some((i) => i.kind === 'xml') && items.length > 1) return 'scan.xmlAlone';
+  if (items.reduce((s, i) => s + (i.kind === 'xml' ? 1 : 1), 0) > MAX_PAGES) return 'scan.limitPages';
+  if (items.reduce((s, i) => s + (i.size || 0), 0) > MAX_BYTES) return 'scan.limitSize';
+  return null;
+}
+/** Bild → JPEG-Seite, klein genug für die Ablage (< 240 KB als Text) */
+function canvasToPage(canvas) {
+  let w = canvas.width, h = canvas.height, q = 0.62;
+  const maxSide = 1500;
+  let scale = Math.min(1, maxSide / Math.max(w, h));
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const c = document.createElement('canvas');
+    c.width = Math.round(w * scale); c.height = Math.round(h * scale);
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(canvas, 0, 0, c.width, c.height);
+    const d = c.toDataURL('image/jpeg', q);
+    if (d.length < 240000) return { dataUrl: d, w: c.width, h: c.height };
+    scale *= 0.82; q = Math.max(0.45, q - 0.05);
+  }
+  const c = document.createElement('canvas'); c.width = Math.round(w * scale); c.height = Math.round(h * scale);
+  c.getContext('2d').drawImage(canvas, 0, 0, c.width, c.height);
+  return { dataUrl: c.toDataURL('image/jpeg', 0.45), w: c.width, h: c.height };
+}
+const isImageFile = (f) => (f.type || '').startsWith('image/') || /\.(jpe?g|png|heic|heif|webp|gif)$/i.test(f.name || '');
+function loadImage(file) {
+  return new Promise((res, rej) => { const u = URL.createObjectURL(file); const img = new Image(); img.onload = () => res(img); img.onerror = () => { URL.revokeObjectURL(u); rej(new Error('image')); }; img.src = u; });
+}
+async function addPageFromCanvas(canvas, name, size) {
+  const pg = canvasToPage(canvas);
+  const id = uid();
+  await store.put('pages', { id, docId: 'draft', idx: 0, dataUrl: pg.dataUrl, w: pg.w, h: pg.h });
+  S.scan.items.push({ id, kind: 'page', name, size: size || pg.dataUrl.length * 0.75, thumb: thumbOf(canvas) });
+}
+function thumbOf(canvas) {
+  const c = document.createElement('canvas'); const s = 90 / Math.max(canvas.width, canvas.height);
+  c.width = Math.round(canvas.width * s); c.height = Math.round(canvas.height * s);
+  c.getContext('2d').drawImage(canvas, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.5);
+}
+async function importFiles(files) {
+  S.busy = t('scan.processing'); render();
+  try {
+    for (const f of files) {
+      const n = f.name.toLowerCase();
+      if (n.endsWith('.xml') || f.type.includes('xml')) {
+        const text = await f.text(); const id = uid();
+        await store.put('pages', { id, docId: 'draft', idx: 0, xml: text.slice(0, 200000) });
+        S.scan.items.push({ id, kind: 'xml', name: f.name, size: f.size });
+      } else if (n.endsWith('.pdf') || f.type === 'application/pdf') {
+        S.busy = t('web.pdfRender'); render();
+        try {
+          if (!window.pdfjsLib) throw new Error('pdf.js');
+          pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+          const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise;
+          const per = f.size / pdf.numPages;
+          const zx = await zugferdXml(pdf);
+          const firstIdx = S.scan.items.length;
+          for (let i = 1; i <= pdf.numPages && S.scan.items.length < MAX_PAGES + 1; i++) {
+            const page = await pdf.getPage(i);
+            const vp = page.getViewport({ scale: 1.6 });
+            const c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height;
+            await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+            await addPageFromCanvas(c, `${f.name} · ${i}`, per);
+          }
+          if (zx && S.scan.items[firstIdx]) {
+            const pg = await store.one('pages', S.scan.items[firstIdx].id);
+            if (pg) { pg.zugferd = zx.slice(0, 200000); await store.put('pages', pg); S.scan.items[firstIdx].name += ' · E-Rechnung'; }
+          }
+        } catch (e) { console.error(e); toast(t('web.pdfFail')); }
+      } else if (isImageFile(f)) {
+        const img = await loadImage(f);
+        const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+        c.getContext('2d').drawImage(img, 0, 0);
+        await addPageFromCanvas(c, f.name, f.size);
+      } else toast(`${f.name}: ${t('scan.unsupported')}`);
+    }
+    await persistDraft();
+  } catch (e) { await guard(() => { throw e; }); }
+  S.busy = null; render();
+}
+/* Die Claude-App für Android gibt Datei-Auswahl und Kamera nicht an Links weiter (Diagnose 05.11.2026:
+   Auswahl wird sofort abgebrochen, Kamera „NotAllowedError“). Dann Ausweg anzeigen: im Browser öffnen oder Bild einfügen. */
+const ARTIFACT_URL = 'https://claude.ai/artifact/Cm3MSFWDmSbfqy6Sh6ULi1';
+const SITE_URL = window.EOFFIS_HOST ? window.EOFFIS_HOST.siteUrl : ARTIFACT_URL;
+const UA = navigator.userAgent || '';
+const IN_CLAUDE_ANDROID = /Android/.test(UA) && /Claude\//.test(UA) && /; wv\)/.test(UA);
+function pickerHelp() {
+  return `<div class="card" style="border:2px solid var(--warn)"><h2>${esc(t('web.pickTitle'))}</h2>
+    <p class="small">${esc(t('web.pickWhy'))}</p>
+    <ol class="small" style="margin:6px 0;padding-inline-start:20px"><li>${esc(t('web.pickStep1'))}</li><li>${esc(t('web.pickStep2'))}</li><li>${esc(t('web.pickStep3'))}</li></ol>
+    <p class="mono small" style="user-select:all;overflow-wrap:anywhere;background:var(--bg);padding:8px;border-radius:8px">${esc(SITE_URL)}</p>
+    <button class="btn sec" data-a="copyLink">${esc(t('web.pickCopy'))}</button>
+    <p class="small muted">${esc(t('web.pickPaste'))}</p></div>`;
+}
+VIEWS.scan = {
+  title: () => t('scan.title'),
+  render() {
+    const sc = S.scan;
+    if (!sc) { loadDraft().then(() => { render(); if (S.params.pick) setTimeout(() => $('#fileIn') && $('#fileIn').click(), 50); }); return busyCard(t('common.loading')); }
+    if (S.crop) return renderCrop();
+    const items = sc.items, bytes = items.reduce((s, i) => s + (i.size || 0), 0), prob = draftProblem(items);
+    return `${sc.restored ? `<div class="banner">${esc(t('scan.draftRestored'))}</div>` : ''}
+      ${S.busy ? busyCard(S.busy) : `
+      ${items.length ? `<div class="card" style="border:2px solid var(--accent)"><h2>✓ ${esc(t('web.pagesDone', { count: items.length }))}</h2>
+        ${items.filter((i) => i.thumb).length ? `<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:10px">${items.map((it, i) => it.thumb ? `<img src="${it.thumb}" alt="${i + 1}" style="width:44px;height:60px;object-fit:cover;border-radius:4px;border:1px solid var(--line)">` : '').join('')}</div>` : ''}
+        <button class="btn" data-a="finishAnalyze" ${prob || !S.sample ? 'disabled' : ''}>${ico('spark')}${esc(t('web.finishAi', { count: items.length }))}</button>
+        <label class="btn sec pick">${ico('camera')}＋ ${esc(t('web.morePage'))}<input id="camIn" class="vh" type="file" accept="image/*" capture="environment"></label>
+        <button class="btn ghost" data-a="finishScan" data-v="save" ${prob ? 'disabled' : ''}>${esc(t('web.saveOnly'))}</button></div>` : `
+      <label class="btn pick big">${ico('camera')}${esc(t('web.camera'))}<input id="camIn" class="vh" type="file" accept="image/*" capture="environment"></label>
+      <p class="muted small" style="text-align:center">${esc(t('web.moreHint'))}</p>`}
+      <div class="grid2">
+        <label class="btn ghost pick">${ico('doc')}${esc(t('web.uiGallery'))}<input id="galIn" class="vh" type="file" multiple accept="image/*"></label>
+        <label class="btn ghost pick">${ico('clip')}${esc(t('web.uiFile'))}<input id="fileIn" class="vh" type="file" multiple accept=".jpg,.jpeg,.png,.heic,.heif,.webp,.pdf,.xml,image/*,application/pdf,text/xml,application/xml"></label>
+      </div>
+      ${S.pickerBlocked || IN_CLAUDE_ANDROID ? pickerHelp() : ''}
+      <details class="card more-opts"><summary>${esc(t('web.uiMoreOptions'))}</summary>
+        <p class="muted small">${esc(t('web.cameraHint'))}</p>
+        <textarea id="pasteIn" class="in" rows="2" style="border-style:dashed" placeholder="${esc(t('web.pastePh'))}" aria-label="${esc(t('web.pastePh'))}"></textarea>
+        <p style="font-weight:700;margin:12px 0 0">${esc(t('web.scanTipsTitle'))}</p><ol class="small" style="margin:6px 0 0;padding-inline-start:20px">${t('web.scanTips').split('|').map((x) => `<li>${esc(x)}</li>`).join('')}</ol>
+      </details>`}
+      ${items.length ? `<div class="card"><div class="row between"><h2>${esc(t('scan.pages', { count: items.length }))}</h2><span class="muted num">${esc(t('scan.size', { mb: (bytes / 1048576).toFixed(1) }))}</span></div>
+        <div class="meter"><i style="width:${Math.min(100, (bytes / MAX_BYTES) * 100)}%"></i></div>
+        ${prob ? `<div class="banner warn">${esc(t(prob))}</div>` : ''}
+        <button class="btn sm ghost" data-a="togglePages" aria-expanded="${sc.open}">${sc.open ? '▾' : '▸'} ${esc(t('scan.pageList'))} (${items.length})</button>
+        ${sc.open ? items.map((it, i) => `<div class="part">
+            ${it.thumb ? `<img src="${it.thumb}" alt="" style="width:34px;height:46px;object-fit:cover;border-radius:3px;border:1px solid var(--line)">` : `<span class="mono" style="width:34px;text-align:center">XML</span>`}
+            <div class="nm">${i + 1}. ${esc(it.name)}</div>
+            <button class="ib" data-a="partUp" data-i="${i}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(t('scan.moveUp'))}">▲</button>
+            <button class="ib" data-a="partDown" data-i="${i}" ${i === items.length - 1 ? 'disabled' : ''} aria-label="${esc(t('scan.moveDown'))}">▼</button>
+            <button class="ib" data-a="partDel" data-i="${i}" aria-label="${esc(t('scan.remove'))}">✕</button></div>`).join('') : ''}
+      </div>
+      <button class="btn ghost" data-a="discardScan">${esc(t('scan.discard'))}</button>` : ''}`;
+  },
+  after() {
+    const cam = $('#camIn'), gal = $('#galIn'), fi = $('#fileIn');
+    // Ein Foto → Zuschnitt auf A4; mehrere Bilder oder PDFs → direkt übernehmen
+    const onPhotos = async (input) => {
+      const fs = [...input.files]; input.value = '';
+      if (!fs.length) return;
+      if (fs.length === 1 && isImageFile(fs[0])) { try { const img = await loadImage(fs[0]); S.crop = initCrop(img, fs[0]); render(); } catch { toast(t('web.imageFail')); } }
+      else importFiles(fs);
+    };
+    if (cam) cam.onchange = () => onPhotos(cam);
+    if (gal) gal.onchange = () => onPhotos(gal);
+    if (fi) fi.onchange = () => { const fs = [...fi.files]; fi.value = ''; if (fs.length) importFiles(fs); };
+    // Öffnet sich die Auswahl gar nicht (sofortiger Abbruch), Ausweg einblenden
+    for (const el of [cam, gal, fi]) {
+      if (!el) continue;
+      let at = 0;
+      el.addEventListener('click', () => { at = Date.now(); });
+      el.addEventListener('cancel', () => { if (at && Date.now() - at < 1500 && !S.pickerBlocked) { S.pickerBlocked = true; render(); toast(t('web.pickTitle')); } });
+    }
+    // Bild aus der Zwischenablage einfügen (Handy: lange tippen → Einsetzen; PC: Strg+V)
+    const pin = $('#pasteIn');
+    if (pin) pin.onpaste = (ev) => {
+      const fs = [...((ev.clipboardData && ev.clipboardData.items) || [])].filter((i) => i.kind === 'file').map((i) => i.getAsFile()).filter(Boolean)
+        .map((f, k) => (f.name && f.name !== 'image.png' ? f : new File([f], `Eingefuegt_${k + 1}.${(f.type.split('/')[1] || 'png').replace('jpeg', 'jpg')}`, { type: f.type })));
+      ev.preventDefault(); pin.value = '';
+      if (!fs.length) return toast(t('web.pasteNone'));
+      if (fs.length === 1 && isImageFile(fs[0])) { loadImage(fs[0]).then((img) => { S.crop = initCrop(img, fs[0]); render(); }).catch(() => toast(t('web.imageFail'))); }
+      else importFiles(fs);
+    };
+    if (S.crop) cropAfter();
+  },
+};
+/* A4-Zuschnitt: Rahmen verschieben und skalieren */
+function initCrop(img, file) {
+  const ratio = 297 / 210;
+  const W = img.naturalWidth, H = img.naturalHeight;
+  let fw = W * 0.92, fh = fw * ratio;
+  if (fh > H * 0.96) { fh = H * 0.96; fw = fh / ratio; }
+  return { img, file, ratio, scale: 1, base: { w: fw, h: fh }, x: (W - fw) / 2, y: (H - fh) / 2 };
+}
+function renderCrop() {
+  return `<div class="card"><h2>${esc(t('web.cropTitle'))}</h2><p class="muted">${esc(t('web.cropHint'))}</p>
+    <div class="crop" id="cropBox"><canvas id="cropCv"></canvas><div class="frame" id="cropFr" tabindex="0" aria-label="A4"></div></div>
+    <label class="f" for="cropSz">${esc(t('web.frameSize'))}<input type="range" id="cropSz" min="30" max="100" value="${Math.round(S.crop.scale * 100)}"></label>
+    <button class="btn" data-a="cropUse">${esc(t('web.useCrop'))}</button>
+    <button class="btn sec" data-a="cropFull">${esc(t('web.useFull'))}</button>
+    <button class="btn ghost" data-a="cropCancel">${esc(t('common.cancel'))}</button></div>`;
+}
+function cropAfter() {
+  const cr = S.crop, cv = $('#cropCv'), fr = $('#cropFr'), box = $('#cropBox');
+  const W = cr.img.naturalWidth, H = cr.img.naturalHeight;
+  const disp = Math.min(1, 1400 / Math.max(W, H));
+  cv.width = Math.round(W * disp); cv.height = Math.round(H * disp);
+  cv.getContext('2d').drawImage(cr.img, 0, 0, cv.width, cv.height);
+  const place = () => {
+    const k = box.clientWidth / W;
+    const fw = cr.base.w * cr.scale, fh = cr.base.h * cr.scale;
+    cr.x = Math.max(0, Math.min(W - fw, cr.x)); cr.y = Math.max(0, Math.min(H - fh, cr.y));
+    Object.assign(fr.style, { left: cr.x * k + 'px', top: cr.y * k + 'px', width: fw * k + 'px', height: fh * k + 'px' });
+  };
+  requestAnimationFrame(place);
+  $('#cropSz').oninput = (e) => {
+    const old = { w: cr.base.w * cr.scale, h: cr.base.h * cr.scale };
+    cr.scale = Number(e.target.value) / 100;
+    cr.x += (old.w - cr.base.w * cr.scale) / 2; cr.y += (old.h - cr.base.h * cr.scale) / 2; place();
+  };
+  let drag = null;
+  fr.onpointerdown = (e) => { drag = { x: e.clientX, y: e.clientY, ox: cr.x, oy: cr.y }; fr.setPointerCapture(e.pointerId); };
+  fr.onpointermove = (e) => { if (!drag) return; const k = box.clientWidth / W; cr.x = drag.ox + (e.clientX - drag.x) / k; cr.y = drag.oy + (e.clientY - drag.y) / k; place(); };
+  fr.onpointerup = fr.onpointercancel = () => { drag = null; };
+  fr.onkeydown = (e) => { const s = W * 0.02; if (e.key === 'ArrowLeft') cr.x -= s; else if (e.key === 'ArrowRight') cr.x += s; else if (e.key === 'ArrowUp') cr.y -= s; else if (e.key === 'ArrowDown') cr.y += s; else return; e.preventDefault(); place(); };
+}
+async function useCrop(full) {
+  const cr = S.crop; const c = document.createElement('canvas');
+  if (full) { c.width = cr.img.naturalWidth; c.height = cr.img.naturalHeight; c.getContext('2d').drawImage(cr.img, 0, 0); }
+  else {
+    const fw = cr.base.w * cr.scale, fh = cr.base.h * cr.scale;
+    c.width = Math.round(fw); c.height = Math.round(fh);
+    c.getContext('2d').drawImage(cr.img, cr.x, cr.y, fw, fh, 0, 0, c.width, c.height);
+  }
+  S.crop = null; S.busy = t('scan.processing'); render();
+  await guard(async () => { await addPageFromCanvas(c, `${t('web.camera')} ${S.scan.items.length + 1}`, cr.file.size); await persistDraft(); });
+  S.busy = null; render();
+}
+async function finishScan(mode) {
+  const items = S.scan.items;
+  if (!items.length || draftProblem(items)) return;
+  if (!mode && !(await ask(t('scan.finishConfirm'), t('scan.finish')))) return;
+  S.busy = t('scan.uploading'); render();
+  await guard(async () => {
+    const id = uid();
+    const isXml = items.length === 1 && items[0].kind === 'xml';
+    let hashSrc = '', exml = null;
+    for (const [i, it] of items.entries()) {
+      const pg = await store.one('pages', it.id);
+      if (!pg) continue;
+      if (!exml) exml = pg.xml || pg.zugferd || null;
+      pg.docId = id; pg.idx = i; hashSrc += pg.dataUrl || pg.xml || '';
+      await store.put('pages', pg);
+    }
+    const rec = {
+      id, title: isXml ? items[0].name.replace(/\.xml$/i, '') : `Scan ${fmtDate(todayISO())}`, file_kind: isXml ? 'xml' : 'pdf',
+      page_count: isXml ? 1 : items.length, size_bytes: Math.round(items.reduce((s, i) => s + (i.size || 0), 0)),
+      sources: items.map((i) => i.name).slice(0, 60), sha256: await sha256(hashSrc), status: 'saved', folder: 'sonstiges',
+      tax_flag: 'none', archived: false, paid: false, payment_required: false, is_contract: false, is_incoming_invoice: false,
+      next_steps: [], dates: [], created_at: nowIso(), version: 0,
+    };
+    const parsed = exml ? parseEInvoice(exml) : null;
+    if (parsed) Object.assign(rec, einvoicePatch(parsed), { tax_flag: 'prebook' });
+    const saved = await saveVersioned('docs', rec, parsed ? t('web.erech') : '');
+    upsertLocal('docs', saved);
+    S.scan.items = []; await persistDraft(); S.scan = null;
+    S.busy = null; S.docUi = { step: 1 };
+    go('doc', parsed || mode === 'save' ? { id } : { id, analyze: 1 }, { replace: true });
+  });
+  S.busy = null; if (S.view === 'scan') render();
+}
+
+/* ---------- Beleg ---------- */
+const DOC_TEXT = ['title', 'doc_type', 'sender', 'sender_address', 'recipient', 'recipient_address', 'invoice_number', 'iban', 'bic', 'payment_reference'];
+const DOC_MONEY = ['amount_net', 'vat_amount', 'amount_gross'];
+const getDoc = (id) => S.docs.find((d) => d.id === id);
+VIEWS.doc = {
+  title: () => (getDoc(S.params.id) || {}).title || t('docs.title'),
+  render() {
+    const d = getDoc(S.params.id);
+    if (!d) return `<p class="muted">–</p>`;
+    const st = S.docUi || (S.docUi = {});
+    if (!st.step) st.step = d.status === 'done' || d.archived ? 4 : 1;
+    if (S.params.analyze && !d.analyzed_at && !st.analyzing && S.sample && d.file_kind !== 'xml') { S.params.analyze = 0; setTimeout(() => analyzeDoc(d.id), 0); }
+    const steps = [t('web.step1'), t('web.step2'), t('web.step3'), t('web.step4')];
+    const nav = `<nav class="wsteps" aria-label="Schritte">${steps.map((l, i) => `<button class="wstep ${i + 1 < st.step ? 'done' : ''}" data-a="docStep" data-v="${i + 1}" ${st.step === i + 1 ? 'aria-current="step"' : ''}><b>${i + 1 < st.step ? '✓' : i + 1}</b>${esc(l)}</button>`).join('')}</nav>`;
+    const pills = `<div class="dochead"><h1>${esc(d.title)}</h1>${d.sender || d.document_date ? `<p>${esc([d.sender, d.document_date ? fmtDate(d.document_date) : ''].filter(Boolean).join(' · '))}</p>` : ''}${d.amount_gross != null ? `<b class="num">${esc(money(d.amount_gross, d.currency))}</b>` : ''}</div><div class="row">
+        <span class="pill c-${d.status === 'done' ? 'green' : d.status === 'reviewed' ? 'grey' : 'yellow'}">${esc(t('docs.status_' + d.status))}</span>
+        <span class="pill c-grey">${esc(t('docs.folder_' + d.folder))}</span>
+        ${d.archived ? `<span class="pill c-red">🔒 ${esc(t('docs.archived'))}</span>` : ''}
+        ${d.example ? `<span class="pill c-orange">${esc(t('web.example'))}</span>` : ''}</div>`;
+    const nextBtn = st.step < 4 ? `<button class="btn" data-a="docStep" data-v="${st.step + 1}">${esc(t('web.next'))}: ${esc(steps[st.step])} ›</button>` : '';
+    return pills + nav + [docStep1, docStep2, docStep3, docStep4][st.step - 1](d, st) + nextBtn;
+  },
+  after() {
+    const d = getDoc(S.params.id); if (!d || !d.page_count || (S.docUi && S.docUi.step !== 1)) return;
+    store.where('pages', 'docId', d.id).then((pages) => {
+      const el = $('#thumbs'); if (!el || S.view !== 'doc') return;
+      pages.sort((a, b) => a.idx - b.idx);
+      el.innerHTML = pages.map((p, i) => p.xml ? `<button class="thumb" data-a="showXml" data-pid="${p.id}"><span>XML</span></button>` : `<button class="thumb" data-a="showPage" data-pid="${p.id}" aria-label="${esc(t('web.pageOf', { n: i + 1, count: pages.length }))}"><img src="${p.dataUrl}" alt=""><span>${i + 1}</span></button>`).join('');
+    }).catch(() => {});
+  },
+};
+function einvoiceTable(e) {
+  if (!e || !e.lines || !e.lines.length) return '';
+  return `<div class="tscroll"><table class="pos"><thead><tr><th>${esc(t('inv.description'))}</th><th class="r">${esc(t('inv.qty'))}</th><th class="r">${esc(t('inv.vatRate'))}</th><th class="r">${esc(t('inv.net'))}</th></tr></thead><tbody>
+    ${e.lines.map((l) => `<tr><td>${esc(l.name)}</td><td class="r">${esc(numStr(l.qty))}</td><td class="r">${l.rate != null ? esc(numStr(l.rate)) + ' %' : ''}</td><td class="r">${esc(money(l.net, e.currency))}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function docStep1(d, st) {
+  return `${accCards(d, st)}${prepayCard(d)}<div class="card"><div class="row between"><h2>${esc(t('doc.original'))}</h2>
+      ${d.page_count ? `<button class="btn sm sec" data-a="docDownload">${esc(d.file_kind === 'xml' ? t('web.downloadXml') : t('web.downloadPdf'))}</button>` : ''}</div>
+      <div class="thumbs" id="thumbs">${d.page_count ? '<div class="spin"></div>' : `<p class="muted">${esc(t('doc.noFile'))}</p>`}</div></div>
+    ${st.analyzing ? busyCard(t('doc.analyzing')) : !d.analyzed_at && d.page_count ? (S.sample ? `<button class="btn" data-a="analyze">${ico('spark')}${esc(t('doc.analyze'))}</button>` : `<div class="banner">${esc(t('web.noAi'))}</div>`) : ''}
+    ${st.aiNote ? `<div class="banner warn">${esc(st.aiNote)}</div>` : ''}
+    ${calOfferCard(st)}
+    ${d.explanation ? `<div class="card"><h2>${esc(t('doc.explanation'))}</h2><p class="prose">${esc(d.explanation)}</p>
+      ${d.page_count && S.sample && d.file_kind !== 'xml' ? `<button class="btn sm ghost" data-a="analyze">${esc(t('doc.reanalyze'))}</button>` : ''}</div>` : ''}
+    ${(d.invoice_checks || []).length ? `<div class="sec-h">${esc(t('web.checksTitle'))}</div><div class="group">${d.invoice_checks.map((c) => `<div class="cell noicon" style="cursor:default"><span class="pill c-${c.status === 'present' ? 'green' : c.status === 'missing' ? 'red' : 'orange'}">${esc(t('web.st_' + c.status))}</span><span class="cx"><span class="ct">${esc(c.label)}</span>${c.detail ? `<span class="cs" style="display:block">${esc(c.detail)}</span>` : ''}</span></div>`).join('')}</div><p class="muted small">${esc(t('web.checksNote'))}</p>` : ''}
+    ${d.is_contract || d.contract_end || d.cancellation_date || d.contract_number || d.contract_terms ? `<div class="card"><h2>${esc(t('web.contract'))}</h2><dl class="kv">
+      ${d.contract_number ? `<dt>${esc(t('web.contractNo'))}</dt><dd class="mono">${esc(d.contract_number)}</dd>` : ''}
+      ${d.contract_end ? `<dt>${esc(t('web.contractEnd'))}</dt><dd class="num">${esc(fmtDate(d.contract_end))}</dd>` : ''}
+      ${d.cancellation_date ? `<dt>${esc(t('web.cancelBy'))}</dt><dd class="num"><b>${esc(fmtDate(d.cancellation_date))}</b> · ${esc(dueLabel(daysUntil(d.cancellation_date)))}</dd>` : ''}
+      ${d.contract_terms ? `<dt>${esc(t('web.contractTerms'))}</dt><dd>${esc(d.contract_terms)}</dd>` : ''}
+      ${d.cost_amount != null ? `<dt>${esc(t('unt.ctrCost'))}</dt><dd class="num">${esc(money(d.cost_amount))} ${esc(t('unt.iv_' + (d.cost_interval || 'monthly')))}</dd>` : ''}
+      ${d.coverage ? `<dt>${esc(t('unt.ctrCoverage'))}</dt><dd>${esc(d.coverage)}</dd>` : ''}</dl>
+      <div class="grid2"><button class="btn sm sec" data-go="contract" data-id="${d.id}">${esc(t('unt.ctrEdit'))}</button><button class="btn sm ghost" data-a="ctrCancel" data-v="${d.id}">${esc(t('unt.ctrCancel'))}</button></div></div>` : ''}
+    ${d.discount_date ? `<div class="banner">${esc(t('web.discount'))}: ${d.discount_percent ? esc(numStr(d.discount_percent)) + ' % ' : ''}${esc(t('web.discountUntil'))} ${esc(fmtDate(d.discount_date))}${d.discount_percent && d.amount_gross ? ' → ' + esc(money(Math.round(d.amount_gross * (100 - d.discount_percent)) / 100, d.currency)) : ''}${d.discount_terms ? ' · ' + esc(d.discount_terms) : ''}</div>` : ''}
+    ${d.einvoice ? `<div class="card"><h2>${esc(t('web.positions'))}</h2><p class="muted small">${esc(t('web.format'))}: ${esc(d.einvoice.format)}</p>${einvoiceTable(d.einvoice)}</div>` : ''}
+    ${d.page_count && S.sample ? `<div class="card"><h2>${esc(t('doc.translate'))}</h2>
+      <div class="chips">${LANGS.map((l) => chip(t('lang.' + l), st.trLang === l, `data-a="translate" data-v="${l}" ${st.translating ? 'disabled' : ''}`)).join('')}</div>
+      ${st.translating && !st.translation ? `<p class="muted">${esc(t('web.thinking'))}</p>` : ''}
+      ${st.translation ? `<p class="prose" id="trOut" ${st.trLang === 'ar' ? 'dir="rtl"' : ''}>${esc(st.translation)}</p>` : ''}</div>` : ''}`;
+}
+function docStep2(d) {
+  const docTasks = S.tasks.filter((x) => x.document_id === d.id);
+  const takenKeys = new Set(docTasks.map((x) => `${x.kind}|${x.due_date}`));
+  const takenTitles = new Set(docTasks.map((x) => x.title));
+  const hasPayDate = !!d.due_date || (d.dates || []).some((x) => x.kind === 'payment' && x.date);
+  const needRem = d.analyzed_at && !d.archived && d.status !== 'done' && ((d.payment_required && !hasPayDate) || (d.dates || []).some((x) => !x.date));
+  const steps = (d.suggested_task && !(d.next_steps || []).includes(d.suggested_task) ? [d.suggested_task] : []).concat(d.next_steps || []);
+  const isInv = d.is_incoming_invoice || /rechnung|mahnung/i.test(d.doc_type || '');
+  const svc = d.service_received || 'unknown';
+  return `${isInv ? `<div class="sec-h">${esc(t('web.service'))}</div>${seg([['yes', t('web.svc_yes')], ['no', t('web.svc_no')], ['unknown', t('web.svc_unknown')]], svc, 'docService')}` : ''}
+    ${steps.length ? group(steps.map((s, i) => { const done = takenTitles.has(s); return `<div class="cell noicon" style="cursor:default"><span class="cx"><span class="ct" style="font-weight:${s === d.suggested_task ? 700 : 400}">${esc(s)}</span>${s === d.suggested_task ? `<span class="cs" style="display:block">${esc(t('web.suggestedTask'))}</span>` : ''}</span><button class="btn sm ${done ? 'ghost' : 'sec'}" data-a="todoTask" data-i="${i}" ${done ? 'disabled' : ''}>${esc(done ? '✓ ' + t('web.taskMade') : '+ ' + t('web.makeTask'))}</button></div>`; }), t('doc.nextSteps'))
+      : `<p class="muted">${esc(d.analyzed_at ? t('web.noTodo') : t('docs.notAnalyzed'))}</p>`}
+    ${(d.dates || []).length || needRem ? `<div class="sec-h">${esc(t('doc.dates'))}</div><div class="card">
+      ${(d.dates || []).map((x, i) => { const taken = takenKeys.has(`${x.kind}|${x.date}`); return `<div class="row between"><p class="grow">${esc(t('tasks.kind_' + x.kind))}: ${esc(x.description)} – <b class="num">${esc(x.date ? fmtDate(x.date) : '?')}</b></p>
+        ${x.date ? `<button class="btn sm ${taken ? 'ghost' : 'sec'}" data-a="takeDate" data-i="${i}" ${taken ? 'disabled' : ''}>${esc(taken ? '✓ ' + t('doc.taken') : t('doc.takeDeadline'))}</button>` : ''}</div>`; }).join('')}
+      ${needRem ? `<p class="muted">${esc(t('doc.askReminder'))}</p>${field('remDate', t('doc.reminderDate'), '', `placeholder="${esc(t('common.dateHint'))}" inputmode="numeric"`)}<button class="btn sm" data-a="setReminder">${esc(t('doc.setReminder'))}</button>` : ''}</div>` : ''}
+    ${d.payment_required || d.iban ? `<div class="sec-h">${esc(t('doc.paymentData'))}</div><div class="card"><dl class="kv">
+      <dt>${esc(t('doc.recipient'))}</dt><dd>${esc(d.sender || '–')}</dd>
+      <dt>${esc(t('doc.iban'))}</dt><dd class="mono">${esc(fmtIban(d.iban) || '–')}</dd>
+      ${d.bic ? `<dt>${esc(t('doc.bic'))}</dt><dd class="mono">${esc(d.bic)}</dd>` : ''}
+      <dt>${esc(t('doc.gross'))}</dt><dd class="num">${esc(money(d.amount_gross, d.currency))}</dd>
+      <dt>${esc(t('doc.reference'))}</dt><dd>${esc(d.payment_reference || d.invoice_number || '–')}</dd>
+      <dt>${esc(t('doc.dueDate'))}</dt><dd class="num">${esc(fmtDate(d.due_date))}</dd></dl>
+      ${d.iban ? `<button class="btn sm ghost" data-a="copyPay">${esc(t('web.copyText'))}</button>` : ''}
+      <label class="check"><input type="checkbox" data-a="docFlag" data-k="paid" ${d.paid ? 'checked' : ''}>${esc(t('doc.paid'))}</label></div>` : ''}`;
+}
+function docStep3(d) {
+  const reply = S.replies.find((r) => r.docId === d.id);
+  if (reply) return `<div class="card"><h2>${esc(t('reply.title'))}</h2><p class="muted">${esc(t('reply.kind_' + reply.kind))} · ${esc(reply.data.subject || '')}</p><button class="btn" data-go="reply" data-id="${d.id}">${ico('pen')}${esc(t('doc.openReply'))}</button></div>`;
+  if (!S.sample || !d.page_count) return `<div class="banner">${esc(t('web.noAi'))}</div>`;
+  const sa = d.suggested_action || {};
+  const kinds = d.is_contract ? ['reply', 'statement', 'cancellation'] : ['reply', 'statement'];
+  const hasSug = sa.type && sa.type !== 'none';
+  return `${hasSug ? `<div class="card"><h2>${esc(sa.question || t('reply.consent'))}</h2>
+      <button class="btn" data-a="replyGo" data-v="${esc(sa.type)}">${ico('pen')}${esc(t('web.yesWrite'))}</button>
+      <button class="btn ghost" data-a="docStep" data-v="4">${esc(t('web.noNeed'))}</button></div>`
+    : `<div class="card"><p>${esc(d.analyzed_at ? t('web.suggestNone') : t('reply.consent'))}</p></div>`}
+    <div class="sec-h">${esc(hasSug ? t('web.otherKind') : t('reply.title'))}</div>
+    ${group(kinds.filter((k) => !hasSug || k !== sa.type).map((k) => cell({ icon: 'pen', ic: 'g', title: t('reply.kind_' + k), attrs: `data-a="replyGo" data-v="${k}"` })))}`;
+}
+function docStep4(d, st) {
+  const L = d.archived ? 'readonly' : '';
+  return `<div class="card"><h2>${esc(t('doc.folder'))}</h2>
+      <div class="chips">${FOLDERS.map((f) => chip(t('docs.folder_' + f), d.folder === f, `data-a="docFolderSet" data-v="${f}" ${d.archived ? 'disabled' : ''}`)).join('')}</div>
+      <h2>${esc(t('doc.taxFlag'))}</h2>
+      <div class="chips">${['none', 'prebook', 'deadline'].map((f) => chip(t('doc.flag_' + f), d.tax_flag === f, `data-a="docTax" data-v="${f}"`)).join('')}</div>
+      <label class="check"><input type="checkbox" data-a="docChecked" ${d.status !== 'saved' ? 'checked' : ''} ${d.status === 'done' ? 'disabled' : ''}><b>${esc(t('web.checked'))}</b></label></div>
+    ${d.status !== 'done' ? `<button class="btn" data-a="docStatus" data-v="done">${ico('check')}${esc(t('web.fileDone'))}</button>` : `<button class="btn ghost" data-a="docStatus" data-v="saved">${esc(t('doc.reopen'))}</button>`}
+    ${d.archived ? `<div class="banner stamp">🔒 ${esc(t('doc.archivedLocked'))}<br>${esc(t('web.archiveNotice'))}${d.retain_until ? `<br>${esc(t('web.retainUntil'))}: <b class="num">${esc(fmtDate(d.retain_until))}</b>` : ''}</div>` : `<button class="btn sec" data-a="docArchive">${ico('archive')}${esc(t('doc.archive'))}</button>`}
+    <button class="btn ghost" data-a="toggleFields" aria-expanded="${!!st.fieldsOpen}">${st.fieldsOpen ? '▾' : '▸'} ${esc(t('web.editFields'))}</button>
+    ${st.fieldsOpen ? `<div class="card">
+      ${field('f_title', t('doc.title'), d.title, L)}
+      ${field('f_doc_type', t('doc.docType'), d.doc_type || '', L)}
+      ${field('f_sender', t('doc.sender'), d.sender || '', L)}
+      ${area('f_sender_address', t('doc.senderAddress'), d.sender_address || '', L)}
+      ${field('f_recipient', t('doc.recipient'), d.recipient || '', L)}
+      ${area('f_recipient_address', t('doc.recipientAddress'), d.recipient_address || '', L)}
+      ${field('f_invoice_number', t('doc.invoiceNo'), d.invoice_number || '', L)}
+      <div class="grid2">${field('f_amount_net', t('doc.net'), numStr(d.amount_net), L + ' inputmode="decimal"')}${field('f_vat_amount', t('doc.vat'), numStr(d.vat_amount), L + ' inputmode="decimal"')}</div>
+      ${field('f_amount_gross', t('doc.gross'), numStr(d.amount_gross), L + ' inputmode="decimal"')}
+      ${field('f_due', t('doc.dueDate'), d.due_date ? fmtDate(d.due_date) : '', L + ` placeholder="${esc(t('common.dateHint'))}"`)}
+      ${field('f_iban', t('doc.iban'), fmtIban(d.iban), L + ' style="font-family:var(--f-mono)" autocapitalize="characters"')}
+      ${field('f_bic', t('doc.bic'), d.bic || '', L + ' autocapitalize="characters"')}
+      ${field('f_payment_reference', t('doc.reference'), d.payment_reference || '', L)}
+      ${['payment_required', 'is_incoming_invoice', 'is_contract'].map((k) => `<label class="check"><input type="checkbox" data-a="docFlag" data-k="${k}" ${d[k] ? 'checked' : ''} ${d.archived ? 'disabled' : ''}>${esc(t({ payment_required: 'doc.paymentRequired', is_incoming_invoice: 'doc.incomingInvoice', is_contract: 'doc.isContract' }[k]))}</label>`).join('')}
+      ${d.archived ? '' : `<button class="btn" data-a="docSave">${esc(t('common.save'))}</button>`}</div>` : ''}
+    <div class="card"><h2>${esc(t('web.history'))}</h2>
+      ${(d.history || []).slice().reverse().slice(0, 12).map((h) => `<p class="small"><span class="num">${esc(new Date(h.at).toLocaleString('de-DE'))}</span> · ${esc(t('web.' + h.action))}${h.note ? ' · ' + esc(h.note) : ''}</p>`).join('')}
+      ${d.sha256 ? `<p class="muted small">${esc(t('doc.checksum'))}</p><p class="mono small" style="overflow-wrap:anywhere">${esc(d.sha256)}</p>` : ''}</div>`;
+}
+async function persistDoc(d, patch, note) {
+  const next = Object.assign({}, d, patch);
+  const saved = await saveVersioned('docs', next, note);
+  upsertLocal('docs', saved);
+  return saved;
+}
+async function analyzeDoc(id) {
+  const d = getDoc(id); if (!d || !S.sample) return;
+  S.docUi = { analyzing: true }; render();
+  try {
+    const inp = await aiInputFor(d);
+    const prompt = `Du bist der Dokumentassistent von eOffis für kleine Betriebe in Deutschland. Heute ist ${todayISO()}. ${companyLine()}
+${inp.text}
+Lies das Dokument genau. Erfinde nichts: Unbekanntes ist null. Beträge als Zahl mit Punkt als Dezimaltrennzeichen. Datumsangaben als YYYY-MM-DD.
+Schreibe "explanation" (2–5 Sätze, ohne Fachjargon) und "next_steps" (1–5 konkrete Schritte) auf ${LANG_NAMES[lang]}. Namen, Anschriften und Nummern bleiben in Originalschreibweise; Anschriften mehrzeilig mit \\n.
+"payment_required" ist true, wenn der Empfänger zahlen soll – auch ohne ausdrücklich genannte Zahlungsfrist (z. B. Rechnung, Mahnung, Beitragsbescheid).
+"suggested_action": Schlage vor, ob der Betrieb schriftlich reagieren sollte. "type" ist "reply" (Antwort), "statement" (Stellungnahme/Widerspruch), "cancellation" (Kündigung – nur bei Verträgen, wenn eine Kündigung naheliegt) oder "none". "question" ist eine kurze Ja/Nein-Frage auf ${LANG_NAMES[lang]}, z. B. „Soll ich die Kündigung für dich schreiben?“.
+"document_date" ist das Datum des Schreibens (YYYY-MM-DD) oder null.
+"action_needed": true nur bei konkreter Aufgabe für den Betrieb; "suggested_task" ist dann eine kurze konkrete Aufgabe auf ${LANG_NAMES[lang]}, sonst "". Bereits bezahlte Rechnungen nicht erneut zur Zahlung auffordern.
+"response_recipient" und "response_address": zuständige Stelle und vollständige Postanschrift für eine ANTWORT (meist der Absender), "response_reference": Aktenzeichen/Kunden-/Vertrags-/Rechnungsnummer, "response_subject": passender Betreff, "recipient_email": nur eine ausdrücklich genannte E-Mail-Adresse für Antworten. Nichts erfinden.
+Verträge: "contract_end" (Vertragsende), "cancellation_date" (letzter Tag, an dem eine Kündigung zugehen muss – NICHT Vertragsende), "contract_number", "contract_terms" (Laufzeit, Verlängerung, Kündigungsform, Frist), "contract_party" (Vertragspartner/Versicherer), "contract_start", "notice_period" (z. B. "3 Monate zum Laufzeitende"), "auto_renew" (true/false), "cost_amount" (Beitrag/Kosten je Zahlung, Zahl), "cost_interval" ("monthly"|"quarterly"|"yearly"|"once"), "coverage" (Leistung/Versicherungsschutz in einem kurzen Satz) – nur wenn belegt, sonst null.
+Skonto: "discount_date", "discount_percent" (Zahl), "discount_terms" – nur wenn genannt.
+Rechnungen: "invoice_checks" prüft die Pflichtangaben nach § 14 Abs. 4 UStG (Name/Anschrift beider Parteien, Steuernummer oder USt-IdNr., Ausstellungsdatum, Rechnungsnummer, Menge/Art der Leistung, Leistungsdatum, Entgelt nach Steuersätzen, Steuersatz und Steuerbetrag oder Befreiungshinweis) und rechnet die Summen nach. Kleinbetragsrechnung bis 250 € nach § 33 UStDV vereinfacht. Jeder Eintrag {"label","status":"present"|"missing"|"unclear","detail"} auf ${LANG_NAMES[lang]}. Bei Nicht-Rechnungen leere Liste. Das ist keine rechtsverbindliche Freigabe.
+"ocr_text": der vollständig lesbare Originaltext (höchstens 15000 Zeichen) für die Volltextsuche.
+"folder" ist einer von: ${FOLDERS.join(', ')} – firma = Firmen-Stammdaten (Gewerbeanmeldung, Handelsregisterauszug, Ausweis des Inhabers, Zuteilung Steuernummer/USt-IdNr., Gesellschaftsvertrag), finanzamt = Steuerbescheide und Schreiben des Finanzamts, buchhaltung = Buchhaltungsbelege (Eingangsrechnungen, Quittungen/Kassenbons, Lieferscheine, Kontoauszüge, Gutschriften), bank = Bank- und Kreditverträge, Schreiben der Bank (außer Kontoauszügen), versicherungen = Versicherungspolicen und -schreiben, personal = Arbeitsverträge/Lohn/Sozialversicherung, behoerden = sonstige Behörden/Kammern, mietvertraege = Miete/Pacht. "dates[].kind" ist einer von: payment, reply, contract, cancellation, skonto, other; "date" ist null, wenn kein eindeutiges Datum genannt ist.
+Vorauszahlungsbescheid des Finanzamts oder der Gemeinde (Einkommensteuer, Gewerbesteuer, Körperschaftsteuer, Kirchensteuer, Solidaritätszuschlag): "prepayments" listet jede künftige Vorauszahlung {"tax": Steuerart auf Deutsch, "due_date": "YYYY-MM-DD", "amount": Zahl}; diese Termine NICHT zusätzlich in "dates". Sonst leere Liste.
+Buchhaltung: "acc_type" ist "rechnung" (Eingangsrechnung an den Betrieb), "quittung" (Quittung, Kassenbon, Tank-/Bewirtungsbeleg), "lieferschein", "kontoauszug", "gutschrift" oder "none" (kein Buchhaltungsbeleg, z. B. Behördenschreiben, Vertrag, Mahnung ohne neue Rechnung). "document_number": Nummer dieses Belegs (Rechnungs-, Lieferschein-, Quittungsnummer) oder null. "reference_numbers": im Beleg genannte andere Nummern, mit denen er zu anderen Belegen gehört (Lieferschein-, Auftrags-, Bestell-, Rechnungsnummern), sonst leere Liste.
+Antworte nur mit einem JSON-Objekt dieser Form:
+{"title":string,"prepayments":[{"tax":string,"due_date":string,"amount":number}],"acc_type":string,"document_number":string|null,"reference_numbers":[string],"doc_type":string,"sender":string|null,"sender_address":string|null,"recipient":string|null,"recipient_address":string|null,"invoice_number":string|null,"amount_gross":number|null,"amount_net":number|null,"vat_amount":number|null,"currency":string|null,"payment_required":boolean,"payment_due_date":string|null,"iban":string|null,"bic":string|null,"payment_reference":string|null,"is_contract":boolean,"is_incoming_invoice":boolean,"folder":string,"explanation":string,"next_steps":[string],"dates":[{"kind":string,"date":string|null,"description":string}],"document_date":string|null,"suggested_action":{"type":string,"question":string},"action_needed":boolean,"suggested_task":string,"response_recipient":string|null,"response_address":string|null,"response_reference":string|null,"response_subject":string|null,"recipient_email":string|null,"contract_end":string|null,"cancellation_date":string|null,"contract_number":string|null,"contract_terms":string|null,"contract_party":string|null,"contract_start":string|null,"notice_period":string|null,"auto_renew":boolean|null,"cost_amount":number|null,"cost_interval":string|null,"coverage":string|null,"discount_date":string|null,"discount_percent":number|null,"discount_terms":string|null,"invoice_checks":[{"label":string,"status":string,"detail":string}],"ocr_text":string}`;
+    const r = await aiJson(prompt, inp.images);
+    if (!r || typeof r !== 'object') throw { code: 'invalid_json' };
+    const docDate = (r.document_date && parseDate(r.document_date)) || todayISO();
+    // Benennung: Rechnung = „Rechnungssteller Rechnungsnummer“, sonst „Dokumenttyp Datum“
+    const title = r.invoice_number && r.sender ? `${r.sender} ${r.invoice_number}`.trim() : `${r.doc_type || r.title || 'Dokument'} ${fmtDate(docDate)}`;
+    const sa = r.suggested_action && typeof r.suggested_action === 'object' ? r.suggested_action : {};
+    const saType = ['reply', 'statement', 'cancellation'].includes(sa.type) && (sa.type !== 'cancellation' || r.is_contract) ? sa.type : 'none';
+    const num = (x) => (typeof x === 'number' && isFinite(x) ? x : parseMoney(x));
+    const iso = (x) => (x && parseDate(x)) || null;
+    await persistDoc(getDoc(id), {
+      title, doc_type: r.doc_type || null, sender: r.sender || null, sender_address: r.sender_address || null,
+      recipient: r.recipient || null, recipient_address: r.recipient_address || null, invoice_number: r.invoice_number || null,
+      amount_gross: num(r.amount_gross), amount_net: num(r.amount_net), vat_amount: num(r.vat_amount), currency: r.currency || 'EUR',
+      payment_required: !!r.payment_required, due_date: iso(r.payment_due_date), iban: r.iban ? String(r.iban).replace(/\s+/g, '') : null,
+      bic: r.bic || null, payment_reference: r.payment_reference || null, is_contract: !!r.is_contract, is_incoming_invoice: !!r.is_incoming_invoice,
+      folder: ACC_TYPES.includes(r.acc_type) ? 'buchhaltung' : FOLDERS.includes(r.folder) ? r.folder : r.folder === 'rechnungen' ? 'buchhaltung' : 'sonstiges', explanation: r.explanation || '',
+      acc_type: ACC_TYPES.includes(r.acc_type) ? r.acc_type : 'none', document_number: r.document_number ? String(r.document_number) : null,
+      reference_numbers: Array.isArray(r.reference_numbers) ? r.reference_numbers.map(String).filter(Boolean).slice(0, 10) : [],
+      prepayments: Array.isArray(r.prepayments) ? r.prepayments.map((x) => ({ tax: String(x.tax || 'Steuer').slice(0, 40), due_date: iso(x.due_date), amount: num(x.amount) })).filter((x) => x.due_date && x.amount != null).slice(0, 16) : [],
+      next_steps: Array.isArray(r.next_steps) ? r.next_steps.map(String).slice(0, 6) : [],
+      dates: (() => {
+        const list = Array.isArray(r.dates) ? r.dates.map((x) => ({ kind: KINDS.includes(x.kind) ? x.kind : 'other', date: iso(x.date), description: String(x.description || '') })).slice(0, 10) : [];
+        const add = (kind, date, description) => { if (date && !list.some((x) => x.kind === kind && x.date === date)) list.push({ kind, date, description }); };
+        add('cancellation', iso(r.cancellation_date), t('web.cancelBy'));
+        add('contract', iso(r.contract_end), t('web.contractEnd'));
+        add('skonto', iso(r.discount_date), r.discount_percent ? `${numStr(r.discount_percent)} % Skonto` : 'Skonto');
+        return list;
+      })(),
+      document_date: docDate, suggested_action: { type: saType, question: String(sa.question || '') },
+      action_needed: !!r.action_needed, suggested_task: r.action_needed || r.payment_required ? String(r.suggested_task || '') : '',
+      response_recipient: r.response_recipient || null, response_address: r.response_address || null, response_reference: r.response_reference || null,
+      response_subject: r.response_subject || null, recipient_email: r.recipient_email || null,
+      contract_end: iso(r.contract_end), cancellation_date: iso(r.cancellation_date), contract_number: r.contract_number || null, contract_terms: r.contract_terms || null,
+      contract_party: r.contract_party || null, contract_start: iso(r.contract_start), notice_period: r.notice_period || null, auto_renew: typeof r.auto_renew === 'boolean' ? r.auto_renew : null,
+      cost_amount: typeof r.cost_amount === 'number' ? r.cost_amount : null, cost_interval: ['monthly', 'quarterly', 'yearly', 'once'].includes(r.cost_interval) ? r.cost_interval : null, coverage: r.coverage || null,
+      discount_date: iso(r.discount_date), discount_percent: num(r.discount_percent), discount_terms: r.discount_terms || null,
+      invoice_checks: Array.isArray(r.invoice_checks) ? r.invoice_checks.slice(0, 15).map((c) => ({ label: String(c.label || ''), status: ['present', 'missing', 'unclear'].includes(c.status) ? c.status : 'unclear', detail: String(c.detail || '') })) : [],
+      ocr_text: String(r.ocr_text || '').slice(0, 15000),
+      analyzed_at: nowIso(),
+    }, 'KI-Analyse');
+    let calIds = [];
+    try { calIds = await autoTakeDates(getDoc(id)); } catch (e2) { console.error(e2); }
+    S.docUi = { aiNote: inp.cut ? t('web.pagesSent', { count: inp.cut }) : '', calIds };
+  } catch (e) {
+    if (e && e.conflict) { await reloadAll(); S.docUi = { aiNote: t('doc.conflict') }; }
+    else { console.error(e); S.docUi = { aiNote: aiError(e) }; }
+  }
+  if (S.view === 'doc') render();
+}
+async function translateDoc(l) {
+  const d = getDoc(S.params.id); if (!d || !S.sample) return;
+  S.docUi = Object.assign({}, S.docUi, { translating: true, trLang: l, translation: '' }); render();
+  try {
+    const inp = await aiInputFor(d);
+    const prompt = `${inp.text}\nÜbersetze den vollständigen Inhalt dieses Geschäftsbriefs sinngetreu und gut lesbar nach ${LANG_NAMES[l]}. Behalte Beträge, Daten und Nummern bei. Gib nur die Übersetzung aus, ohne Vorbemerkung.`;
+    const opts = { onText: ({ text }) => { const el = $('#trOut'); if (el) el.textContent = text; else { S.docUi.translation = text; render(); } } };
+    if (inp.images.length) opts.images = inp.images;
+    const { text } = await S.sample(prompt, opts);
+    S.docUi = Object.assign({}, S.docUi, { translating: false, translation: text });
+  } catch (e) { S.docUi = Object.assign({}, S.docUi, { translating: false, aiNote: aiError(e), translation: e && e.text ? e.text : '' }); }
+  if (S.view === 'doc') render();
+}
+async function docSave() {
+  const d = getDoc(S.params.id); if (!d) return;
+  let due = null;
+  if (val('f_due').trim()) { due = parseDate(val('f_due')); if (!due) return toast(t('common.invalidDate')); }
+  const patch = { due_date: due };
+  for (const k of DOC_TEXT) patch[k] = val('f_' + k).trim() || null;
+  if (patch.iban) patch.iban = patch.iban.replace(/\s+/g, '').toUpperCase();
+  if (!patch.title) patch.title = d.title;
+  for (const k of DOC_MONEY) patch[k] = parseMoney(val('f_' + k));
+  await guard(async () => { await persistDoc(d, patch, t('doc.fields')); toast(t('web.toastSaved')); render(); });
+}
+async function docDownload() {
+  const d = getDoc(S.params.id); if (!d) return;
+  const pages = (await store.where('pages', 'docId', d.id)).sort((a, b) => a.idx - b.idx);
+  if (d.file_kind === 'xml') return saveFile(`${safeName(d.title)}.xml`, (pages[0] && pages[0].xml) || '');
+  await saveFile(`${safeName(d.title)}.pdf`, pagesToPdf(pages));
+}
+function pagesToPdf(pages) {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
+  pages.filter((p) => p.dataUrl).forEach((p, i) => {
+    if (i) pdf.addPage();
+    const s = Math.min(200 / p.w, 287 / p.h), w = p.w * s, h = p.h * s;
+    pdf.addImage(p.dataUrl, 'JPEG', (210 - w) / 2, (297 - h) / 2, w, h);
+  });
+  return pdf.output('blob');
+}
+/** Nach der KI-Analyse: erkannte (heutige/künftige) Fristen automatisch unter „Fristen“ eintragen – ohne Doppelte */
+async function autoTakeDates(d) {
+  if (!d) return [];
+  const pre = new Set((d.prepayments || []).map((x) => x.due_date));
+  const list = (d.dates || []).filter((x) => x.date && !(pre.has(x.date) && (x.kind === 'payment' || x.kind === 'tax')));
+  if (d.due_date && !pre.has(d.due_date) && !list.some((x) => x.kind === 'payment' && x.date === d.due_date)) list.push({ kind: 'payment', date: d.due_date, description: t('tasks.kind_payment') });
+  const ids = [];
+  for (const x of list) {
+    if (x.date < todayISO()) continue;
+    const have = S.tasks.find((k) => k.document_id === d.id && k.kind === x.kind && k.due_date === x.date);
+    if (have) { ids.push(have.id); continue; }
+    const saved = await saveVersioned('tasks', taskFromDate(d, x));
+    S.tasks.push(saved); ids.push(saved.id);
+  }
+  return ids;
+}
+function taskFromDate(d, x) {
+  return {
+    id: uid(), document_id: d.id, title: `${x.description || t('tasks.kind_' + x.kind)} – ${d.sender || d.title}`, kind: x.kind,
+    due_date: x.date, status: 'open', priority: x.kind === 'payment' || x.kind === 'cancellation' || x.kind === 'skonto' ? 'high' : 'normal', notes: '', created_at: nowIso(), version: 0,
+  };
+}
+function gcalLink(x) {
+  if (x.due_time) { const d = x.due_date.replace(/-/g, ''), [hh, mm] = x.due_time.split(':'), eh = String(Math.min(23, +hh + 1)).padStart(2, '0');
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('eOffis: ' + x.title)}&dates=${d}T${hh}${mm}00/${d}T${eh}${mm}00&ctz=Europe/Berlin&details=${encodeURIComponent(t('tasks.kind_' + x.kind))}`; }
+  const a = x.due_date.replace(/-/g, ''), b = addDays(x.due_date, 1).replace(/-/g, '');
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('eOffis: ' + x.title)}&dates=${a}/${b}&details=${encodeURIComponent(t('tasks.kind_' + x.kind))}`;
+}
+function calOfferCard(st) {
+  const tasks = (st.calIds || []).map((id) => S.tasks.find((x) => x.id === id)).filter((x) => x && x.due_date);
+  if (!tasks.length || st.calDismissed) return '';
+  return `<div class="card" style="border:2px solid var(--accent)"><h2>${ico('bell')}${esc(t('web.calTitle', { count: tasks.length }))}</h2>
+    <ul class="small" style="margin:4px 0 8px;padding-inline-start:20px">${tasks.map((x) => `<li><b class="num">${esc(fmtDate(x.due_date))}</b> – ${esc(x.title)}</li>`).join('')}</ul>
+    <p class="small">✓ ${esc(t('web.calAuto'))} ${esc(t('web.calAsk'))}</p>
+    <button class="btn" data-a="calAdd">${ico('cal')}${esc(t('web.calYes'))}</button>
+    <p class="muted small">${esc(t('web.calHow'))}</p>
+    <details><summary class="small" style="cursor:pointer;font-weight:700">${esc(t('web.calGoogle'))}</summary><p class="muted small">${esc(t('web.calGoogleHint'))}</p>
+      ${tasks.map((x) => `<a class="btn sm ghost" href="${esc(gcalLink(x))}" target="_blank" rel="noopener">${esc(fmtDate(x.due_date))} · ${esc(t('web.calOne'))}</a>`).join('')}</details>
+    <button class="btn ghost" data-a="calNo">${esc(t('web.calNo'))}</button></div>`;
+}
+async function takeDate(d, x) {
+  const task = {
+    id: uid(), document_id: d.id, title: `${x.description || t('tasks.kind_' + x.kind)} – ${d.sender || d.title}`, kind: x.kind,
+    due_date: x.date, status: 'open', priority: x.kind === 'payment' || x.kind === 'cancellation' || x.kind === 'skonto' ? 'high' : 'normal', notes: '', created_at: nowIso(), version: 0,
+  };
+  const saved = await saveVersioned('tasks', task);
+  S.tasks.push(saved);
+  toast(t('web.toastTaken'));
+}
+
+/* ---------- E-Rechnung: XRechnung (UBL/CII) und ZUGFeRD/Factur-X lesen ---------- */
+function xKids(el, name) { return el ? [...el.children].filter((c) => c.localName === name) : []; }
+function xPath(el, ...names) { let cur = el ? [el] : []; for (const n of names) cur = cur.flatMap((c) => xKids(c, n)); return cur; }
+const xFirst = (el, ...names) => xPath(el, ...names)[0] || null;
+const xText = (el, ...names) => { const n = names.length ? xFirst(el, ...names) : el; return n ? n.textContent.trim() : ''; };
+const xNum = (el, ...names) => { const v = xText(el, ...names); return v === '' ? null : Number(v); };
+const ciiDate = (v) => (/^\d{8}$/.test(v) ? `${v.slice(0, 4)}-${v.slice(4, 6)}-${v.slice(6, 8)}` : parseDate(v));
+function parseEInvoice(xmlText) {
+  let dom;
+  try { dom = new DOMParser().parseFromString(xmlText, 'application/xml'); } catch { return null; }
+  if (!dom || dom.getElementsByTagName('parsererror').length) return null;
+  const root = dom.documentElement;
+  const addr = (lines) => lines.filter(Boolean).join('\n');
+  if (root.localName === 'CrossIndustryInvoice') {
+    const tx = xFirst(root, 'SupplyChainTradeTransaction');
+    const agr = xFirst(tx, 'ApplicableHeaderTradeAgreement');
+    const set = xFirst(tx, 'ApplicableHeaderTradeSettlement');
+    const party = (p) => { const a = xFirst(p, 'PostalTradeAddress'); return { name: xText(p, 'Name'), address: addr([xText(p, 'Name'), xText(a, 'LineOne'), xText(a, 'LineTwo'), [xText(a, 'PostcodeCode'), xText(a, 'CityName')].filter(Boolean).join(' '), xText(a, 'CountryID') !== 'DE' ? xText(a, 'CountryID') : '']), vat: xText(p, 'SpecifiedTaxRegistration', 'ID') }; };
+    const seller = party(xFirst(agr, 'SellerTradeParty')), buyer = party(xFirst(agr, 'BuyerTradeParty'));
+    const sum = xFirst(set, 'SpecifiedTradeSettlementHeaderMonetarySummation');
+    const taxes = xPath(set, 'ApplicableTradeTax').map((tt) => ({ rate: xNum(tt, 'RateApplicablePercent'), net: xNum(tt, 'BasisAmount'), vat: xNum(tt, 'CalculatedAmount') }));
+    const taxTotal = xPath(sum, 'TaxTotalAmount').map((n) => Number(n.textContent)).find((n) => !isNaN(n));
+    const lines = xPath(tx, 'IncludedSupplyChainTradeLineItem').map((li) => ({
+      name: xText(li, 'SpecifiedTradeProduct', 'Name'), qty: xNum(li, 'SpecifiedLineTradeDelivery', 'BilledQuantity'),
+      price: xNum(li, 'SpecifiedLineTradeAgreement', 'NetPriceProductTradePrice', 'ChargeAmount'),
+      rate: xNum(li, 'SpecifiedLineTradeSettlement', 'ApplicableTradeTax', 'RateApplicablePercent'),
+      net: xNum(li, 'SpecifiedLineTradeSettlement', 'SpecifiedTradeSettlementLineMonetarySummation', 'LineTotalAmount'),
+    }));
+    return {
+      format: 'ZUGFeRD/Factur-X/XRechnung (CII)', number: xText(root, 'ExchangedDocument', 'ID'),
+      issue_date: ciiDate(xText(root, 'ExchangedDocument', 'IssueDateTime', 'DateTimeString')),
+      due_date: ciiDate(xText(set, 'SpecifiedTradePaymentTerms', 'DueDateDateTime', 'DateTimeString')),
+      currency: xText(set, 'InvoiceCurrencyCode') || 'EUR', seller, buyer,
+      iban: xText(set, 'SpecifiedTradeSettlementPaymentMeans', 'PayeePartyCreditorFinancialAccount', 'IBANID'),
+      bic: xText(set, 'SpecifiedTradeSettlementPaymentMeans', 'PayeeSpecifiedCreditorFinancialInstitution', 'BICID'),
+      reference: xText(set, 'PaymentReference'),
+      net: xNum(sum, 'TaxBasisTotalAmount'), vat: taxTotal ?? null, gross: xNum(sum, 'GrandTotalAmount'), payable: xNum(sum, 'DuePayableAmount'),
+      taxes, lines, type: xText(root, 'ExchangedDocument', 'TypeCode'),
+    };
+  }
+  if (root.localName === 'Invoice' || root.localName === 'CreditNote') {
+    const party = (p) => { const pp = xFirst(p, 'Party'); const a = xFirst(pp, 'PostalAddress'); const name = xText(pp, 'PartyName', 'Name') || xText(pp, 'PartyLegalEntity', 'RegistrationName');
+      return { name, address: addr([name, xText(a, 'StreetName'), xText(a, 'AdditionalStreetName'), [xText(a, 'PostalZone'), xText(a, 'CityName')].filter(Boolean).join(' '), (xText(a, 'Country', 'IdentificationCode') || 'DE') !== 'DE' ? xText(a, 'Country', 'IdentificationCode') : '']), vat: xText(pp, 'PartyTaxScheme', 'CompanyID') }; };
+    const tot = xFirst(root, 'LegalMonetaryTotal');
+    const taxTotal = xFirst(root, 'TaxTotal');
+    const lineName = root.localName === 'Invoice' ? 'InvoiceLine' : 'CreditNoteLine';
+    const qtyName = root.localName === 'Invoice' ? 'InvoicedQuantity' : 'CreditedQuantity';
+    return {
+      format: 'XRechnung (UBL)', number: xText(root, 'ID'), issue_date: parseDate(xText(root, 'IssueDate')),
+      due_date: parseDate(xText(root, 'DueDate')) || parseDate(xText(root, 'PaymentMeans', 'PaymentDueDate')),
+      currency: xText(root, 'DocumentCurrencyCode') || 'EUR', seller: party(xFirst(root, 'AccountingSupplierParty')), buyer: party(xFirst(root, 'AccountingCustomerParty')),
+      iban: xText(root, 'PaymentMeans', 'PayeeFinancialAccount', 'ID'), bic: xText(root, 'PaymentMeans', 'PayeeFinancialAccount', 'FinancialInstitutionBranch', 'ID'),
+      reference: xText(root, 'PaymentMeans', 'PaymentID'),
+      net: xNum(tot, 'TaxExclusiveAmount'), vat: xNum(taxTotal, 'TaxAmount'), gross: xNum(tot, 'TaxInclusiveAmount'), payable: xNum(tot, 'PayableAmount'),
+      taxes: xPath(taxTotal, 'TaxSubtotal').map((x) => ({ rate: xNum(x, 'TaxCategory', 'Percent'), net: xNum(x, 'TaxableAmount'), vat: xNum(x, 'TaxAmount') })),
+      lines: xPath(root, lineName).map((li) => ({ name: xText(li, 'Item', 'Name'), qty: xNum(li, qtyName), price: xNum(li, 'Price', 'PriceAmount'), rate: xNum(li, 'Item', 'ClassifiedTaxCategory', 'Percent'), net: xNum(li, 'LineExtensionAmount') })),
+      type: root.localName,
+    };
+  }
+  return null;
+}
+/** Belegfelder aus einer gelesenen E-Rechnung (ohne KI) */
+function einvoicePatch(e) {
+  const title = `${e.seller.name || 'Rechnung'} ${e.number || ''}`.trim();
+  return {
+    title, doc_type: e.type === 'CreditNote' || e.type === '381' ? 'Gutschrift (E-Rechnung)' : 'Eingangsrechnung (E-Rechnung)',
+    sender: e.seller.name || null, sender_address: e.seller.address || null, recipient: e.buyer.name || null, recipient_address: e.buyer.address || null,
+    invoice_number: e.number || null, amount_net: e.net, vat_amount: e.vat, amount_gross: e.gross ?? e.payable, currency: e.currency,
+    payment_required: (e.payable ?? e.gross ?? 0) > 0, due_date: e.due_date || null, iban: e.iban ? e.iban.replace(/\s+/g, '') : null, bic: e.bic || null,
+    payment_reference: e.reference || e.number || null, is_incoming_invoice: true, folder: 'buchhaltung', acc_type: 'rechnung', document_number: e.number || null, document_date: e.issue_date || null,
+    explanation: `${e.format}: Rechnung ${e.number || ''} von ${e.seller.name || '–'} vom ${fmtDate(e.issue_date)} über ${money(e.gross ?? e.payable, e.currency)}${e.due_date ? `, fällig am ${fmtDate(e.due_date)}` : ''}.`,
+    next_steps: ['Rechnung sachlich prüfen (Leistung erhalten, Preise korrekt)', e.due_date ? `Bis ${fmtDate(e.due_date)} bezahlen` : 'Zahlung veranlassen', 'Für den Steuerberater als Vorbuchhaltung markieren'],
+    dates: e.due_date ? [{ kind: 'payment', date: e.due_date, description: 'Zahlungsziel' }] : [],
+    suggested_action: { type: 'none', question: '' }, einvoice: e, analyzed_at: nowIso(),
+  };
+}
+async function zugferdXml(pdf) {
+  try {
+    const att = await pdf.getAttachments();
+    if (!att) return null;
+    for (const k of Object.keys(att)) { const a = att[k]; if (/\.xml$/i.test(a.filename || k)) return new TextDecoder().decode(a.content); }
+  } catch {}
+  return null;
+}
+VIEWS.erech = {
+  title: () => t('web.erech'),
+  render() {
+    const E = S.erech || (S.erech = {});
+    const e = E.parsed;
+    return `<p>${esc(t('web.erechIntro'))}</p>
+      <label class="btn pick">${ico('xml')}${esc(t('web.erechPick'))}<input id="erIn" class="vh" type="file" accept=".xml,.pdf,application/xml,text/xml,application/pdf"></label>
+      ${E.busy ? busyCard(t('scan.processing')) : ''}${E.error ? `<div class="banner warn">${esc(E.error)}</div>` : ''}
+      ${e ? `<div class="card"><div class="row between"><h2>${esc(e.number || '–')}</h2><span class="pill c-grey">${esc(e.format)}</span></div>
+        <dl class="kv"><dt>${esc(t('web.seller'))}</dt><dd class="prose">${esc(e.seller.address || e.seller.name)}</dd>
+        <dt>${esc(t('web.buyer'))}</dt><dd class="prose">${esc(e.buyer.address || e.buyer.name)}</dd>
+        <dt>${esc(t('web.issueDate'))}</dt><dd class="num">${esc(fmtDate(e.issue_date))}</dd>
+        <dt>${esc(t('web.dueDate'))}</dt><dd class="num">${esc(fmtDate(e.due_date))}</dd>
+        ${e.iban ? `<dt>${esc(t('doc.iban'))}</dt><dd class="mono">${esc(fmtIban(e.iban))}</dd>` : ''}
+        ${e.reference ? `<dt>${esc(t('doc.reference'))}</dt><dd>${esc(e.reference)}</dd>` : ''}</dl>
+        <h2>${esc(t('web.positions'))}</h2>${einvoiceTable(e)}
+        <div class="tot"><span class="muted">${esc(t('inv.net'))}</span><span>${money(e.net, e.currency)}</span>
+          ${(e.taxes || []).map((x) => `<span class="muted">${esc(t('inv.vat'))} ${esc(numStr(x.rate))} %</span><span>${money(x.vat, e.currency)}</span>`).join('')}
+          <span class="g">${esc(t('inv.gross'))}</span><span class="g">${money(e.gross ?? e.payable, e.currency)}</span></div>
+        <button class="btn" data-a="erTake">${esc(t('web.erechTake'))}</button></div>` : ''}`;
+  },
+  after() {
+    const inp = $('#erIn'); if (!inp) return;
+    inp.onchange = () => { const f = inp.files[0]; inp.value = ''; if (f) readEInvoiceFile(f); };
+  },
+};
+async function readEInvoiceFile(f) {
+  const E = S.erech; E.busy = true; E.error = null; E.parsed = null; render();
+  try {
+    let xml = null; E.pdfPages = null; E.file = f.name;
+    if (/\.pdf$/i.test(f.name) || f.type === 'application/pdf') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise;
+      xml = await zugferdXml(pdf);
+      if (xml) {
+        E.pdfPages = [];
+        for (let i = 1; i <= Math.min(pdf.numPages, 20); i++) { const pg = await pdf.getPage(i); const vp = pg.getViewport({ scale: 1.6 }); const c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height; await pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise; E.pdfPages.push(canvasToPage(c)); }
+      }
+    } else xml = await f.text();
+    const parsed = xml ? parseEInvoice(xml) : null;
+    if (!parsed) E.error = t('web.erechNone'); else { E.parsed = parsed; E.xml = xml; }
+  } catch (e) { console.error(e); E.error = t('web.erechNone'); }
+  E.busy = false; if (S.view === 'erech') render();
+}
+async function erTake() {
+  const E = S.erech; const id = uid();
+  await guard(async () => {
+    let idx = 0;
+    if (E.pdfPages) for (const p of E.pdfPages) await store.put('pages', { id: uid(), docId: id, idx: idx++, dataUrl: p.dataUrl, w: p.w, h: p.h });
+    else await store.put('pages', { id: uid(), docId: id, idx: idx++, xml: E.xml.slice(0, 200000) });
+    const rec = Object.assign({
+      id, file_kind: E.pdfPages ? 'pdf' : 'xml', page_count: E.pdfPages ? E.pdfPages.length : 1, size_bytes: E.xml.length, sources: [E.file],
+      sha256: await sha256(E.xml), status: 'saved', tax_flag: 'prebook', archived: false, paid: false, is_contract: false, created_at: nowIso(), version: 0,
+    }, einvoicePatch(E.parsed));
+    const saved = await saveVersioned('docs', rec, t('web.erech'));
+    upsertLocal('docs', saved);
+    S.erech = null; S.docUi = { step: 2 }; toast(t('web.erechTaken'));
+    go('doc', { id }, { replace: true });
+  });
+}
+
+/* ---------- Antwortschreiben ---------- */
+const LETTER_FIELDS = [['sender', 'reply.sender', 1], ['recipient', 'reply.recipient', 1], ['place_date', 'reply.placeDate'], ['subject', 'reply.subject'], ['salutation', 'reply.salutation'], ['body', 'reply.body', 2], ['closing', 'reply.closing'], ['signature', 'reply.signature']];
+function addrLines(s) { const out = []; for (const raw of String(s || '').split(/\r?\n/)) { const l = raw.trim(); if (l && !out.some((o) => o.toLowerCase() === l.toLowerCase())) out.push(l); } return out; }
+/** Betreff inkl. Bezug/Zeichen (ältere Entwürfe hatten ein eigenes Feld „Bezug“) */
+function letterSubject(L) {
+  const s = String(L.subject || '').trim(), r = String(L.reference || '').trim();
+  if (!r || s.toLowerCase().includes(r.toLowerCase())) return s;
+  return s ? `${s} – ${r}` : r;
+}
+function letterText(L) {
+  return [addrLines(L.sender).join('\n'), '', addrLines(L.recipient).join('\n'), '', L.place_date, '', letterSubject(L), '', L.salutation, '', String(L.body || '').trim(), '', '', L.closing, '', '', '', L.signature].join('\n').replace(/\n{4,}(?=\S)/g, (m) => m);
+}
+function letterMail(L) { return [L.salutation, '', String(L.body || '').trim(), '', '', L.closing, '', '', '', L.signature].join('\n'); }
+function letterPdf(L) {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
+  const left = 25, width = 165, lh = 5;
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(7); pdf.text(addrLines(L.sender).join(' · '), left, 48, { maxWidth: 85 });
+  pdf.setFontSize(10.5);
+  const rl = addrLines(L.recipient).slice(0, 9);
+  let y = 55; for (const l of rl) { pdf.text(l, left, y, { maxWidth: 85 }); y += lh; }
+  // „Ort, Datum“ rechts, auf Höhe der letzten Anschriftzeile (PLZ Ort)
+  if (L.place_date) pdf.text(String(L.place_date), 190, 55 + Math.max(0, rl.length - 1) * lh, { align: 'right', maxWidth: 70 });
+  y = Math.max(103.4, y + 2 * lh); pdf.setFont('helvetica', 'bold'); for (const l of pdf.splitTextToSize(letterSubject(L), width)) { pdf.text(l, left, y); y += lh; }
+  pdf.setFont('helvetica', 'normal'); y += lh;
+  const lines = [L.salutation, '', ...String(L.body || '').trim().split('\n'), '', '', L.closing, '', '', '', L.signature];
+  for (const para of lines) {
+    const wrapped = para ? pdf.splitTextToSize(para, width) : [''];
+    for (const l of wrapped) { if (y > 280) { pdf.addPage(); y = 25; } pdf.text(l, left, y); y += lh; }
+  }
+  return pdf.output('blob');
+}
+VIEWS.reply = {
+  title: () => t('reply.title'),
+  render() {
+    const d = getDoc(S.params.id); if (!d) return '';
+    const R = S.replyUi || (S.replyUi = { step: 'consent', kind: 'reply', questions: null, answers: {} });
+    const rep = S.replies.find((r) => r.docId === d.id);
+    if (rep && R.step !== 'edit') { R.step = 'edit'; R.kind = rep.kind; }
+    if (R.step === 'consent') {
+      const kinds = d.is_contract ? ['reply', 'statement', 'cancellation'] : ['reply', 'statement'];
+      return `<div class="card"><h2>${esc(d.title)}</h2><p>${esc(t('reply.consent'))}</p>
+        <div class="chips">${kinds.map((k) => chip(t('reply.kind_' + k), R.kind === k, `data-a="replyKind" data-v="${k}"`)).join('')}</div>
+        ${S.sample ? `<button class="btn" data-a="replyStart">${esc(t('common.yes'))}</button>` : `<div class="banner">${esc(t('web.noAi'))}</div>`}
+        <button class="btn ghost" data-a="back">${esc(t('common.no'))}</button></div>`;
+    }
+    if (R.step === 'questions' || R.step === 'generating') {
+      if (R.error) return `<div class="banner warn">${esc(R.error)}</div><button class="btn" data-a="replyStart">${esc(t('common.retry'))}</button>`;
+      if (!R.questions || R.step === 'generating') return busyCard(R.step === 'generating' ? t('reply.generating') : t('web.thinking'));
+      return `<div class="card"><h2>${esc(t('reply.questions'))}</h2>${R.questions.length ? `<p class="muted">${esc(t('reply.skip'))}</p>` : ''}
+        ${R.questions.map((q, i) => area('q_' + i, q.question, R.answers[i] || '', 'style="min-height:70px"')).join('')}
+        <button class="btn" data-a="replyGenerate">${ico('pen')}${esc(t('reply.generate'))}</button></div>`;
+    }
+    if (rep.data.reference) rep.data = Object.assign({}, rep.data, { subject: letterSubject(rep.data), reference: '' });
+    const L = rep.data;
+    return `<div class="banner warn">${esc(t('reply.checkHint'))}</div>
+      <div class="row between"><span class="pill c-grey">${esc(t('reply.kind_' + rep.kind))}</span><span class="muted small" id="saveState">${esc(R.saveState || '')}</span></div>
+      <div class="grid2"><button class="btn" data-a="letterPdf">${esc(t('web.downloadPdf'))}</button><button class="btn sec" data-a="letterCopy">${esc(t('web.copyText'))}</button></div>
+      ${field('l_email', t('web.email'), L.email || '', 'type="email" data-l="email" autocomplete="off"')}
+      <a class="btn ghost" id="mailLink" href="mailto:${encodeURIComponent(L.email || '')}?subject=${encodeURIComponent(letterSubject(L))}&body=${encodeURIComponent(letterMail(L))}" target="_blank" rel="noopener">${esc(t('web.mailApp'))}</a>
+      <p class="muted small">${esc(t('web.mailNote'))}</p>
+      <button class="btn sm ghost" data-go="doc" data-id="${d.id}">${esc(t('reply.toOriginal'))}</button>
+      <div class="card">${LETTER_FIELDS.map(([k, lab, multi]) => multi ? area('l_' + k, t(lab), L[k] || '', `data-l="${k}" ${multi === 2 ? 'style="min-height:240px"' : ''}`) : field('l_' + k, t(lab), L[k] || '', `data-l="${k}"`)).join('')}</div>
+      <h2>${esc(t('reply.preview'))}</h2>
+      <div class="letter" id="letterPrev">${letterPreview(L)}</div>`;
+  },
+  after() {
+    document.querySelectorAll('[data-l]').forEach((el) => { el.oninput = () => replyChanged(); });
+  },
+};
+function letterPreview(L) {
+  return `<div class="ret">${esc(addrLines(L.sender).join(' · '))}</div><div class="head"><div class="addr">${esc(addrLines(L.recipient).join('\n'))}</div>
+    <div class="meta">${esc(L.place_date || '')}</div></div>
+    <div class="subj">${esc(letterSubject(L))}</div><div class="body">${esc(`${L.salutation}\n\n${String(L.body || '').trim()}\n\n\n${L.closing}\n\n\n\n${L.signature}`)}</div>`;
+}
+let replyTimer = null;
+function replyChanged() {
+  const rep = S.replies.find((r) => r.docId === S.params.id); if (!rep) return;
+  const L = Object.assign({}, rep.data);
+  document.querySelectorAll('[data-l]').forEach((el) => { L[el.dataset.l] = el.value; });
+  rep.data = L;
+  $('#letterPrev').innerHTML = letterPreview(L);
+  const ml = $('#mailLink'); if (ml) ml.href = `mailto:${encodeURIComponent(L.email || '')}?subject=${encodeURIComponent(L.subject || '')}&body=${encodeURIComponent(letterMail(L))}`;
+  $('#saveState').textContent = t('reply.saving');
+  clearTimeout(replyTimer);
+  replyTimer = setTimeout(async () => {
+    try {
+      const saved = await saveVersioned('replies', rep, t('reply.title'));
+      upsertLocal('replies', saved);
+      S.replyUi.saveState = '✓ ' + t('reply.autosaved');
+    } catch (e) {
+      if (e && e.conflict) { upsertLocal('replies', e.current); S.replyUi.saveState = ''; toast(t('doc.conflict')); render(); return; }
+      S.replyUi.saveState = t('web.saveFailed', { msg: errText(e) });
+    }
+    const s = $('#saveState'); if (s) s.textContent = S.replyUi.saveState;
+  }, 1200);
+}
+async function replyStart() {
+  const d = getDoc(S.params.id); const R = S.replyUi;
+  R.step = 'questions'; R.questions = null; R.error = null; render();
+  try {
+    const inp = await aiInputFor(d);
+    const kl = { reply: 'Antwortschreiben', statement: 'Stellungnahme', cancellation: 'Kündigung' }[R.kind];
+    const r = await aiJson(`Du bereitest ein ${kl} auf das beiliegende Schreiben vor. ${companyLine()}\n${inp.text}\nStelle nur Fragen, deren Antworten für ein korrektes Schreiben wirklich fehlen (z. B. Sachverhalt, gewünschter Termin, Kundennummer). Höchstens 5 kurze Fragen auf ${LANG_NAMES[lang]}. Wenn nichts fehlt, gib eine leere Liste zurück.\nAntworte nur mit JSON: {"questions":[{"question":string}]}`, inp.images);
+    R.questions = (r && Array.isArray(r.questions) ? r.questions : []).slice(0, 5).map((q) => ({ question: String(q.question || q) }));
+  } catch (e) { R.error = aiError(e); }
+  if (S.view === 'reply') render();
+}
+async function replyGenerate() {
+  const d = getDoc(S.params.id); const R = S.replyUi;
+  R.questions.forEach((_, i) => { R.answers[i] = val('q_' + i); });
+  R.step = 'generating'; render();
+  try {
+    const inp = await aiInputFor(d);
+    const kl = { reply: 'Antwortschreiben', statement: 'Stellungnahme', cancellation: 'Kündigung' }[R.kind];
+    const qa = R.questions.map((q, i) => `- ${q.question}\n  Antwort: ${R.answers[i] || '(keine Angabe – Platzhalter [ … ] verwenden)'}`).join('\n') || '(keine zusätzlichen Angaben)';
+    const L = await aiJson(`Schreibe ein sachliches, höfliches ${kl} auf Deutsch im Namen des Betriebs. Heute ist ${fmtDate(todayISO())}. ${companyLine()}
+${inp.text}
+Absender ist der Betrieb, Empfänger ist der Absender des beiliegenden Schreibens. "place_date" enthält NUR Ort und Datum, z. B. "Köln, ${fmtDate(todayISO())}" – keinen Bezug, kein Zeichen. Der Bezug (Datum des Schreibens, Aktenzeichen/„Ihr Zeichen“, Rechnungs- oder Kundennummer) gehört in die Betreffzeile "subject", z. B. "SEPA-Mandat Nr. 123 – Ihr Schreiben vom 13.12.2024, Ihr Zeichen: AB-77". Keine eigene Bezugs- oder Zeichenzeile. Erfinde keine Tatsachen; fehlende Angaben als [Platzhalter]. ${R.kind === 'cancellation' ? 'Kündige fristgerecht zum nächstmöglichen Zeitpunkt und bitte um schriftliche Bestätigung mit Datum. ' : ''}Anschriften mehrzeilig mit \\n, jeder Name nur einmal. Im Feld "body" weder Anrede noch Grußformel; Absätze mit \\n\\n.
+${d.response_recipient ? `Antwort an: ${d.response_recipient}\n${d.response_address || ''}\n` : ''}${d.response_reference ? `Bezug: ${d.response_reference}\n` : ''}${d.response_subject ? `Betreff-Vorschlag: ${d.response_subject}\n` : ''}Angaben des Betriebs:\n${qa}
+Antworte nur mit JSON: {"sender":string,"recipient":string,"place_date":string,"subject":string,"salutation":string,"body":string,"closing":string,"signature":string}`, inp.images);
+    const data = {}; for (const [k] of LETTER_FIELDS) data[k] = String((L && L[k]) || '');
+    data.subject = letterSubject({ subject: data.subject, reference: String((L && L.reference) || '') });
+    if (!data.closing) data.closing = 'Mit freundlichen Grüßen';
+    data.email = d.recipient_email || '';
+    const saved = await saveVersioned('replies', { id: uid(), docId: d.id, kind: R.kind, data, created_at: nowIso(), version: 0 }, t('reply.title'));
+    upsertLocal('replies', saved);
+    R.step = 'edit'; R.saveState = '✓ ' + t('reply.autosaved');
+  } catch (e) { R.step = 'questions'; R.error = aiError(e); }
+  if (S.view === 'reply') render();
+}
+
+/* ---------- Fristen & Aufgaben ---------- */
+VIEWS.tasks = {
+  title: () => t('tasks.title'),
+  topPlus: 'data-go="task" data-id="new"',
+  render() {
+    const list = S.tasks.filter((x) => (S.showDone ? x.status === 'done' : x.status !== 'done')).sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999'));
+    return `${voiceButton('compact')}${seg([['open', t('web.open')], ['done', t('web.done')]], S.showDone ? 'done' : 'open', 'taskSeg')}
+      ${list.length ? `<div class="group">${list.slice(0, lim('tasks')).map((x) => { const dn = x.status === 'done'; const d = dn ? null : daysUntil(x.due_date); const sv = sev(d);
+        const circ = dn ? '✓' : x.status === 'in_progress' ? '◐' : '○';
+        return `<div class="cell" style="padding:0;gap:0"><button class="ib" style="border:0;margin-inline-start:6px;font-size:1.3rem;color:var(--${dn ? 'ok' : sv === 'red' ? 'stamp' : sv === 'orange' || sv === 'yellow' ? 'warn' : 'muted'})" data-a="taskCycle" data-v="${x.id}" aria-label="${esc(t('tasks.tapStatus'))}: ${esc(t('tasks.status_' + x.status))}">${circ}</button>
+          <button class="cell" style="flex:1" data-go="task" data-id="${x.id}"><span class="cx"><span class="ct" ${dn ? 'style="text-decoration:line-through;color:var(--muted)"' : ''}>${x.priority === 'high' && !dn ? `<span class="prio" aria-label="${esc(t('tasks.prio_high'))}">!</span>` : ''}${esc(x.title)}</span><span class="cs" style="display:block">${dn ? '' : `<b class="due c-${sv}">${esc(dueLabel(d))}</b> · `}${esc([fmtDate(x.due_date) + (x.due_time ? ' ' + x.due_time : ''), t('tasks.kind_' + x.kind), x.status === 'in_progress' ? t('tasks.status_' + x.status) : '', x.recur ? '↻ ' + t('tasks.recur_' + x.recur) : ''].filter(Boolean).join(' · '))}</span></span><span class="chev">›</span></button></div>`; }).join('')}</div>`
+        : `<div class="empty">${ico('clock')}<p class="muted">${esc(t('tasks.empty'))}</p></div>`}${moreBtn('tasks', list.length)}
+      ${group([cell({ icon: 'cal', ic: 'g', title: t('tasks.taxCalendar'), attrs: 'data-go="tax"' })].concat(S.tasks.some((x) => x.status !== 'done' && x.due_date) ? [cell({ icon: 'bell', ic: 'g', title: t('web.icsExport'), sub: t('web.icsHint'), attrs: 'data-a="icsExport"' })] : []))}
+      <p class="muted small">${esc(t('tax.stateNote'))}</p>`;
+  },
+};
+VIEWS.task = {
+  title: () => (S.params.id === 'new' ? t('tasks.new') : t('tasks.edit')),
+  render() {
+    const isNew = S.params.id === 'new';
+    const x = isNew ? (S.taskDraft || (S.taskDraft = { kind: 'other', status: 'open', priority: 'normal' })) : S.tasks.find((k) => k.id === S.params.id);
+    if (!x) return '';
+    if (!isNew) S.taskDraft = S.taskDraft && S.taskDraft.id === x.id ? S.taskDraft : clone(x);
+    const T = S.taskDraft;
+    return `<div class="card">${field('t_title', t('tasks.name'), T.title || '')}
+      <div class="grid2">${field('t_due', t('tasks.due'), T.due_date ? fmtDate(T.due_date) : '', `placeholder="${esc(t('common.dateHint'))}" inputmode="numeric"`)}${field('t_time', t('heu.fTime'), T._time !== undefined ? T._time : T.due_time || '', 'placeholder="10:00" inputmode="numeric"')}</div>
+      <h2>${esc(t('tasks.kind'))}</h2><div class="chips">${KINDS.map((k) => chip(t('tasks.kind_' + k), T.kind === k, `data-a="tset" data-k="kind" data-v="${k}"`)).join('')}</div>
+      <h2>${esc(t('tasks.status'))}</h2><div class="chips">${['open', 'in_progress', 'done'].map((k) => chip(t('tasks.status_' + k), T.status === k, `data-a="tset" data-k="status" data-v="${k}"`)).join('')}</div>
+      <h2>${esc(t('tasks.priority'))}</h2><div class="chips">${['low', 'normal', 'high'].map((k) => chip(t('tasks.prio_' + k), T.priority === k, `data-a="tset" data-k="priority" data-v="${k}"`)).join('')}</div>
+      <h2>${esc(t('tasks.recur'))}</h2><div class="chips">${['', 'monthly', 'quarterly', 'yearly'].map((k) => chip(t('tasks.recur_' + (k || 'none')), (T.recur || '') === k, `data-a="tset" data-k="recur" data-v="${k}"`)).join('')}</div>
+      ${area('t_notes', t('tasks.notes'), T.notes || '')}
+      <button class="btn" data-a="taskSave">${esc(t('common.save'))}</button></div>
+      ${T.document_id ? `<button class="btn sec" data-go="doc" data-id="${T.document_id}">${esc(t('tasks.linkedDoc'))}</button>` : ''}
+      ${isNew ? '' : `<button class="btn ghost" data-a="taskDel">${esc(t('common.delete'))}</button>`}`;
+  },
+};
+function keepTaskInputs() { if (!S.taskDraft) return; S.taskDraft.title = val('t_title'); S.taskDraft._due = val('t_due'); S.taskDraft._time = val('t_time'); S.taskDraft.notes = val('t_notes'); }
+function nextDue(iso, recur) {
+  const d = fromISO(iso), day = d.getDate(), add = recur === 'monthly' ? 1 : recur === 'quarterly' ? 3 : 12;
+  const n = new Date(d.getFullYear(), d.getMonth() + add, 1); n.setDate(Math.min(day, new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate()));
+  return toISO(n);
+}
+/** Wiederkehrende Frist erledigt → nächsten Termin anlegen (einmalig je Termin) */
+async function spawnNext(task) {
+  if (!task.recur || !task.due_date || task.status !== 'done') return;
+  const due = nextDue(task.due_date, task.recur);
+  if (S.tasks.some((x) => x.series === (task.series || task.id) && x.due_date === due)) return;
+  const rec = { id: uid(), title: task.title, kind: task.kind, due_date: due, status: 'open', priority: task.priority, notes: task.notes || '', recur: task.recur, series: task.series || task.id, document_id: task.document_id || null, template_key: task.template_key || null, created_at: nowIso(), version: 0 };
+  const saved = await saveVersioned('tasks', rec); S.tasks.push(saved); toast(t('tasks.nextCreated', { date: fmtDate(due) }));
+}
+async function taskSave() {
+  const T = S.taskDraft; keepTaskInputs();
+  if (!T.title.trim()) return toast(t('tasks.name'));
+  let due = null; if (T._due.trim()) { due = parseDate(T._due); if (!due) return toast(t('common.invalidDate')); }
+  const tm = String(T._time || '').trim().replace('.', ':'); if (tm && !/^([01]?\d|2[0-3]):[0-5]\d$/.test(tm)) return toast(t('heu.fTime'));
+  await guard(async () => {
+    const rec = Object.assign({}, T, { title: T.title.trim(), due_date: due, due_time: tm && due ? tm.padStart(5, '0') : null, notes: T.notes.trim() });
+    delete rec._due; delete rec._time;
+    if (!rec.id) { rec.id = uid(); rec.created_at = nowIso(); rec.version = 0; }
+    const saved = await saveVersioned('tasks', rec);
+    const i = S.tasks.findIndex((k) => k.id === saved.id); if (i >= 0) S.tasks[i] = saved; else S.tasks.push(saved);
+    S.taskDraft = null; toast(t('web.toastSaved')); await spawnNext(saved); back();
+  });
+}
+
+function icsEscape(v) { return String(v || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
+function icsFold(line) { const out = []; let l = line; while (l.length > 74) { out.push(l.slice(0, 74)); l = ' ' + l.slice(74); } out.push(l); return out.join('\r\n'); }
+function buildIcs(ids, fixedDays) {
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//eOffis//Fristen//DE', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:eOffis Fristen'];
+  for (const x of S.tasks.filter((k) => k.status !== 'done' && k.due_date && (!ids || ids.includes(k.id)))) {
+    const d = x.due_date.replace(/-/g, ''), e = addDays(x.due_date, 1).replace(/-/g, '');
+    if (x.due_time) {
+      // Termin mit Uhrzeit (z. B. per Sprache): 1 Stunde, Erinnerung 24 Stunden und 1 Stunde vorher (Ortszeit des Handys)
+      const [hh, mm] = x.due_time.split(':').map(Number), endH = Math.min(23, hh + 1);
+      lines.push('BEGIN:VEVENT', `UID:${x.id}@eoffis`, `DTSTAMP:${stamp}`, `DTSTART:${d}T${String(hh).padStart(2, '0')}${String(mm).padStart(2, '0')}00`, `DTEND:${d}T${String(endH).padStart(2, '0')}${String(endH === hh ? 59 : mm).padStart(2, '0')}00`,
+        icsFold(`SUMMARY:${icsEscape('eOffis: ' + x.title)}`), icsFold(`DESCRIPTION:${icsEscape(t('tasks.kind_' + x.kind) + (x.notes ? ' – ' + x.notes : ''))}`));
+      for (const trig of ['-P1D', '-PT1H']) lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', `TRIGGER:${trig}`, icsFold(`DESCRIPTION:${icsEscape(x.title)}`), 'END:VALARM');
+      lines.push('END:VEVENT');
+      continue;
+    }
+    lines.push('BEGIN:VEVENT', `UID:${x.id}@eoffis`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${d}`, `DTEND;VALUE=DATE:${e}`,
+      icsFold(`SUMMARY:${icsEscape('eOffis: ' + x.title)}`), icsFold(`DESCRIPTION:${icsEscape(t('tasks.kind_' + x.kind) + (x.notes ? ' – ' + x.notes : ''))}`), 'TRANSP:TRANSPARENT');
+    for (const n of [...new Set(fixedDays || offsetsFor(x.kind))].sort((a, b) => b - a)) {
+      // Ganztägiger Termin beginnt 00:00 – Erinnerung jeweils um 9 Uhr am Tag „n Tage vorher“
+      const trig = n === 0 ? 'PT9H' : n === 1 ? '-PT15H' : `-P${n - 1}DT15H`;
+      lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', `TRIGGER:${trig}`, icsFold(`DESCRIPTION:${icsEscape(x.title)}`), 'END:VALARM');
+    }
+    lines.push('END:VEVENT');
+  }
+  lines.push('END:VCALENDAR');
+  return lines.join('\r\n') + '\r\n';
+}
+
+/* ---------- Steuerfristenkalender ---------- */
+VIEWS.tax = {
+  title: () => t('tax.title'),
+  render() {
+    const dfv = !!(S.profile && S.profile.dauerfrist);
+    const sel = S.taxSel || (S.taxSel = new Set(['ust_va']));
+    const R = S.taxRule || (S.taxRule = { title: '', interval: 'monthly', first: 1, day: 10, offset: 1, weekend: true, holidays: '', preview: null });
+    return `<p>${esc(t('tax.intro'))}</p>
+      <label class="check"><input type="checkbox" data-a="dfv" ${dfv ? 'checked' : ''}>${esc(t('tax.dfv'))}</label>
+      ${TAX.filter((x) => x.key !== 'sondervz' || dfv).map((x) => `<div class="card"><label class="check"><input type="checkbox" data-a="taxSel" data-v="${x.key}" ${sel.has(x.key) ? 'checked' : ''}><b>${esc(t(x.title))}</b></label>
+        <p class="muted small num">${esc(t('tax.next'))}: ${x.dates(todayISO(), 12, dfv).slice(0, 4).map(fmtDate).join(' · ')}</p></div>`).join('')}
+      <button class="btn" data-a="taxCreate" ${sel.size ? '' : 'disabled'}>${esc(t('tax.create'))}</button>
+      <div class="sec-h">${esc(t('web.ruleTitle'))}</div>
+      <div class="card"><p class="muted small">${esc(t('web.ruleHint'))}</p>
+        ${field('r_title', t('tasks.name'), R.title)}
+        <div class="seg">${['monthly', 'quarterly', 'yearly'].map((k) => `<button aria-pressed="${R.interval === k}" data-a="ruleInt" data-v="${k}">${esc(t('tasks.recur_' + k))}</button>`).join('')}</div>
+        <div class="grid2">${field('r_first', t('web.ruleFirst'), String(R.first), 'inputmode="numeric"')}${field('r_day', t('web.ruleDay'), String(R.day), 'inputmode="numeric"')}</div>
+        ${field('r_offset', t('web.ruleOffset'), String(R.offset), 'inputmode="numeric"')}
+        <label class="check"><input type="checkbox" id="r_weekend" ${R.weekend ? 'checked' : ''}>${esc(t('web.ruleWeekend'))}</label>
+        ${area('r_hol', t('web.ruleHolidays'), R.holidays, `placeholder="${esc(t('common.dateHint'))}, …" style="min-height:64px"`)}
+        <button class="btn sec" data-a="rulePreview">${esc(t('web.rulePreview'))}</button>
+        ${R.preview ? (R.preview.length ? `<p class="small num">${R.preview.map(fmtDate).join(' · ')}</p><button class="btn" data-a="ruleCreate">${esc(t('tax.create'))} (${R.preview.length})</button>` : `<p class="muted">–</p>`) : ''}</div>
+      <button class="btn ghost" data-go="task" data-id="new">${esc(t('tax.own'))}</button>
+      <p class="muted small">${esc(t('tax.stateNote'))} ${esc(t('home.legalNote'))}</p>`;
+  },
+};
+function readRule() {
+  const R = S.taxRule;
+  R.title = val('r_title'); R.first = Math.min(12, Math.max(1, parseInt(val('r_first'), 10) || 1)); R.day = Math.min(31, Math.max(1, parseInt(val('r_day'), 10) || 10));
+  R.offset = Math.min(12, Math.max(0, parseInt(val('r_offset'), 10) || 0)); R.weekend = !!($('#r_weekend') && $('#r_weekend').checked); R.holidays = val('r_hol');
+}
+/** Eigene Steuerregel: ab erstem Monat im Intervall, Tag X, Versatz in Monaten, Wochenende/Feiertage (bundesweit + eigene) → nächster Werktag */
+function ruleDates(R, from, months) {
+  const own = new Set(R.holidays.split(/[\s,;]+/).map(parseDate).filter(Boolean));
+  const step = R.interval === 'monthly' ? 1 : R.interval === 'quarterly' ? 3 : 12;
+  const start = fromISO(from), end = new Date(start.getFullYear(), start.getMonth() + months, start.getDate()), out = [];
+  for (let y = start.getFullYear() - 1; y <= end.getFullYear(); y++) {
+    for (let m = R.first; m <= 12; m += step) {
+      const tm = new Date(y, m - 1 + R.offset, 1);
+      tm.setDate(Math.min(R.day, new Date(tm.getFullYear(), tm.getMonth() + 1, 0).getDate()));
+      let iso = toISO(tm);
+      for (let n = 0; n < 30 && ((R.weekend && !isWorkday(iso)) || own.has(iso)); n++) iso = addDays(iso, 1);
+      if (iso >= from && fromISO(iso) < end && !out.includes(iso)) out.push(iso);
+    }
+  }
+  return out.sort();
+}
+async function taxCreate() {
+  const dfv = !!(S.profile && S.profile.dauerfrist);
+  const have = new Set(S.tasks.filter((x) => x.template_key).map((x) => `${x.template_key}|${x.due_date}`));
+  let n = 0;
+  await guard(async () => {
+    for (const tpl of TAX.filter((x) => S.taxSel.has(x.key) && (x.key !== 'sondervz' || dfv))) {
+      for (const d of tpl.dates(todayISO(), 12, dfv)) {
+        if (have.has(`${tpl.key}|${d}`)) continue;
+        const rec = { id: uid(), title: t(tpl.title), kind: 'tax', due_date: d, status: 'open', priority: 'high', notes: '', template_key: tpl.key, created_at: nowIso(), version: 1 };
+        await store.put('tasks', rec); S.tasks.push(rec); n++;
+      }
+    }
+    toast(t('tax.created', { count: n })); go('tasks');
+  });
+}
+
+/* ---------- Rechnungen ---------- */
+VIEWS.invoices = {
+  title: () => t('acc.oldInvoices'),
+  render() {
+    const list = S.invoices.filter((i) => i.status === 'final' && !i.is_template);
+    return `<div class="banner">${esc(t('acc.movedNote'))}</div>
+      <div class="list">${list.length ? list.slice(0, lim('inv')).map((i) => item({ title: `${i.number} · ${i.snapshot.customer_name || '–'}`, sub: fmtDate(i.snapshot.issue_date), right: money(i.snapshot.gross), attrs: `data-go="invoice" data-id="${i.id}"` })).join('') + moreBtn('inv', list.length) : `<div class="empty">${ico('invoice')}<p class="muted">${esc(t('inv.empty'))}</p></div>`}</div>`;
+  },
+};
+const UNITS = [['C62', 'Stück'], ['HUR', 'Std.'], ['DAY', 'Tag'], ['KGM', 'kg'], ['MTR', 'm']];
+const unitLabel = (u) => (UNITS.find((x) => x[0] === u) || UNITS[0])[1];
+/** IBAN-Prüfziffer (Modulo 97) */
+function ibanValid(iban) {
+  const s = String(iban || '').replace(/\s+/g, '').toUpperCase();
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(s)) return false;
+  const r = s.slice(4) + s.slice(0, 4); let n = 0;
+  for (const c of r) for (const d of /[A-Z]/.test(c) ? String(c.charCodeAt(0) - 55) : c) n = (n * 10 + Number(d)) % 97;
+  return n === 1;
+}
+const vatIdValid = (v) => /^DE\d{9}$/.test(String(v || '').replace(/\s+/g, ''));
+function splitAddress(addr) {
+  const lines = addrLines(addr); const zl = lines.find((l) => /^\d{5}\s+\S/.test(l)) || '';
+  return { street: lines.find((l) => l !== zl && /\d/.test(l)) || '', zip: (zl.match(/^\d{5}/) || [''])[0], city: zl.replace(/^\d{5}\s+/, '') };
+}
+function companyData(p) {
+  p = p || {};
+  const sp = p.street ? { street: p.street, zip: p.zip || '', city: p.city || '' } : splitAddress(p.address || '');
+  return { name: p.company_name || '', street: sp.street, zip: sp.zip, city: sp.city, email: p.email || '', contact: p.contact || '', phone: p.phone || '',
+    tax_number: p.tax_number || '', vat_id: (p.vat_id || '').replace(/\s+/g, ''), iban: (p.iban || '').replace(/\s+/g, ''),
+    address: [p.company_name, sp.street, [sp.zip, sp.city].filter(Boolean).join(' ')].filter(Boolean).join('\n') };
+}
+/* Rechnungen schreibt jetzt das Buchhaltungsprogramm. Frühere finalisierte Ausgangsrechnungen bleiben einsehbar (PDF, XRechnung, ZUGFeRD). */
+VIEWS.invoice = {
+  title: () => { const i = S.invoices.find((x) => x.id === S.params.id); return i ? i.number || t('inv.draft') : t('acc.oldInvoices'); },
+  render() {
+    const inv = S.invoices.find((x) => x.id === S.params.id);
+    if (!inv || inv.status !== 'final') return `<div class="banner">${esc(t('acc.movedNote'))}</div>`;
+    return renderFinalInvoice(inv);
+  },
+};
+function renderFinalInvoice(inv) {
+  const s = inv.snapshot;
+  return `<div class="banner">${esc(t('acc.movedNote'))}</div><div class="card"><div class="row between"><h2 class="mono" style="font-size:1.05rem">${esc(s.number)}</h2></div>
+      <p><b>${esc(s.customer_name)}</b></p><p class="muted prose">${esc(s.customer_address)}</p>
+      <dl class="kv"><dt>${esc(t('inv.issueDate'))}</dt><dd class="num">${fmtDate(s.issue_date)}</dd><dt>${esc(t('inv.serviceDate'))}</dt><dd class="num">${fmtDate(s.service_date || s.issue_date)}</dd><dt>${esc(t('doc.dueDate'))}</dt><dd class="num">${fmtDate(s.due_date)}</dd>${s.buyer_reference ? `<dt>${esc(t('web.buyerRef'))}</dt><dd>${esc(s.buyer_reference)}</dd>` : ''}</dl>
+      <hr>${s.items.map((it) => `<div class="row between"><span class="grow">${esc(numStr(it.qty))} ${esc(unitLabel(it.unit))} × ${esc(it.description)} <span class="muted small">(${it.vat_rate} %)</span></span><span class="num">${money(Math.round(it.qty * it.unit_price * 100) / 100)}</span></div>`).join('')}
+      <div class="tot"><span class="muted">${esc(t('inv.net'))}</span><span>${money(s.net)}</span>${s.vat_lines.map((v) => `<span class="muted">${esc(t('inv.vat'))} ${v.rate} %</span><span>${money(v.vat)}</span>`).join('')}<span class="g">${esc(t('inv.gross'))}</span><span class="g">${money(s.gross)}</span></div>
+      <button class="btn" data-a="invPdf">${esc(t('web.downloadPdf'))}</button>
+      ${s.e_ready ? `<div class="grid2"><button class="btn sec" data-a="invXr">XRechnung (XML)</button><button class="btn sec" data-a="invZf">ZUGFeRD (PDF)</button></div>` : ''}</div>
+    <p class="muted small">${esc(t('web.finalized', { date: new Date(inv.finalized_at).toLocaleString('de-DE') }))}</p>
+    <p class="muted small">${esc(t('inv.hash'))}:</p><p class="mono small" style="overflow-wrap:anywhere">${esc(inv.final_hash || '')}</p>`;
+}
+function invoicePdfDoc(s) {
+  const { jsPDF } = window.jspdf; const pdf = new jsPDF({ unit: 'mm', format: 'a4' }); const L = 25, R = 190; const c = s.company;
+  pdf.setFont('helvetica', 'normal'); pdf.setFontSize(7); pdf.text(addrLines(c.address || c.name).join(' · '), L, 48, { maxWidth: 85 });
+  pdf.setFontSize(10.5); let y = 55; for (const l of addrLines(`${s.customer_name}\n${s.customer_address}`)) { pdf.text(l, L, y); y += 5; }
+  let my = 55; for (const m of [`Rechnungsnr.: ${s.number}`, `Rechnungsdatum: ${fmtDate(s.issue_date)}`, `Leistungsdatum: ${fmtDate(s.service_date || s.issue_date)}`, s.buyer_reference ? `Ihre Referenz: ${s.buyer_reference}` : ''].filter(Boolean)) { pdf.text(m, R, my, { align: 'right' }); my += 5; }
+  y = 103.4; pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13); pdf.text(`Rechnung ${s.number}`, L, y); pdf.setFontSize(9.5);
+  y += 10; const cols = [L, L + 10, 130, 152, 165, R];
+  pdf.text('Pos.', cols[0], y); pdf.text('Beschreibung', cols[1], y); pdf.text('Menge', cols[2], y, { align: 'right' }); pdf.text('Einzelpreis', cols[3], y, { align: 'right' }); pdf.text('USt', cols[4], y, { align: 'right' }); pdf.text('Netto', cols[5], y, { align: 'right' });
+  pdf.setFont('helvetica', 'normal'); y += 2; pdf.line(L, y, R, y); y += 5;
+  s.items.forEach((it, i) => {
+    const desc = pdf.splitTextToSize(it.description, 82);
+    if (y + desc.length * 4.5 > 265) { pdf.addPage(); y = 25; }
+    pdf.text(String(i + 1), cols[0], y); pdf.text(desc, cols[1], y); pdf.text(`${numStr(it.qty)} ${unitLabel(it.unit)}`, cols[2], y, { align: 'right' });
+    pdf.text(money(it.unit_price), cols[3], y, { align: 'right' }); pdf.text(`${it.vat_rate} %`, cols[4], y, { align: 'right' });
+    pdf.text(money(Math.round(it.qty * it.unit_price * 100) / 100), cols[5], y, { align: 'right' }); y += desc.length * 4.5 + 1.5;
+  });
+  pdf.line(L, y, R, y); y += 6;
+  const totRow = (a, b, bold) => { pdf.setFont('helvetica', bold ? 'bold' : 'normal'); pdf.text(a, 165, y, { align: 'right' }); pdf.text(b, R, y, { align: 'right' }); y += 5.5; };
+  totRow('Summe netto', money(s.net)); s.vat_lines.forEach((v) => totRow(`USt ${v.rate} % auf ${money(v.net)}`, money(v.vat))); totRow('Gesamtbetrag', money(s.gross), true);
+  pdf.setFont('helvetica', 'normal'); y += 6;
+  pdf.text(pdf.splitTextToSize(`Bitte überweisen Sie den Betrag bis zum ${fmtDate(s.due_date)}${c.iban ? ` auf das Konto IBAN ${fmtIban(c.iban)}` : ''} unter Angabe der Rechnungsnummer.${s.note ? '\n' + s.note : ''}`, R - L), L, y);
+  pdf.setFontSize(8); pdf.setTextColor(90);
+  pdf.text([c.name, c.tax_number ? `Steuernummer ${c.tax_number}` : '', c.vat_id ? `USt-IdNr. ${c.vat_id}` : '', c.email, c.phone].filter(Boolean).join(' · '), L, 285, { maxWidth: R - L });
+  return pdf;
+}
+const invoicePdf = (s) => invoicePdfDoc(s).output('blob');
+/** XRechnung 3.0 / ZUGFeRD EN 16931 im CII-Format */
+function xmlEsc(v) { return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function invoiceXml(s, flavour) {
+  const c = s.company, d102 = (iso) => iso.replace(/-/g, ''), a2 = (n) => Number(n).toFixed(2);
+  const line = (it, i) => `
+    <ram:IncludedSupplyChainTradeLineItem>
+      <ram:AssociatedDocumentLineDocument><ram:LineID>${i + 1}</ram:LineID></ram:AssociatedDocumentLineDocument>
+      <ram:SpecifiedTradeProduct><ram:Name>${xmlEsc(it.description)}</ram:Name></ram:SpecifiedTradeProduct>
+      <ram:SpecifiedLineTradeAgreement><ram:NetPriceProductTradePrice><ram:ChargeAmount>${Number(it.unit_price).toFixed(4)}</ram:ChargeAmount></ram:NetPriceProductTradePrice></ram:SpecifiedLineTradeAgreement>
+      <ram:SpecifiedLineTradeDelivery><ram:BilledQuantity unitCode="${xmlEsc(it.unit || 'C62')}">${Number(it.qty).toFixed(4)}</ram:BilledQuantity></ram:SpecifiedLineTradeDelivery>
+      <ram:SpecifiedLineTradeSettlement>
+        <ram:ApplicableTradeTax><ram:TypeCode>VAT</ram:TypeCode><ram:CategoryCode>S</ram:CategoryCode><ram:RateApplicablePercent>${a2(it.vat_rate)}</ram:RateApplicablePercent></ram:ApplicableTradeTax>
+        <ram:SpecifiedTradeSettlementLineMonetarySummation><ram:LineTotalAmount>${a2(Math.round(it.qty * it.unit_price * 100) / 100)}</ram:LineTotalAmount></ram:SpecifiedTradeSettlementLineMonetarySummation>
+      </ram:SpecifiedLineTradeSettlement>
+    </ram:IncludedSupplyChainTradeLineItem>`;
+  const guideline = flavour === 'xrechnung' ? 'urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0' : 'urn:cen.eu:en16931:2017';
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rsm:CrossIndustryInvoice xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100" xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100" xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100" xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100">
+  <rsm:ExchangedDocumentContext>${flavour === 'xrechnung' ? `
+    <ram:BusinessProcessSpecifiedDocumentContextParameter><ram:ID>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</ram:ID></ram:BusinessProcessSpecifiedDocumentContextParameter>` : ''}
+    <ram:GuidelineSpecifiedDocumentContextParameter><ram:ID>${guideline}</ram:ID></ram:GuidelineSpecifiedDocumentContextParameter>
+  </rsm:ExchangedDocumentContext>
+  <rsm:ExchangedDocument>
+    <ram:ID>${xmlEsc(s.number)}</ram:ID>
+    <ram:TypeCode>380</ram:TypeCode>
+    <ram:IssueDateTime><udt:DateTimeString format="102">${d102(s.issue_date)}</udt:DateTimeString></ram:IssueDateTime>${s.note ? `
+    <ram:IncludedNote><ram:Content>${xmlEsc(s.note)}</ram:Content></ram:IncludedNote>` : ''}
+  </rsm:ExchangedDocument>
+  <rsm:SupplyChainTradeTransaction>${s.items.map(line).join('')}
+    <ram:ApplicableHeaderTradeAgreement>
+      <ram:BuyerReference>${xmlEsc(s.buyer_reference)}</ram:BuyerReference>
+      <ram:SellerTradeParty>
+        <ram:Name>${xmlEsc(c.name)}</ram:Name>
+        <ram:DefinedTradeContact>
+          <ram:PersonName>${xmlEsc(c.contact)}</ram:PersonName>
+          <ram:TelephoneUniversalCommunication><ram:CompleteNumber>${xmlEsc(c.phone)}</ram:CompleteNumber></ram:TelephoneUniversalCommunication>
+          <ram:EmailURIUniversalCommunication><ram:URIID>${xmlEsc(c.email)}</ram:URIID></ram:EmailURIUniversalCommunication>
+        </ram:DefinedTradeContact>
+        <ram:PostalTradeAddress><ram:PostcodeCode>${xmlEsc(c.zip)}</ram:PostcodeCode><ram:LineOne>${xmlEsc(c.street)}</ram:LineOne><ram:CityName>${xmlEsc(c.city)}</ram:CityName><ram:CountryID>DE</ram:CountryID></ram:PostalTradeAddress>
+        <ram:URIUniversalCommunication><ram:URIID schemeID="EM">${xmlEsc(c.email)}</ram:URIID></ram:URIUniversalCommunication>${c.tax_number ? `
+        <ram:SpecifiedTaxRegistration><ram:ID schemeID="FC">${xmlEsc(c.tax_number)}</ram:ID></ram:SpecifiedTaxRegistration>` : ''}${c.vat_id ? `
+        <ram:SpecifiedTaxRegistration><ram:ID schemeID="VA">${xmlEsc(c.vat_id)}</ram:ID></ram:SpecifiedTaxRegistration>` : ''}
+      </ram:SellerTradeParty>
+      <ram:BuyerTradeParty>
+        <ram:Name>${xmlEsc(s.customer_name)}</ram:Name>
+        <ram:PostalTradeAddress><ram:PostcodeCode>${xmlEsc(s.customer_zip)}</ram:PostcodeCode><ram:LineOne>${xmlEsc(s.customer_street)}</ram:LineOne><ram:CityName>${xmlEsc(s.customer_city)}</ram:CityName><ram:CountryID>DE</ram:CountryID></ram:PostalTradeAddress>
+        <ram:URIUniversalCommunication><ram:URIID schemeID="EM">${xmlEsc(s.customer_email)}</ram:URIID></ram:URIUniversalCommunication>
+      </ram:BuyerTradeParty>
+    </ram:ApplicableHeaderTradeAgreement>
+    <ram:ApplicableHeaderTradeDelivery>
+      <ram:ActualDeliverySupplyChainEvent><ram:OccurrenceDateTime><udt:DateTimeString format="102">${d102(s.service_date || s.issue_date)}</udt:DateTimeString></ram:OccurrenceDateTime></ram:ActualDeliverySupplyChainEvent>
+    </ram:ApplicableHeaderTradeDelivery>
+    <ram:ApplicableHeaderTradeSettlement>
+      <ram:PaymentReference>${xmlEsc(s.number)}</ram:PaymentReference>
+      <ram:InvoiceCurrencyCode>EUR</ram:InvoiceCurrencyCode>
+      <ram:SpecifiedTradeSettlementPaymentMeans><ram:TypeCode>58</ram:TypeCode><ram:PayeePartyCreditorFinancialAccount><ram:IBANID>${xmlEsc(c.iban)}</ram:IBANID><ram:AccountName>${xmlEsc(c.name)}</ram:AccountName></ram:PayeePartyCreditorFinancialAccount></ram:SpecifiedTradeSettlementPaymentMeans>${s.vat_lines.map((v) => `
+      <ram:ApplicableTradeTax><ram:CalculatedAmount>${a2(v.vat)}</ram:CalculatedAmount><ram:TypeCode>VAT</ram:TypeCode><ram:BasisAmount>${a2(v.net)}</ram:BasisAmount><ram:CategoryCode>S</ram:CategoryCode><ram:RateApplicablePercent>${a2(v.rate)}</ram:RateApplicablePercent></ram:ApplicableTradeTax>`).join('')}
+      <ram:SpecifiedTradePaymentTerms><ram:Description>Zahlbar bis ${fmtDate(s.due_date)} ohne Abzug.</ram:Description><ram:DueDateDateTime><udt:DateTimeString format="102">${d102(s.due_date)}</udt:DateTimeString></ram:DueDateDateTime></ram:SpecifiedTradePaymentTerms>
+      <ram:SpecifiedTradeSettlementHeaderMonetarySummation>
+        <ram:LineTotalAmount>${a2(s.net)}</ram:LineTotalAmount>
+        <ram:TaxBasisTotalAmount>${a2(s.net)}</ram:TaxBasisTotalAmount>
+        <ram:TaxTotalAmount currencyID="EUR">${a2(s.vat)}</ram:TaxTotalAmount>
+        <ram:GrandTotalAmount>${a2(s.gross)}</ram:GrandTotalAmount>
+        <ram:DuePayableAmount>${a2(s.gross)}</ram:DuePayableAmount>
+      </ram:SpecifiedTradeSettlementHeaderMonetarySummation>
+    </ram:ApplicableHeaderTradeSettlement>
+  </rsm:SupplyChainTradeTransaction>
+</rsm:CrossIndustryInvoice>
+`;
+}
+/** ZUGFeRD: Rechnungs-PDF mit eingebetteter factur-x.xml (ohne PDF/A-3-Zertifizierung) */
+async function zugferdPdf(s) {
+  const base = invoicePdfDoc(s).output('arraybuffer');
+  if (!window.PDFLib) throw new Error('pdf-lib');
+  const doc = await PDFLib.PDFDocument.load(base);
+  const xml = new TextEncoder().encode(invoiceXml(s, 'zugferd'));
+  const opts = { mimeType: 'text/xml', description: 'Factur-X/ZUGFeRD-Rechnungsdaten (EN 16931)', creationDate: new Date(), modificationDate: new Date() };
+  if (PDFLib.AFRelationship) opts.afRelationship = PDFLib.AFRelationship.Alternative;
+  await doc.attach(xml, 'factur-x.xml', opts);
+  doc.setTitle(`Rechnung ${s.number}`); doc.setAuthor(s.company.name); doc.setSubject('Rechnung'); doc.setProducer('eOffis');
+  return new Blob([await doc.save()], { type: 'application/pdf' });
+}
+const normName = (v) => String(v || '').toLocaleLowerCase('de-DE').replace(/[^\p{L}\p{N}]/gu, '');
+
+/* ---------- Steuerberater-Übergabe ---------- */
+VIEWS.export = {
+  title: () => t('export.title'),
+  render() {
+    const tab = S.exTab || 'prebook';
+    const all = S.docs.filter((d) => d.page_count);
+    const docs = all.filter((d) => (tab === 'prebook' ? d.tax_flag !== 'deadline' : d.tax_flag === 'deadline'));
+    if (!S.exSel) S.exSel = new Set(all.filter((d) => d.tax_flag === 'prebook').map((d) => d.id));
+    const selHere = docs.filter((d) => S.exSel.has(d.id));
+    const mail = S.profile && S.profile.tax_advisor_email;
+    return `${seg([['prebook', t('web.tabPrebook')], ['deadline', t('web.tabDeadline')]], tab, 'exTab')}
+      <p class="muted">${esc(tab === 'prebook' ? t('export.intro') : t('web.forwardHint'))}</p>
+      ${docs.length ? `<label class="check"><input type="checkbox" data-a="exAll" ${selHere.length === docs.length ? 'checked' : ''}><b>${esc(t('export.selectAll'))}</b><span class="muted small">· ${esc(tn('web.docs', selHere.length))}</span></label>
+      <div class="group">${docs.map((d) => `<label class="cell" style="cursor:pointer"><input type="checkbox" data-a="exOne" data-v="${d.id}" ${S.exSel.has(d.id) ? 'checked' : ''} style="width:22px;height:22px;accent-color:var(--accent)"><span class="cx"><span class="ct">${esc(d.title)}</span><span class="cs" style="display:block">${esc(t('docs.folder_' + d.folder))} · ${esc(fmtDate(d.created_at))}${d.tax_flag !== 'none' ? ' · ' + esc(t('doc.flag_' + d.tax_flag)) : ''}</span></span></label>`).join('')}</div>`
+        : `<div class="empty">${ico('box')}<p class="muted">${esc(t('export.none'))}</p></div>`}
+      ${S.exBusy ? busyCard(t('export.building')) : tab === 'prebook'
+        ? `<button class="btn" data-a="exZip" ${selHere.length ? '' : 'disabled'}>${ico('box')}${esc(t('export.create'))} (${esc(tn('web.docs', selHere.length))})</button>
+           <button class="btn sec" data-a="exPdf" ${selHere.length ? '' : 'disabled'}>${ico('doc')}${esc(t('web.sortedPdf'))}</button><p class="muted small">${esc(t('web.sortedHint'))}</p>`
+        : `<div class="grid2"><button class="btn" data-a="fwPdf" ${selHere.length ? '' : 'disabled'}>${esc(t('web.downloadPdf'))}</button><button class="btn sec" data-a="fwText" ${selHere.length ? '' : 'disabled'}>${esc(t('web.forwardText'))}</button></div>`}
+      ${mail ? `<p class="muted small">${esc(t('web.advisorMailHint', { mail }))}</p>` : `<p class="muted small">${esc(t('export.noAdvisor'))}</p>`}`;
+  },
+};
+/** Ein PDF aus allen gewählten Belegen, sortiert nach Ordner und Datum, mit Deckblatt */
+async function sortedPdf(docs) {
+  const { jsPDF } = window.jspdf; const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
+  const list = docs.slice().sort((a, b) => a.folder.localeCompare(b.folder) || (a.created_at || '').localeCompare(b.created_at || ''));
+  pdf.setFont('helvetica', 'bold'); pdf.setFontSize(15); pdf.text(`Belegübersicht ${(S.profile && S.profile.company_name) || ''}`, 20, 25);
+  pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9.5); let y = 35;
+  list.forEach((d, i) => { if (y > 280) { pdf.addPage(); y = 20; } pdf.text(`${i + 1}. ${t('docs.folder_' + d.folder)} · ${fmtDate(d.created_at)} · ${d.title}${d.amount_gross != null ? ' · ' + money(d.amount_gross, d.currency) : ''}`, 20, y, { maxWidth: 170 }); y += 6; });
+  for (const d of list) {
+    const pages = (await store.where('pages', 'docId', d.id)).sort((a, b) => a.idx - b.idx);
+    for (const p of pages) {
+      pdf.addPage();
+      if (p.dataUrl) { const sc = Math.min(200 / p.w, 287 / p.h), w = p.w * sc, h = p.h * sc; pdf.addImage(p.dataUrl, 'JPEG', (210 - w) / 2, (297 - h) / 2, w, h); }
+      else { pdf.setFontSize(11); pdf.text(`${d.title} (E-Rechnung)`, 20, 25); pdf.setFontSize(9); pdf.text(pdf.splitTextToSize(d.explanation || '', 170), 20, 35); }
+    }
+  }
+  return pdf.output('blob');
+}
+function forwardText(docs) {
+  const p = S.profile || {};
+  return `Guten Tag,\n\nanbei ${docs.length === 1 ? 'ein Schreiben mit Frist' : `${docs.length} Schreiben mit Fristen`} zur Kenntnis bzw. Bearbeitung:\n\n${docs.map((d) => `- ${d.title}${d.sender ? ` (${d.sender})` : ''}${(d.dates || []).filter((x) => x.date).map((x) => `, ${x.description} bis ${fmtDate(x.date)}`).join('')}`).join('\n')}\n\nMit freundlichen Grüßen\n${p.company_name || ''}`;
+}
+async function exportZip() {
+  S.exBusy = true; render();
+  try {
+    const zip = new JSZip();
+    const tab = S.exTab || 'prebook';
+    const docs = S.docs.filter((d) => S.exSel.has(d.id) && d.page_count && (tab === 'prebook' ? d.tax_flag !== 'deadline' : d.tax_flag === 'deadline')).sort((a, b) => a.folder.localeCompare(b.folder) || (a.created_at || '').localeCompare(b.created_at || ''));
+    const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const rows = [['Nr', 'Ordner', 'Datei', 'Titel', 'Art', 'Absender', 'Rechnungsnr', 'Netto', 'USt', 'Brutto', 'Fällig', 'Bezahlt', 'Markierung', 'Erfasst', 'SHA-256'].map(cell).join(';')];
+    const nf = (n) => (n == null ? '' : Number(n).toFixed(2).replace('.', ','));
+    for (const [i, d] of docs.entries()) {
+      const pages = (await store.where('pages', 'docId', d.id)).sort((a, b) => a.idx - b.idx);
+      const folder = safeName(t('docs.folder_' + d.folder));
+      const name = `${String(i + 1).padStart(3, '0')}_${safeName(d.title)}.${d.file_kind === 'xml' ? 'xml' : 'pdf'}`;
+      zip.file(`${folder}/${name}`, d.file_kind === 'xml' ? (pages[0] && pages[0].xml) || '' : pagesToPdf(pages));
+      rows.push([i + 1, t('docs.folder_' + d.folder), `${folder}/${name}`, d.title, d.doc_type, d.sender, d.invoice_number, nf(d.amount_net), nf(d.vat_amount), nf(d.amount_gross), fmtDate(d.due_date), d.paid ? 'ja' : 'nein', t('doc.flag_' + d.tax_flag), fmtDate(d.created_at), d.sha256].map(cell).join(';'));
+    }
+    zip.file('Uebersicht.csv', '﻿' + rows.join('\r\n'));
+    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+    S.exBusy = false; render();
+    await saveFile(`eOffis_Steuerberater_${todayISO()}.zip`, blob);
+  } catch (e) { console.error(e); S.exBusy = false; render(); toast(t('web.saveFailed', { msg: errText(e) })); }
+}
+
+/* ---------- Mehr & Einstellungen ---------- */
+const HUB = () => [
+  ['web.hubMoney', [
+    ['invoice', 'acc.hubAcc', 'acc.hubAccH', 'data-a="openAcc"'],
+    ['box', 'web.hubExport', 'web.hubExportH', 'data-go="export"'],
+  ].concat(S.invoices.some((i) => i.status === 'final') ? [['archive', 'acc.oldInvoices', 'acc.oldInvoicesH', 'data-go="invoices"']] : [])],
+  ['web.hubRecords', [
+    ['folder', 'web.hubReview', 'web.hubReviewH', 'data-a="hubDocs" data-v="open"'],
+    ['archive', 'web.hubArchive', 'web.hubArchiveH', 'data-a="hubDocs" data-v="archived"'],
+    ['pen', 'web.hubContracts', 'web.hubContractsH', 'data-go="contracts"'],
+    ['xml', 'web.hubErech', 'web.hubErechH', 'data-go="erech"'],
+  ]],
+  ['web.hubPlanning', [
+    ['clock', 'web.hubDates', 'web.hubDatesH', 'data-go="tasks"'],
+    ['cal', 'web.hubTax', 'web.hubTaxH', 'data-go="tax"'],
+    ['bell', 'web.hubRem', 'web.hubRemH', 'data-go="settings"'],
+    ['gear', 'web.hubSettings', 'web.hubSettingsH', 'data-go="settings"'],
+  ]],
+];
+VIEWS.more = {
+  title: () => t('web.more'),
+  render() {
+    const p = S.profile || {};
+    const q = (S.hubQ || '').trim().toLowerCase();
+    const groups = HUB().map(([g, items]) => [g, items.filter(([, l, h]) => !q || (t(l) + ' ' + t(h)).toLowerCase().includes(q))]).filter(([, items]) => items.length);
+    return `<div class="group">${cell({ icon: 'gear', title: p.company_name || '–', sub: `${t('settings.ind_' + (p.industry || 'sonstiges'))} · ${store.space === 'demo' ? 'Demo' : t('web.test')}`, attrs: 'data-go="settings"' })}</div>
+      <input class="in" id="hubq" type="search" value="${esc(S.hubQ || '')}" placeholder="${esc(t('home.searchFeatures'))}" aria-label="${esc(t('common.search'))}">
+      ${groups.map(([g, items]) => group(items.map(([icon, l, h, attrs]) => cell({ icon, ic: 'h-' + icon, title: t(l), sub: t(h), attrs })), t(g))).join('') || `<p class="muted">–</p>`}
+      ${store.space === 'demo' ? group([cell({ icon: 'flask', ic: 'o', title: t('web.demoReset'), attrs: 'data-a="resetDemo"' }), cell({ icon: 'flask', ic: 'g', title: t('web.demoLeave'), attrs: 'data-a="leaveDemo"' })], t('web.uiDemoShort')) : ''}
+      <div class="sec-h">${esc(t('web.infoTitle'))}</div>
+      <div class="group">${[['gobdTitle', 'gobd'], ['privacyTitle', 'privacy'], ['homeScreen', 'homeScreenH']].map(([k, h]) => `<details class="cell-d"><summary class="cell"><span class="ci g">${ico('info')}</span><span class="cx"><span class="ct">${esc(t('web.' + k))}</span></span><span class="chev">›</span></summary><div class="dbody">${esc(t('web.' + h))}</div></details>`).join('')}
+        ${INFO.map((k) => `<details class="cell-d"><summary class="cell"><span class="ci g">${ico('info')}</span><span class="cx"><span class="ct">${esc(t('web.info_' + k + '_t'))}</span></span><span class="chev">›</span></summary><div class="dbody">${esc(t('web.info_' + k))}</div></details>`).join('')}
+        <details class="cell-d"><summary class="cell"><span class="ci g">${ico('info')}</span><span class="cx"><span class="ct">${esc(t('more.limitsTitle'))}</span></span><span class="chev">›</span></summary><div class="dbody">${esc(t('more.limitsText'))}<br><br>${esc(t('inv.limits'))}</div></details></div>
+      <p class="muted small">${esc(t('web.infoStand'))}</p>`;
+  },
+  after() {
+    const q = $('#hubq'); if (!q) return;
+    let tm; q.oninput = () => { clearTimeout(tm); tm = setTimeout(() => { S.hubQ = q.value; const pos = q.selectionStart; render(); const n = $('#hubq'); n.focus(); n.setSelectionRange(pos, pos); }, 200); };
+  },
+};
+VIEWS.settings = {
+  title: () => t('settings.title'),
+  render() {
+    const p = S.profile || {};
+    const ind = S.setInd || p.industry || 'sonstiges';
+    const rc = remCfg();
+    const offs = (key, opts) => `<div class="chips">${opts.map((n) => chip(n === 0 ? t('tasks.today') : `${n}`, rc[key].includes(n), `data-a="remSet" data-k="${key}" data-v="${n}"`)).join('')}</div>`;
+    const H = window.EOFFIS_HOST;
+    const acct = H ? `<div class="sec-h">${esc(t('web.account'))}</div><div class="card"><p class="small">${esc(H.isDemo() ? t('web.demoAccount') : (H.email() || ''))}</p><button class="btn sec" data-a="logout">${esc(t('web.logout'))}</button></div>` : '';
+    return `${acct}<div class="sec-h">${esc(t('settings.language'))}</div><div class="card"><div class="chips">${LANGS.map((l) => chip(t('lang.' + l), lang === l, `data-a="setLang" data-v="${l}"`)).join('')}</div></div>
+      <div class="sec-h">${esc(t('web.remTitle'))}</div><div class="card">
+        <label class="check"><input type="checkbox" data-a="remInApp" ${rc.inApp ? 'checked' : ''}>${esc(t('web.remInApp'))}</label>
+        <p class="small muted">${esc(t('web.remContract'))}</p>${offs('contract', [60, 30, 14, 7, 3, 1])}
+        <p class="small muted">${esc(t('web.remSkonto'))}</p>${offs('skonto', [7, 3, 1, 0])}
+        <p class="small muted">${esc(t('web.remOther'))}</p>${offs('other', [14, 7, 3, 1, 0])}
+        <button class="btn sec" data-a="icsExport">${ico('bell')}${esc(t('web.icsExport'))}</button><p class="muted small">${esc(t('web.icsHint'))}</p></div>
+      <div class="sec-h">${esc(t('settings.company'))}</div><div class="card">
+        ${field('st_name', t('auth.companyName'), p.company_name || '')}
+        <div class="f" style="font-weight:700;color:var(--muted);font-size:.86rem">${esc(t('settings.industry'))}</div>
+        <div class="chips">${INDUSTRIES.map((i) => chip(t('settings.ind_' + i), ind === i, `data-a="setInd" data-v="${i}"`)).join('')}</div>
+        ${(() => { const c = companyData(p); return `${field('st_street', t('web.street'), c.street)}<div class="grid2">${field('st_zip', t('web.zip'), c.zip, 'inputmode="numeric"')}${field('st_city', t('web.city'), c.city)}</div>`; })()}
+        ${field('st_email', t('web.companyMail'), p.email || '', 'type="email"')}
+        <div class="grid2 stack">${field('st_contact', t('web.contact'), p.contact || '')}${field('st_phone', t('web.phone'), p.phone || '', 'type="tel"')}</div>
+        <div class="grid2 stack">${field('st_tax', t('settings.taxNo'), p.tax_number || '')}${field('st_vat', t('settings.vatId'), p.vat_id || '', 'autocapitalize="characters"')}</div>
+        ${field('st_mail', t('settings.advisorEmail'), p.tax_advisor_email || '', 'type="email"')}
+        <button class="btn" data-a="settingsSave">${esc(t('common.save'))}</button></div>
+      <div class="sec-h">${esc(t('heu.pushTitle'))}</div>${pushCard(true)}
+      ${accSettingsHtml()}
+      <div class="sec-h">${esc(t('web.privacyTitle'))}</div><div class="card"><p class="small muted">${esc(t('web.privacyText'))}</p></div>
+      <div class="sec-h">${esc(t('web.gobdTitle'))}</div><div class="card"><p class="small muted">${esc(t('web.gobdText'))}</p></div>`;
+  },
+};
+
+/* =================== Beispieldaten entfernen =================== */
+// Frühere Versionen legten im Demo-Bereich Beispielunterlagen an (Frischemarkt, Finanzamt, Getränke Nord, Muster Event).
+// Diese werden einmalig gelöscht – eigene, selbst gescannte Unterlagen bleiben unverändert.
+const SEED_TASK_TITLES = new Set(['Skonto Frischemarkt nutzen', 'Rechnung Frischemarkt bezahlen', 'Antwort ans Finanzamt', 'Hygieneschulung Personal']);
+function isSeedProfile(p) { return !!p && p.company_name === 'Demo Bistro am Markt' && /demo-bistro\.example/.test(p.email || ''); }
+async function purgeExamples() {
+  const docs = (S.docs || []).filter((d) => d.example);
+  const ids = new Set(docs.map((d) => d.id));
+  const tasks = (S.tasks || []).filter((x) => x.example || ids.has(x.document_id) || (!x.document_id && SEED_TASK_TITLES.has(x.title)));
+  const inv = (S.invoices || []).filter((x) => x.example);
+  const rep = (S.replies || []).filter((r) => ids.has(r.docId));
+  let n = 0;
+  for (const d of docs) { for (const pg of await store.where('pages', 'docId', d.id)) await store.del('pages', pg.id); await store.del('docs', d.id); n++; }
+  for (const x of tasks) { await store.del('tasks', x.id); n++; }
+  for (const x of inv) { await store.del('invoices', x.id); n++; }
+  for (const x of rep) { await store.del('replies', x.id); n++; }
+  return n;
+}
+async function wipeSpace() {
+  for (const c of COLS) for (const x of await store.all(c)) await store.del(c, x.id);
+}
+async function switchSpace(space) {
+  store.space = space; try { localStorage.setItem('eoffis.space', space); } catch {}
+  S.scan = null; S.docUi = null; S.replyUi = null; S.invDraft = null; S.exSel = null; S.bank = null; S.accM = null; S.accSel = null; ACC_SECRET = null;
+  S.loaded = false; render();
+  await reloadAll().catch(() => { S.loadError = true; });
+  try { if (await purgeExamples()) await reloadAll(); } catch (e) { console.error(e); }
+  S.loaded = true; S.stack = []; S.view = !S.profile ? 'setup' : 'home'; S.params = {}; render();
+}
+
+/* =================== Aktionen (Event-Delegation) =================== */
+document.addEventListener('click', async (e) => {
+  if (e.target.id === 'modalBg') { $('#layer').innerHTML = ''; return; }
+  const g = e.target.closest('[data-go]');
+  if (g && !g.disabled) {
+    const p = {}; if (g.dataset.id) p.id = g.dataset.id; if (g.dataset.from) p.from = g.dataset.from; if (g.dataset.archived) p.archived = 1;
+    if (g.dataset.go === 'docs') S.filters.f = p.archived ? 'archived' : S.filters.f === 'archived' ? 'open' : S.filters.f;
+    if (g.dataset.go === 'reply') S.replyUi = null;
+    if (g.dataset.go === 'doc' && g.dataset.id !== S.params.id) S.docUi = null;
+    if (g.dataset.go === 'task') S.taskDraft = null;
+    if (g.dataset.go === 'invoice') S.invDraft = null;
+    if (g.dataset.go === 'export') S.exSel = null;
+    if (g.dataset.go === 'scan') { S.scan = null; S.crop = null; }
+    if (g.dataset.go === 'erech') S.erech = null;
+    if (g.dataset.go === 'docs' && !p.archived && (g.closest('.tabs') || g.closest('.sec-h'))) { S.filters.contracts = false; S.filters.q = ''; S.filters.folder = null; S.filters.review = false; }
+    if (g.dataset.go === 'doc' && g.dataset.id !== S.params.id) S.docUi = null;
+    return go(g.dataset.go, p);
+  }
+  const f = e.target.closest('[data-feat]');
+  if (f) { const ft = FEATURES()[+f.dataset.feat]; S.scan = null; S.invDraft = null; S.taskDraft = null; S.exSel = null; if (ft[2] === 'docs') S.filters.f = ft[3].archived ? 'archived' : 'open'; return go(ft[2], Object.assign({}, ft[3])); }
+  const a = e.target.closest('[data-a]');
+  if (!a || a.disabled) return;
+  const A = a.dataset.a, v = a.dataset.v, i = a.dataset.i !== undefined ? +a.dataset.i : null;
+  const d = getDoc(S.params.id);
+  switch (A) {
+    case 'back': return back();
+    case 'openSearch': S.hubQ = ''; go('more'); setTimeout(() => { const q = $('#hubq'); if (q) q.focus(); }, 30); return;
+    case 'closeModal': $('#layer').innerHTML = ''; return;
+    case 'modalGo': $('#layer').innerHTML = ''; return go(v);
+    case 'setupLang': setLang(v); return render();
+    case 'pickInd': S.setupInd = v; document.querySelectorAll('[data-a="pickInd"]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === v)); return;
+    case 'setupSave': {
+      const name = val('s_name').trim(); if (!name) { $('#s_name').focus(); return toast(t('auth.companyName')); }
+      return guard(async () => {
+        const p = { company_name: name, industry: S.setupInd || 'sonstiges', language: lang, tax_advisor_email: val('s_mail').trim() || null, address: '', tax_number: '', vat_id: '', iban: '', invoice_prefix: 'RE-', next_invoice_no: 1, dauerfrist: false, created_at: nowIso() };
+        await store.setProfile(p); S.profile = p; go('home');
+      });
+    }
+    case 'enterDemo': return switchSpace('demo');
+    case 'leaveDemo': if (window.EOFFIS_HOST && window.EOFFIS_HOST.isDemo()) return window.EOFFIS_HOST.logout(); return switchSpace('main');
+    case 'resetDemo': if (!(await ask(t('web.demoReset') + '?', t('web.demoReset'), true))) return; S.loaded = false; render(); await wipeSpace(); await reloadAll(); S.loaded = true; toast(t('web.demoResetDone')); S.stack = []; return go(S.profile ? 'home' : 'setup');
+    case 'copyLink': return copy(SITE_URL);
+    case 'logout': return window.EOFFIS_HOST && window.EOFFIS_HOST.logout();
+    case 'showMore': S.lim = Object.assign({}, S.lim, { [v]: lim(v) + PAGE }); return render();
+    case 'docFilter': S.filters.f = v; S.params = {}; S.lim = null; return render();
+    case 'openList': { const fo = v.startsWith('f:') ? v.slice(2) : null; S.lim = null;
+      S.filters = { q: '', f: v === 'archived' ? 'archived' : v === 'done' ? 'done' : v === 'review' ? 'open' : 'all', folder: fo, contracts: v === 'contracts', review: v === 'review' };
+      return go('doclist', { k: v }); }
+    case 'docContracts': S.filters.contracts = !S.filters.contracts; return render();
+    case 'docFolder': S.filters.folder = S.filters.folder === v ? null : v; return render();
+    case 'togglePages': S.scan.open = !S.scan.open; return render();
+    case 'partUp': case 'partDown': { const j = i + (A === 'partUp' ? -1 : 1); const it = S.scan.items; [it[i], it[j]] = [it[j], it[i]]; await guard(persistDraft); return render(); }
+    case 'partDel': { const [x] = S.scan.items.splice(i, 1); await guard(async () => { await store.del('pages', x.id); await persistDraft(); }); return render(); }
+    case 'finishScan': return finishScan(v || '');
+    case 'finishAnalyze': return finishScan('ai');
+    case 'discardScan': if (!(await ask(t('scan.discardConfirm'), t('scan.discard'), true))) return; await guard(async () => { for (const x of S.scan.items) await store.del('pages', x.id); S.scan.items = []; S.scan.restored = false; await persistDraft(); }); return render();
+    case 'cropUse': return useCrop(false);
+    case 'cropFull': return useCrop(true);
+    case 'cropCancel': S.crop = null; return render();
+    case 'analyze': return analyzeDoc(S.params.id);
+    case 'translate': return translateDoc(v);
+    case 'takeDate': return guard(async () => { await takeDate(d, d.dates[i]); render(); });
+    case 'setReminder': { const dt = parseDate(val('remDate')); if (!dt) return toast(t('common.invalidDate')); return guard(async () => { await takeDate(d, { kind: d.payment_required ? 'payment' : 'reply', date: dt, description: t('doc.setReminder') }); render(); }); }
+    case 'docFlag': return guard(async () => { await persistDoc(d, { [a.dataset.k]: a.checked }); render(); });
+    case 'docFolderSet': return guard(async () => { await persistDoc(d, { folder: v }); render(); });
+    case 'docTax': return guard(async () => { await persistDoc(d, { tax_flag: v }); render(); });
+    case 'docSave': return docSave();
+    case 'docStatus': return guard(async () => { await persistDoc(d, Object.assign({ status: v }, v === 'reviewed' ? { reviewed_at: nowIso() } : v === 'done' ? { done_at: nowIso(), reviewed_at: d.reviewed_at || nowIso() } : { done_at: null }), t('docs.status_' + v)); if (v === 'done') { toast(t('web.filed')); back(); } else render(); });
+    case 'docArchive': if (!(await ask(t('doc.archiveConfirm'), t('doc.archive'), true))) return; return guard(async () => { const y = Math.max(Number((d.document_date || d.created_at || todayISO()).slice(0, 4)), new Date().getFullYear()); await persistDoc(d, { archived: true, archived_at: nowIso(), retain_until: `${y + 11}-01-01` }, t('doc.archive')); render(); });
+    case 'docDownload': return docDownload();
+    case 'copyPay': return copy([`${t('doc.recipient')}: ${d.sender || ''}`, `IBAN: ${fmtIban(d.iban)}`, d.bic ? `BIC: ${d.bic}` : '', d.amount_gross != null ? `${t('doc.gross')}: ${money(d.amount_gross, d.currency)}` : '', d.payment_reference ? `${t('doc.reference')}: ${d.payment_reference}` : ''].filter(Boolean).join('\n'));
+    case 'showPage': { const p = await store.one('pages', a.dataset.pid); if (p) showModal(`<div class="viewer"><img src="${p.dataUrl}" alt=""></div>`); return; }
+    case 'showXml': { const p = await store.one('pages', a.dataset.pid); if (p) showModal(`<pre class="mono small" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:60vh;overflow:auto">${esc(p.xml || '')}</pre>`); return; }
+    case 'replyKind': S.replyUi.kind = v; return render();
+    case 'replyStart': return replyStart();
+    case 'replyGenerate': return replyGenerate();
+    case 'letterPdf': { const r = S.replies.find((x) => x.docId === S.params.id); return saveFile(`${safeName(r.data.subject || 'Antwort')}.pdf`, letterPdf(r.data)); }
+    case 'letterCopy': { const r = S.replies.find((x) => x.docId === S.params.id); return copy(letterText(r.data)); }
+    case 'showDone': S.showDone = a.checked; return render();
+    case 'tset': keepTaskInputs(); S.taskDraft[a.dataset.k] = v; render(); { const T = S.taskDraft; $('#t_title').value = T.title || ''; $('#t_due').value = T._due || ''; $('#t_time').value = T._time || ''; $('#t_notes').value = T.notes || ''; } return;
+    case 'taskSave': return taskSave();
+    case 'taskDel': { const x = S.tasks.find((k) => k.id === S.params.id); if (!x || !(await ask(t('tasks.deleteConfirm'), t('common.delete'), true))) return; return guard(async () => { await store.del('tasks', x.id); S.tasks = S.tasks.filter((k) => k.id !== x.id); back(); }); }
+    case 'dfv': return guard(async () => { S.profile = Object.assign({}, S.profile, { dauerfrist: a.checked }); await store.setProfile(S.profile); render(); });
+    case 'taxSel': a.checked ? S.taxSel.add(v) : S.taxSel.delete(v); return render();
+    case 'taxCreate': return taxCreate();
+    case 'ruleInt': readRule(); S.taxRule.interval = v; S.taxRule.preview = null; return render();
+    case 'rulePreview': readRule(); if (!S.taxRule.title.trim()) { $('#r_title').focus(); return; } S.taxRule.preview = ruleDates(S.taxRule, todayISO(), 12); return render();
+    case 'ruleCreate': return guard(async () => { readRule(); const R = S.taxRule; const key = 'custom:' + safeName(R.title).slice(0, 40); const have = new Set(S.tasks.filter((x) => x.template_key === key).map((x) => x.due_date)); let n = 0; for (const d of ruleDates(R, todayISO(), 12)) { if (have.has(d)) continue; const rec = { id: uid(), title: R.title.trim(), kind: 'tax', due_date: d, status: 'open', priority: 'high', notes: '', template_key: key, created_at: nowIso(), version: 1 }; await store.put('tasks', rec); S.tasks.push(rec); n++; } S.taxRule = null; toast(t('tax.created', { count: n })); go('tasks'); });
+    case 'invPdf': { const inv = S.invoices.find((x) => x.id === S.params.id); return saveFile(`${inv.number}.pdf`, invoicePdf(inv.snapshot)); }
+    case 'invXr': { const inv = S.invoices.find((x) => x.id === S.params.id); return saveFile(`${inv.number}_XRechnung.xml`, invoiceXml(inv.snapshot, 'xrechnung')); }
+    case 'invZf': return guard(async () => { const inv = S.invoices.find((x) => x.id === S.params.id); await saveFile(`${inv.number}_ZUGFeRD.pdf`, await zugferdPdf(inv.snapshot)); });
+    case 'hubDocs': S.filters = { q: '', f: v === 'archived' ? 'archived' : v === 'contracts' ? 'all' : 'open', folder: null, contracts: v === 'contracts', review: v === 'open' }; S.lim = null; return go('doclist', { k: v });
+    case 'openAcc': S.accSel = new Set(); S.filters.f = 'open'; return go('acc');
+    case 'exAll': { const tab = S.exTab || 'prebook'; const here = S.docs.filter((x) => x.page_count && (tab === 'prebook' ? x.tax_flag !== 'deadline' : x.tax_flag === 'deadline')); here.forEach((x) => (a.checked ? S.exSel.add(x.id) : S.exSel.delete(x.id))); return render(); }
+    case 'exOne': a.checked ? S.exSel.add(v) : S.exSel.delete(v); return render();
+    case 'exZip': return exportZip();
+    case 'exPdf': return guard(async () => { S.exBusy = true; render(); try { const docs = S.docs.filter((x) => S.exSel.has(x.id) && x.page_count && x.tax_flag !== 'deadline'); const blob = await sortedPdf(docs); S.exBusy = false; render(); await saveFile(`eOffis_Belege_sortiert_${todayISO()}.pdf`, blob); } finally { S.exBusy = false; render(); } });
+    case 'exTab': S.exTab = v; return render();
+    case 'fwPdf': { const docs = S.docs.filter((x) => S.exSel.has(x.id) && x.tax_flag === 'deadline' && x.page_count); for (const x of docs) { const pages = (await store.where('pages', 'docId', x.id)).sort((p1, p2) => p1.idx - p2.idx); if (x.file_kind === 'xml') await saveFile(`${safeName(x.title)}.xml`, (pages[0] && pages[0].xml) || ''); else await saveFile(`${safeName(x.title)}.pdf`, pagesToPdf(pages)); } return; }
+    case 'fwText': return copy(forwardText(S.docs.filter((x) => S.exSel.has(x.id) && x.tax_flag === 'deadline')));
+    case 'taskCycle': return guard(async () => { const x = S.tasks.find((k) => k.id === v); const nx = { open: 'in_progress', in_progress: 'done', done: 'open' }[x.status] || 'open'; const saved = await saveVersioned('tasks', Object.assign({}, x, { status: nx }), t('tasks.status_' + nx)); S.tasks[S.tasks.findIndex((k) => k.id === v)] = saved; await spawnNext(saved); render(); });
+    case 'taskSeg': S.showDone = v === 'done'; return render();
+    case 'calAdd': { const ids = (S.docUi && S.docUi.calIds) || []; if (!ids.length) return; return saveFile(`eOffis_Fristen_${(d && (d.sender || d.title) || 'Beleg').replace(/[^A-Za-z0-9ÄÖÜäöüß_-]+/g, '_').slice(0, 40)}.ics`, buildIcs(ids, [7, 1])).then(() => toast(t('web.calDone'))); }
+    case 'calNo': if (S.docUi) S.docUi.calDismissed = true; return render();
+    case 'icsExport': return saveFile(`eOffis_Fristen_${todayISO()}.ics`, buildIcs());
+    case 'remInApp': return guard(async () => { S.profile = Object.assign({}, S.profile, { reminders: Object.assign(remCfg(), { inApp: a.checked }) }); await store.setProfile(S.profile); render(); });
+    case 'remSet': return guard(async () => { const rc = remCfg(); const n = +v; const k = a.dataset.k; const list = rc[k].includes(n) ? rc[k].filter((x) => x !== n) : rc[k].concat([n]); if (!list.length) return; rc[k] = list.sort((x, y) => y - x); S.profile = Object.assign({}, S.profile, { reminders: rc }); await store.setProfile(S.profile); render(); });
+    case 'docStep': S.docUi = Object.assign({}, S.docUi, { step: +v }); render(); window.scrollTo(0, 0); return;
+    case 'toggleFields': S.docUi.fieldsOpen = !S.docUi.fieldsOpen; return render();
+    case 'todoTask': return guard(async () => { const text = (d.suggested_task && !(d.next_steps || []).includes(d.suggested_task) ? [d.suggested_task] : []).concat(d.next_steps || [])[i]; const rec = { id: uid(), document_id: d.id, title: text, kind: /zahl|überweis|bezahl/i.test(text) ? 'payment' : /antwort|schreib/i.test(text) ? 'reply' : 'other', due_date: d.due_date || null, status: 'open', priority: 'normal', notes: d.title, created_at: nowIso(), version: 0 }; const saved = await saveVersioned('tasks', rec); S.tasks.push(saved); toast(t('web.taskMade')); render(); });
+    case 'replyGo': S.replyUi = { step: 'questions', kind: v, questions: null, answers: {} }; go('reply', { id: d.id }); return replyStart();
+    case 'docChecked': return guard(async () => { await persistDoc(d, a.checked ? { status: 'reviewed', reviewed_at: nowIso() } : { status: 'saved', reviewed_at: null }, t('web.checked')); render(); });
+    case 'erTake': return erTake();
+    case 'docService': return guard(async () => { await persistDoc(d, { service_received: v }, t('web.service')); render(); });
+    case 'setLang': return guard(async () => { setLang(v); if (S.profile) { S.profile = Object.assign({}, S.profile, { language: v }); await store.setProfile(S.profile); } render(); });
+    case 'setInd': S.setInd = v; document.querySelectorAll('[data-a="setInd"]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === v)); return;
+    case 'settingsSave': return guard(async () => {
+      const p = Object.assign({}, S.profile || {}, {
+        company_name: val('st_name').trim(), industry: S.setInd || (S.profile && S.profile.industry) || 'sonstiges',
+        street: val('st_street').trim(), zip: val('st_zip').trim(), city: val('st_city').trim(), email: val('st_email').trim(), contact: val('st_contact').trim(), phone: val('st_phone').trim(),
+        address: [val('st_name').trim(), val('st_street').trim(), [val('st_zip').trim(), val('st_city').trim()].filter(Boolean).join(' ')].filter(Boolean).join('\n'),
+        tax_number: val('st_tax').trim(), vat_id: val('st_vat').trim(), tax_advisor_email: val('st_mail').trim() || null,
+      });
+      if (p.vat_id && !vatIdValid(p.vat_id)) toast(t('settings.vatId') + ' ✗');
+      await store.setProfile(p); S.profile = p; S.setInd = null; if (!p.vat_id || vatIdValid(p.vat_id)) toast(t('web.toastSaved')); render();
+    });
+  }
+});
+
+
+/* =================== Buchhaltung: ablegen, übertragen, an Steuerberater (Paket 1, 08.11.2026) ===================
+   eOffis ist kein Buchhaltungsprogramm: Buchhaltungsbelege (Rechnung, Quittung, Lieferschein, Kontoauszug, Gutschrift)
+   werden erkannt und entweder an das Buchhaltungsprogramm des Betriebs übertragen (Lexware Office, DATEV, sevDesk, andere)
+   oder im Ordner „Buchhaltung“ abgelegt (Jahr / Monat / Belegart, auf Wunsch zusätzlich in einem PC-Ordner). */
+const ACC_TYPES = ['rechnung', 'quittung', 'lieferschein', 'kontoauszug', 'gutschrift'];
+const ACC_DIR = { rechnung: 'Rechnungen', quittung: 'Quittungen', lieferschein: 'Lieferscheine', kontoauszug: 'Kontoauszuege', gutschrift: 'Gutschriften' };
+const ACC_PROGS = ['lexware', 'datev', 'sevdesk', 'other'];
+const SEVDESK_MAIL = 'autobox@sevdesk.email';
+const LEX_KEY_URL = 'https://app.lexware.de/addons/public-api';
+const ACC_TEXT = {
+  de: {
+    folderName: 'Buchhaltung (Rechnungen, Lieferscheine)', folderTitle: 'Buchhaltung',
+    type_rechnung: 'Rechnung', type_quittung: 'Quittung / Kassenbon', type_lieferschein: 'Lieferschein', type_kontoauszug: 'Kontoauszug', type_gutschrift: 'Gutschrift',
+    fileTitleAcc: 'Buchhaltungsbeleg erkannt: {{type}}', fileTarget: 'Ablage', fileTransfer: 'An Buchhaltungsprogramm übertragen', fileToFolder: 'In Ordner „Buchhaltung“ ablegen',
+    fileOther: 'Kein Buchhaltungsbeleg? Anderen Ordner wählen', fileSuggest: 'Vorschlag: im Ordner „{{folder}}“ ablegen?', fileYes: 'Ja, in „{{folder}}“ ablegen',
+    fileAsk: 'Wohin gehört dieses Dokument?', fileAskH: 'Buchhaltungsbelege kommen in den Ordner „Buchhaltung“ und können an dein Buchhaltungsprogramm übertragen werden.',
+    accGroup: 'Buchhaltungsbeleg', otherFolders: 'Anderer Ordner', filedIn: 'Abgelegt: {{path}}', fileDone: 'Abgelegt in {{path}}',
+    transferredTo: 'Übertragen an {{to}} am {{date}}', notTransferred: 'nicht übertragen', advisorSent: 'an Steuerberater gesendet', pcSaved: 'auf PC gespeichert',
+    prog_lexware: 'Lexware Office', prog_datev: 'DATEV', prog_sevdesk: 'sevDesk', prog_other: 'Anderes Programm',
+    pickProgram: 'Welches Buchhaltungsprogramm nutzt du?', lexXl: 'Nutzt du Lexware Office im Tarif XL?',
+    lexXlH: 'Nur im Tarif XL gibt es die Schnittstelle (API) für die direkte Übertragung und den Belegempfang per E-Mail.', yes: 'Ja', no: 'Nein',
+    lexKey: 'API-Schlüssel von Lexware Office', lexKeyH: 'In Lexware Office: Einstellungen → Erweiterungen → Public API → Schlüssel erzeugen (nur Administrator, Tarif XL). Der Schlüssel wird geschützt in deinem eOffis-Konto gespeichert.',
+    lexKeyOpen: 'Lexware-Seite öffnen', lexUseMail: 'Ohne Schlüssel: per E-Mail an den Lexware-Belegempfang',
+    lexApp: 'Ohne Tarif XL überträgst du Belege über die Lexware-App: „Teilen“ tippen und „Lexware Office“ wählen. Die App muss auf dem Handy installiert sein.',
+    addrDatev: 'Deine DATEV-Upload-Mail-Adresse', addrDatevH: 'Einrichten in DATEV Unternehmen online: Belege → Einstellungen → Upload Mail → „Jetzt einrichten“. Senden geht nur von der dort hinterlegten Absenderadresse (PDF, bis 20 MB).',
+    addrSev: 'sevDesk-Autobox', addrSevH: 'sevDesk nimmt Belege an autobox@sevdesk.email an – aber nur von der E-Mail-Adresse, mit der du bei sevDesk angemeldet bist.',
+    addrLex: 'Belegempfangs-Adresse von Lexware Office', addrLexH: 'In Lexware Office: Einstellungen → Belegempfang. Deine Absenderadresse muss dort als Belegsender freigegeben sein.',
+    otherName: 'Name des Programms', addrOther: 'E-Mail-Adresse für Belege', addrOtherH: 'Viele Programme haben eine eigene Adresse für Belege. Du findest sie meist in den Einstellungen unter „Belegeingang“ oder „Upload“.',
+    addrBad: 'Bitte eine gültige E-Mail-Adresse eingeben.', saveContinue: 'Speichern und weiter',
+    transferTitle: 'An {{to}} übertragen', nFiles: '{{count}} Datei(en) bereit', preparing: 'Dateien werden vorbereitet …',
+    step1Copy: '1. Adresse kopieren', step2Share: '2. „Teilen“ tippen → Mail-App wählen → Adresse bei „An“ einfügen → senden', stepApp: '„Teilen“ tippen → „Lexware Office“ wählen',
+    share: 'Teilen', copyAddr: 'Kopieren', noShare: 'Dieses Gerät kann Dateien nicht direkt teilen. Lade die Datei(en) herunter und hänge sie an eine Mail an.',
+    noShareApp: 'Am PC: Datei herunterladen und in Lexware Office unter Belege → „Beleg hochladen“ hochladen.', download: 'Herunterladen', openMail: 'Mail-Programm öffnen',
+    markSent: 'Ich habe gesendet – als übertragen markieren', directNow: 'Jetzt direkt übertragen', apiBusy: 'Wird an Lexware Office übertragen …',
+    apiOk: '{{count}} Beleg(e) an Lexware Office übertragen.', apiFail: 'Direkte Übertragung fehlgeschlagen: {{msg}}', apiKeyBad: 'Der API-Schlüssel wurde nicht angenommen. Bitte in den Einstellungen prüfen.',
+    apiMissing: 'Die direkte Übertragung ist noch nicht eingerichtet. Bitte über „Teilen“ senden.', useShare: 'Stattdessen über „Teilen“ senden', sentOk: 'Als übertragen markiert.',
+    again: 'Bereits übertragen: {{list}}. Trotzdem erneut senden?', againBtn: 'Erneut senden', changeProgram: 'Programm ändern',
+    settingsTitle: 'Buchhaltungsprogramm', settingsNone: 'Noch nicht gewählt – wird beim ersten Übertragen gefragt.', keySaved: 'API-Schlüssel gespeichert', keyDel: 'Schlüssel löschen',
+    pcSave: 'Auch auf diesem PC speichern', pcPick: 'PC-Ordner wählen', pcPickH: 'Buchhaltungsbelege werden zusätzlich in diesem Ordner gespeichert: Jahr / Monat / Belegart.',
+    pcFolder: 'PC-Ordner: {{name}}', pcDone: '{{count}} Datei(en) im PC-Ordner gespeichert.', pcDenied: 'Kein Zugriff auf den PC-Ordner. Bitte erneut wählen.',
+    folderOpenN: '{{count}} Beleg(e) noch nicht an {{to}} übertragen.', folderOpenNoProg: '{{count}} Beleg(e) noch nicht an dein Buchhaltungsprogramm übertragen.', transferAll: 'Jetzt alle übertragen',
+    advisorOpenN: '{{count}} Beleg(e) noch nicht an den Steuerberater gesendet.', advisorAll: 'Alle an Steuerberater senden',
+    selected: '{{count}} ausgewählt', selTransfer: 'Übertragen', selAdvisor: 'An Steuerberater', selPc: 'Auf PC', selClear: 'Auswahl aufheben', selMonth: 'Monat auswählen',
+    empty: 'Noch keine Buchhaltungsbelege. Scanne eine Rechnung, Quittung oder einen Lieferschein.',
+    advisorTitle: 'An Steuerberater senden', advisorMail: 'E-Mail des Steuerberaters', advisorZip: 'ZIP mit {{count}} Belegen (Jahr / Monat / Belegart) und Übersicht',
+    advisorTask: 'Belege des Vormonats an Steuerberater senden', advisorOk: 'Als an Steuerberater gesendet markiert.',
+    linkAsk: 'Gehört zu {{kind}} „{{title}}“ vom {{date}}?', linkYes: 'Ja, verknüpfen', linkNo: 'Nein', linked: 'Verknüpft mit: {{list}}',
+    linkedNote: 'Verknüpfte Lieferscheine werden beim Übertragen der Rechnung mitgeschickt.', unlink: 'Verknüpfung lösen',
+    oldInvoices: 'Frühere Ausgangsrechnungen', oldInvoicesH: 'Nur noch zum Ansehen und Herunterladen',
+    movedNote: 'Rechnungen schreiben, Mahnungen, Kontoabgleich und DATEV-Export erledigt jetzt dein Buchhaltungsprogramm. eOffis legt Belege ab und überträgt sie dorthin.',
+    hubAcc: 'Buchhaltung', hubAccH: 'Belege ablegen und übertragen',
+  },
+  tr: {
+    folderName: 'Muhasebe (faturalar, irsaliyeler)', folderTitle: 'Muhasebe',
+    type_rechnung: 'Fatura', type_quittung: 'Makbuz / fiş', type_lieferschein: 'İrsaliye', type_kontoauszug: 'Hesap dökümü', type_gutschrift: 'Alacak dekontu',
+    fileTitleAcc: 'Muhasebe belgesi tanındı: {{type}}', fileTarget: 'Klasör', fileTransfer: 'Muhasebe programına aktar', fileToFolder: '„Muhasebe“ klasörüne kaydet',
+    fileOther: 'Muhasebe belgesi değil mi? Başka klasör seç', fileSuggest: 'Öneri: „{{folder}}“ klasörüne kaydedilsin mi?', fileYes: 'Evet, „{{folder}}“ klasörüne kaydet',
+    fileAsk: 'Bu belge nereye ait?', fileAskH: 'Muhasebe belgeleri „Muhasebe“ klasörüne gider ve muhasebe programına aktarılabilir.',
+    accGroup: 'Muhasebe belgesi', otherFolders: 'Başka klasör', filedIn: 'Kaydedildi: {{path}}', fileDone: '{{path}} içine kaydedildi',
+    transferredTo: '{{date}} tarihinde {{to}} programına aktarıldı', notTransferred: 'aktarılmadı', advisorSent: 'muhasebeciye gönderildi', pcSaved: 'PC’ye kaydedildi',
+    prog_lexware: 'Lexware Office', prog_datev: 'DATEV', prog_sevdesk: 'sevDesk', prog_other: 'Başka program',
+    pickProgram: 'Hangi muhasebe programını kullanıyorsun?', lexXl: 'Lexware Office’i XL tarifesinde mi kullanıyorsun?',
+    lexXlH: 'Doğrudan aktarım için arayüz (API) ve e-postayla belge alımı yalnızca XL tarifesinde var.', yes: 'Evet', no: 'Hayır',
+    lexKey: 'Lexware Office API anahtarı', lexKeyH: 'Lexware Office’te: Ayarlar → Eklentiler → Public API → anahtar oluştur (yalnızca yönetici, XL tarifesi). Anahtar eOffis hesabında korunarak saklanır.',
+    lexKeyOpen: 'Lexware sayfasını aç', lexUseMail: 'Anahtarsız: Lexware belge alım adresine e-postayla',
+    lexApp: 'XL tarifesi olmadan belgeleri Lexware uygulamasıyla aktarırsın: „Paylaş“a dokun ve „Lexware Office“i seç. Uygulama telefonda yüklü olmalı.',
+    addrDatev: 'DATEV Upload Mail adresin', addrDatevH: 'DATEV Unternehmen online’da kur: Belege → Einstellungen → Upload Mail → „Jetzt einrichten“. Yalnızca orada kayıtlı gönderen adresinden gönderebilirsin (PDF, en fazla 20 MB).',
+    addrSev: 'sevDesk Autobox', addrSevH: 'sevDesk belgeleri autobox@sevdesk.email adresinden alır – ama yalnızca sevDesk’e kayıtlı olduğun e-posta adresinden gönderilirse.',
+    addrLex: 'Lexware Office belge alım adresi', addrLexH: 'Lexware Office’te: Ayarlar → Belegempfang. Gönderen adresin orada belge göndericisi olarak onaylı olmalı.',
+    otherName: 'Programın adı', addrOther: 'Belgeler için e-posta adresi', addrOtherH: 'Birçok programın belgeler için kendi adresi var. Genellikle ayarlarda „Belge girişi“ veya „Yükleme“ altında bulunur.',
+    addrBad: 'Lütfen geçerli bir e-posta adresi gir.', saveContinue: 'Kaydet ve devam et',
+    transferTitle: '{{to}} programına aktar', nFiles: '{{count}} dosya hazır', preparing: 'Dosyalar hazırlanıyor …',
+    step1Copy: '1. Adresi kopyala', step2Share: '2. „Paylaş“a dokun → e-posta uygulamasını seç → adresi „Kime“ alanına yapıştır → gönder', stepApp: '„Paylaş“a dokun → „Lexware Office“i seç',
+    share: 'Paylaş', copyAddr: 'Kopyala', noShare: 'Bu cihaz dosyaları doğrudan paylaşamıyor. Dosyaları indir ve bir e-postaya ekle.',
+    noShareApp: 'PC’de: dosyayı indir ve Lexware Office’te Belege → „Beleg hochladen“ ile yükle.', download: 'İndir', openMail: 'E-posta programını aç',
+    markSent: 'Gönderdim – aktarıldı olarak işaretle', directNow: 'Şimdi doğrudan aktar', apiBusy: 'Lexware Office’e aktarılıyor …',
+    apiOk: '{{count}} belge Lexware Office’e aktarıldı.', apiFail: 'Doğrudan aktarım başarısız: {{msg}}', apiKeyBad: 'API anahtarı kabul edilmedi. Lütfen ayarlardan kontrol et.',
+    apiMissing: 'Doğrudan aktarım henüz kurulmadı. Lütfen „Paylaş“ ile gönder.', useShare: 'Bunun yerine „Paylaş“ ile gönder', sentOk: 'Aktarıldı olarak işaretlendi.',
+    again: 'Zaten aktarıldı: {{list}}. Yine de tekrar gönderilsin mi?', againBtn: 'Tekrar gönder', changeProgram: 'Programı değiştir',
+    settingsTitle: 'Muhasebe programı', settingsNone: 'Henüz seçilmedi – ilk aktarımda sorulur.', keySaved: 'API anahtarı kayıtlı', keyDel: 'Anahtarı sil',
+    pcSave: 'Bu PC’ye de kaydet', pcPick: 'PC klasörü seç', pcPickH: 'Muhasebe belgeleri ayrıca bu klasöre kaydedilir: Yıl / Ay / Belge türü.',
+    pcFolder: 'PC klasörü: {{name}}', pcDone: '{{count}} dosya PC klasörüne kaydedildi.', pcDenied: 'PC klasörüne erişim yok. Lütfen yeniden seç.',
+    folderOpenN: '{{count}} belge henüz {{to}} programına aktarılmadı.', folderOpenNoProg: '{{count}} belge henüz muhasebe programına aktarılmadı.', transferAll: 'Şimdi hepsini aktar',
+    advisorOpenN: '{{count}} belge henüz muhasebeciye gönderilmedi.', advisorAll: 'Hepsini muhasebeciye gönder',
+    selected: '{{count}} seçildi', selTransfer: 'Aktar', selAdvisor: 'Muhasebeciye', selPc: 'PC’ye', selClear: 'Seçimi kaldır', selMonth: 'Ayı seç',
+    empty: 'Henüz muhasebe belgesi yok. Bir fatura, makbuz veya irsaliye tara.',
+    advisorTitle: 'Muhasebeciye gönder', advisorMail: 'Muhasebecinin e-postası', advisorZip: '{{count}} belgelik ZIP (Yıl / Ay / Belge türü) ve özet',
+    advisorTask: 'Geçen ayın belgelerini muhasebeciye gönder', advisorOk: 'Muhasebeciye gönderildi olarak işaretlendi.',
+    linkAsk: '{{date}} tarihli {{kind}} „{{title}}“ ile ilgili mi?', linkYes: 'Evet, bağla', linkNo: 'Hayır', linked: 'Bağlı: {{list}}',
+    linkedNote: 'Bağlı irsaliyeler fatura aktarılırken birlikte gönderilir.', unlink: 'Bağlantıyı kaldır',
+    oldInvoices: 'Eski giden faturalar', oldInvoicesH: 'Yalnızca görüntüleme ve indirme',
+    movedNote: 'Fatura yazma, ihtarlar, hesap eşleştirme ve DATEV dışa aktarımı artık muhasebe programının işi. eOffis belgeleri kaydeder ve oraya aktarır.',
+    hubAcc: 'Muhasebe', hubAccH: 'Belgeleri kaydet ve aktar',
+  },
+  pl: {
+    folderName: 'Księgowość (faktury, dowody dostawy)', folderTitle: 'Księgowość',
+    type_rechnung: 'Faktura', type_quittung: 'Paragon / pokwitowanie', type_lieferschein: 'Dowód dostawy', type_kontoauszug: 'Wyciąg bankowy', type_gutschrift: 'Nota uznaniowa',
+    fileTitleAcc: 'Rozpoznano dokument księgowy: {{type}}', fileTarget: 'Folder', fileTransfer: 'Przekaż do programu księgowego', fileToFolder: 'Zapisz w folderze „Księgowość”',
+    fileOther: 'To nie dokument księgowy? Wybierz inny folder', fileSuggest: 'Propozycja: zapisać w folderze „{{folder}}”?', fileYes: 'Tak, zapisz w „{{folder}}”',
+    fileAsk: 'Gdzie należy ten dokument?', fileAskH: 'Dokumenty księgowe trafiają do folderu „Księgowość” i można je przekazać do programu księgowego.',
+    accGroup: 'Dokument księgowy', otherFolders: 'Inny folder', filedIn: 'Zapisano: {{path}}', fileDone: 'Zapisano w {{path}}',
+    transferredTo: 'Przekazano do {{to}} dnia {{date}}', notTransferred: 'nieprzekazany', advisorSent: 'wysłano do doradcy podatkowego', pcSaved: 'zapisano na PC',
+    prog_lexware: 'Lexware Office', prog_datev: 'DATEV', prog_sevdesk: 'sevDesk', prog_other: 'Inny program',
+    pickProgram: 'Z jakiego programu księgowego korzystasz?', lexXl: 'Czy korzystasz z Lexware Office w taryfie XL?',
+    lexXlH: 'Interfejs (API) do bezpośredniego przekazywania i odbiór dokumentów e-mailem są tylko w taryfie XL.', yes: 'Tak', no: 'Nie',
+    lexKey: 'Klucz API Lexware Office', lexKeyH: 'W Lexware Office: Ustawienia → Rozszerzenia → Public API → utwórz klucz (tylko administrator, taryfa XL). Klucz jest bezpiecznie zapisany na Twoim koncie eOffis.',
+    lexKeyOpen: 'Otwórz stronę Lexware', lexUseMail: 'Bez klucza: e-mailem na adres odbioru dokumentów Lexware',
+    lexApp: 'Bez taryfy XL przekazujesz dokumenty przez aplikację Lexware: dotknij „Udostępnij” i wybierz „Lexware Office”. Aplikacja musi być zainstalowana w telefonie.',
+    addrDatev: 'Twój adres DATEV Upload Mail', addrDatevH: 'Ustaw w DATEV Unternehmen online: Belege → Einstellungen → Upload Mail → „Jetzt einrichten”. Wysyłać można tylko z zapisanego tam adresu nadawcy (PDF, do 20 MB).',
+    addrSev: 'sevDesk Autobox', addrSevH: 'sevDesk przyjmuje dokumenty na autobox@sevdesk.email – ale tylko z adresu e-mail, którym logujesz się do sevDesk.',
+    addrLex: 'Adres odbioru dokumentów Lexware Office', addrLexH: 'W Lexware Office: Ustawienia → Belegempfang. Twój adres nadawcy musi być tam zatwierdzony.',
+    otherName: 'Nazwa programu', addrOther: 'Adres e-mail do dokumentów', addrOtherH: 'Wiele programów ma własny adres do dokumentów. Zwykle znajdziesz go w ustawieniach w sekcji „Wpływ dokumentów” lub „Upload”.',
+    addrBad: 'Podaj prawidłowy adres e-mail.', saveContinue: 'Zapisz i dalej',
+    transferTitle: 'Przekaż do {{to}}', nFiles: 'Gotowe pliki: {{count}}', preparing: 'Przygotowywanie plików …',
+    step1Copy: '1. Skopiuj adres', step2Share: '2. Dotknij „Udostępnij” → wybierz aplikację poczty → wklej adres w „Do” → wyślij', stepApp: 'Dotknij „Udostępnij” → wybierz „Lexware Office”',
+    share: 'Udostępnij', copyAddr: 'Kopiuj', noShare: 'To urządzenie nie może bezpośrednio udostępniać plików. Pobierz pliki i dołącz je do e-maila.',
+    noShareApp: 'Na PC: pobierz plik i prześlij go w Lexware Office w Belege → „Beleg hochladen”.', download: 'Pobierz', openMail: 'Otwórz program pocztowy',
+    markSent: 'Wysłałem – oznacz jako przekazane', directNow: 'Przekaż teraz bezpośrednio', apiBusy: 'Przekazywanie do Lexware Office …',
+    apiOk: 'Przekazano dokumentów do Lexware Office: {{count}}.', apiFail: 'Bezpośrednie przekazanie nie powiodło się: {{msg}}', apiKeyBad: 'Klucz API nie został przyjęty. Sprawdź go w ustawieniach.',
+    apiMissing: 'Bezpośrednie przekazywanie nie jest jeszcze skonfigurowane. Wyślij przez „Udostępnij”.', useShare: 'Zamiast tego wyślij przez „Udostępnij”', sentOk: 'Oznaczono jako przekazane.',
+    again: 'Już przekazano: {{list}}. Mimo to wysłać ponownie?', againBtn: 'Wyślij ponownie', changeProgram: 'Zmień program',
+    settingsTitle: 'Program księgowy', settingsNone: 'Jeszcze nie wybrano – pytanie pojawi się przy pierwszym przekazaniu.', keySaved: 'Klucz API zapisany', keyDel: 'Usuń klucz',
+    pcSave: 'Zapisz też na tym PC', pcPick: 'Wybierz folder na PC', pcPickH: 'Dokumenty księgowe będą dodatkowo zapisywane w tym folderze: rok / miesiąc / rodzaj.',
+    pcFolder: 'Folder na PC: {{name}}', pcDone: 'Zapisano plików w folderze PC: {{count}}.', pcDenied: 'Brak dostępu do folderu na PC. Wybierz go ponownie.',
+    folderOpenN: 'Dokumenty jeszcze nieprzekazane do {{to}}: {{count}}.', folderOpenNoProg: 'Dokumenty jeszcze nieprzekazane do programu księgowego: {{count}}.', transferAll: 'Przekaż wszystkie teraz',
+    advisorOpenN: 'Dokumenty jeszcze niewysłane do doradcy podatkowego: {{count}}.', advisorAll: 'Wyślij wszystkie do doradcy',
+    selected: 'Wybrano: {{count}}', selTransfer: 'Przekaż', selAdvisor: 'Do doradcy', selPc: 'Na PC', selClear: 'Wyczyść wybór', selMonth: 'Wybierz miesiąc',
+    empty: 'Brak dokumentów księgowych. Zeskanuj fakturę, paragon lub dowód dostawy.',
+    advisorTitle: 'Wyślij do doradcy podatkowego', advisorMail: 'E-mail doradcy podatkowego', advisorZip: 'ZIP z {{count}} dokumentami (rok / miesiąc / rodzaj) i zestawieniem',
+    advisorTask: 'Wyślij dokumenty z poprzedniego miesiąca do doradcy podatkowego', advisorOk: 'Oznaczono jako wysłane do doradcy.',
+    linkAsk: 'Należy do: {{kind}} „{{title}}” z dnia {{date}}?', linkYes: 'Tak, połącz', linkNo: 'Nie', linked: 'Połączono z: {{list}}',
+    linkedNote: 'Połączone dowody dostawy są wysyłane razem z fakturą.', unlink: 'Usuń połączenie',
+    oldInvoices: 'Wcześniejsze faktury wychodzące', oldInvoicesH: 'Tylko do podglądu i pobrania',
+    movedNote: 'Wystawianie faktur, upomnienia, uzgadnianie konta i eksport DATEV robi teraz Twój program księgowy. eOffis zapisuje dokumenty i tam je przekazuje.',
+    hubAcc: 'Księgowość', hubAccH: 'Zapisywanie i przekazywanie dokumentów',
+  },
+  ru: {
+    folderName: 'Бухгалтерия (счета, накладные)', folderTitle: 'Бухгалтерия',
+    type_rechnung: 'Счёт', type_quittung: 'Квитанция / чек', type_lieferschein: 'Накладная', type_kontoauszug: 'Выписка со счёта', type_gutschrift: 'Кредит-нота',
+    fileTitleAcc: 'Распознан бухгалтерский документ: {{type}}', fileTarget: 'Папка', fileTransfer: 'Передать в бухгалтерскую программу', fileToFolder: 'Сохранить в папку «Бухгалтерия»',
+    fileOther: 'Не бухгалтерский документ? Выбрать другую папку', fileSuggest: 'Предложение: сохранить в папку «{{folder}}»?', fileYes: 'Да, сохранить в «{{folder}}»',
+    fileAsk: 'Куда относится этот документ?', fileAskH: 'Бухгалтерские документы попадают в папку «Бухгалтерия» и могут быть переданы в вашу бухгалтерскую программу.',
+    accGroup: 'Бухгалтерский документ', otherFolders: 'Другая папка', filedIn: 'Сохранено: {{path}}', fileDone: 'Сохранено в {{path}}',
+    transferredTo: 'Передано в {{to}} {{date}}', notTransferred: 'не передано', advisorSent: 'отправлено налоговому консультанту', pcSaved: 'сохранено на ПК',
+    prog_lexware: 'Lexware Office', prog_datev: 'DATEV', prog_sevdesk: 'sevDesk', prog_other: 'Другая программа',
+    pickProgram: 'Какую бухгалтерскую программу вы используете?', lexXl: 'Вы пользуетесь Lexware Office по тарифу XL?',
+    lexXlH: 'Интерфейс (API) для прямой передачи и приём документов по e-mail есть только в тарифе XL.', yes: 'Да', no: 'Нет',
+    lexKey: 'API-ключ Lexware Office', lexKeyH: 'В Lexware Office: Настройки → Расширения → Public API → создать ключ (только администратор, тариф XL). Ключ надёжно хранится в вашем аккаунте eOffis.',
+    lexKeyOpen: 'Открыть страницу Lexware', lexUseMail: 'Без ключа: по e-mail на адрес приёма документов Lexware',
+    lexApp: 'Без тарифа XL документы передаются через приложение Lexware: нажмите «Поделиться» и выберите «Lexware Office». Приложение должно быть установлено на телефоне.',
+    addrDatev: 'Ваш адрес DATEV Upload Mail', addrDatevH: 'Настройка в DATEV Unternehmen online: Belege → Einstellungen → Upload Mail → «Jetzt einrichten». Отправлять можно только с указанного там адреса (PDF, до 20 МБ).',
+    addrSev: 'sevDesk Autobox', addrSevH: 'sevDesk принимает документы на autobox@sevdesk.email – но только с адреса, под которым вы зарегистрированы в sevDesk.',
+    addrLex: 'Адрес приёма документов Lexware Office', addrLexH: 'В Lexware Office: Настройки → Belegempfang. Ваш адрес отправителя должен быть там разрешён.',
+    otherName: 'Название программы', addrOther: 'E-mail для документов', addrOtherH: 'У многих программ есть свой адрес для документов. Обычно он в настройках в разделе «Входящие документы» или «Загрузка».',
+    addrBad: 'Введите корректный адрес e-mail.', saveContinue: 'Сохранить и продолжить',
+    transferTitle: 'Передать в {{to}}', nFiles: 'Готово файлов: {{count}}', preparing: 'Подготовка файлов …',
+    step1Copy: '1. Скопировать адрес', step2Share: '2. Нажмите «Поделиться» → выберите почту → вставьте адрес в «Кому» → отправьте', stepApp: 'Нажмите «Поделиться» → выберите «Lexware Office»',
+    share: 'Поделиться', copyAddr: 'Копировать', noShare: 'Это устройство не может напрямую делиться файлами. Скачайте файлы и приложите их к письму.',
+    noShareApp: 'На ПК: скачайте файл и загрузите его в Lexware Office в разделе Belege → «Beleg hochladen».', download: 'Скачать', openMail: 'Открыть почтовую программу',
+    markSent: 'Я отправил – отметить как переданное', directNow: 'Передать напрямую сейчас', apiBusy: 'Передача в Lexware Office …',
+    apiOk: 'Передано документов в Lexware Office: {{count}}.', apiFail: 'Прямая передача не удалась: {{msg}}', apiKeyBad: 'API-ключ не принят. Проверьте его в настройках.',
+    apiMissing: 'Прямая передача ещё не настроена. Отправьте через «Поделиться».', useShare: 'Вместо этого отправить через «Поделиться»', sentOk: 'Отмечено как переданное.',
+    again: 'Уже передано: {{list}}. Всё равно отправить ещё раз?', againBtn: 'Отправить снова', changeProgram: 'Сменить программу',
+    settingsTitle: 'Бухгалтерская программа', settingsNone: 'Ещё не выбрана – спросим при первой передаче.', keySaved: 'API-ключ сохранён', keyDel: 'Удалить ключ',
+    pcSave: 'Сохранить и на этом ПК', pcPick: 'Выбрать папку на ПК', pcPickH: 'Бухгалтерские документы дополнительно сохраняются в этой папке: год / месяц / вид.',
+    pcFolder: 'Папка на ПК: {{name}}', pcDone: 'Сохранено файлов в папке ПК: {{count}}.', pcDenied: 'Нет доступа к папке на ПК. Выберите её снова.',
+    folderOpenN: 'Документов ещё не передано в {{to}}: {{count}}.', folderOpenNoProg: 'Документов ещё не передано в бухгалтерскую программу: {{count}}.', transferAll: 'Передать все сейчас',
+    advisorOpenN: 'Документов ещё не отправлено налоговому консультанту: {{count}}.', advisorAll: 'Отправить все консультанту',
+    selected: 'Выбрано: {{count}}', selTransfer: 'Передать', selAdvisor: 'Консультанту', selPc: 'На ПК', selClear: 'Снять выбор', selMonth: 'Выбрать месяц',
+    empty: 'Бухгалтерских документов пока нет. Отсканируйте счёт, чек или накладную.',
+    advisorTitle: 'Отправить налоговому консультанту', advisorMail: 'E-mail налогового консультанта', advisorZip: 'ZIP с {{count}} документами (год / месяц / вид) и обзором',
+    advisorTask: 'Отправить документы прошлого месяца налоговому консультанту', advisorOk: 'Отмечено как отправленное консультанту.',
+    linkAsk: 'Относится к: {{kind}} «{{title}}» от {{date}}?', linkYes: 'Да, связать', linkNo: 'Нет', linked: 'Связано с: {{list}}',
+    linkedNote: 'Связанные накладные отправляются вместе со счётом.', unlink: 'Убрать связь',
+    oldInvoices: 'Прежние исходящие счета', oldInvoicesH: 'Только просмотр и скачивание',
+    movedNote: 'Выставление счетов, напоминания об оплате, сверка счёта и экспорт DATEV теперь делает ваша бухгалтерская программа. eOffis сохраняет документы и передаёт их туда.',
+    hubAcc: 'Бухгалтерия', hubAccH: 'Сохранять и передавать документы',
+  },
+  ar: {
+    folderName: 'المحاسبة (فواتير، إيصالات تسليم)', folderTitle: 'المحاسبة',
+    type_rechnung: 'فاتورة', type_quittung: 'إيصال / فاتورة صندوق', type_lieferschein: 'إيصال تسليم', type_kontoauszug: 'كشف حساب', type_gutschrift: 'إشعار دائن',
+    fileTitleAcc: 'تم التعرّف على مستند محاسبي: {{type}}', fileTarget: 'المجلد', fileTransfer: 'نقل إلى برنامج المحاسبة', fileToFolder: 'حفظ في مجلد „المحاسبة“',
+    fileOther: 'ليس مستندًا محاسبيًا؟ اختر مجلدًا آخر', fileSuggest: 'اقتراح: الحفظ في مجلد „{{folder}}“؟', fileYes: 'نعم، احفظ في „{{folder}}“',
+    fileAsk: 'إلى أين ينتمي هذا المستند؟', fileAskH: 'تذهب المستندات المحاسبية إلى مجلد „المحاسبة“ ويمكن نقلها إلى برنامج المحاسبة.',
+    accGroup: 'مستند محاسبي', otherFolders: 'مجلد آخر', filedIn: 'تم الحفظ: {{path}}', fileDone: 'تم الحفظ في {{path}}',
+    transferredTo: 'نُقل إلى {{to}} في {{date}}', notTransferred: 'لم يُنقل', advisorSent: 'أُرسل إلى المستشار الضريبي', pcSaved: 'حُفظ على الحاسوب',
+    prog_lexware: 'Lexware Office', prog_datev: 'DATEV', prog_sevdesk: 'sevDesk', prog_other: 'برنامج آخر',
+    pickProgram: 'أي برنامج محاسبة تستخدم؟', lexXl: 'هل تستخدم Lexware Office بباقة XL؟',
+    lexXlH: 'واجهة النقل المباشر (API) واستلام المستندات بالبريد الإلكتروني متوفرة فقط في باقة XL.', yes: 'نعم', no: 'لا',
+    lexKey: 'مفتاح API لـ Lexware Office', lexKeyH: 'في Lexware Office: الإعدادات ← الإضافات ← Public API ← إنشاء مفتاح (للمسؤول فقط، باقة XL). يُحفظ المفتاح بأمان في حساب eOffis.',
+    lexKeyOpen: 'فتح صفحة Lexware', lexUseMail: 'بدون مفتاح: بالبريد إلى عنوان استلام المستندات في Lexware',
+    lexApp: 'بدون باقة XL تنقل المستندات عبر تطبيق Lexware: اضغط „مشاركة“ واختر „Lexware Office“. يجب أن يكون التطبيق مثبتًا على الهاتف.',
+    addrDatev: 'عنوان DATEV Upload Mail الخاص بك', addrDatevH: 'الإعداد في DATEV Unternehmen online: Belege ← Einstellungen ← Upload Mail ← „Jetzt einrichten“. الإرسال ممكن فقط من عنوان المرسل المسجّل هناك (PDF حتى 20 ميغابايت).',
+    addrSev: 'sevDesk Autobox', addrSevH: 'يستقبل sevDesk المستندات على autobox@sevdesk.email – لكن فقط من البريد الذي سجّلت به في sevDesk.',
+    addrLex: 'عنوان استلام المستندات في Lexware Office', addrLexH: 'في Lexware Office: الإعدادات ← Belegempfang. يجب أن يكون عنوان المرسل لديك مسموحًا هناك.',
+    otherName: 'اسم البرنامج', addrOther: 'البريد الإلكتروني للمستندات', addrOtherH: 'لكثير من البرامج عنوان خاص للمستندات. تجده عادة في الإعدادات تحت „وارد المستندات“ أو „رفع“.',
+    addrBad: 'يرجى إدخال بريد إلكتروني صالح.', saveContinue: 'حفظ ومتابعة',
+    transferTitle: 'نقل إلى {{to}}', nFiles: '{{count}} ملف جاهز', preparing: 'جارٍ تجهيز الملفات …',
+    step1Copy: '1. انسخ العنوان', step2Share: '2. اضغط „مشاركة“ ← اختر تطبيق البريد ← الصق العنوان في „إلى“ ← أرسل', stepApp: 'اضغط „مشاركة“ ← اختر „Lexware Office“',
+    share: 'مشاركة', copyAddr: 'نسخ', noShare: 'لا يستطيع هذا الجهاز مشاركة الملفات مباشرة. نزّل الملفات وأرفقها برسالة بريد.',
+    noShareApp: 'على الحاسوب: نزّل الملف وارفعه في Lexware Office من Belege ← „Beleg hochladen“.', download: 'تنزيل', openMail: 'فتح برنامج البريد',
+    markSent: 'أرسلت – علّم كمنقول', directNow: 'انقل مباشرة الآن', apiBusy: 'جارٍ النقل إلى Lexware Office …',
+    apiOk: 'تم نقل {{count}} مستند إلى Lexware Office.', apiFail: 'فشل النقل المباشر: {{msg}}', apiKeyBad: 'لم يُقبل مفتاح API. يرجى التحقق منه في الإعدادات.',
+    apiMissing: 'النقل المباشر غير مُعدّ بعد. يرجى الإرسال عبر „مشاركة“.', useShare: 'أرسل عبر „مشاركة“ بدلًا من ذلك', sentOk: 'تم التعليم كمنقول.',
+    again: 'نُقل مسبقًا: {{list}}. إرسال مرة أخرى رغم ذلك؟', againBtn: 'إرسال مرة أخرى', changeProgram: 'تغيير البرنامج',
+    settingsTitle: 'برنامج المحاسبة', settingsNone: 'لم يُختر بعد – سيُسأل عند أول نقل.', keySaved: 'تم حفظ مفتاح API', keyDel: 'حذف المفتاح',
+    pcSave: 'احفظ أيضًا على هذا الحاسوب', pcPick: 'اختر مجلدًا على الحاسوب', pcPickH: 'تُحفظ المستندات المحاسبية أيضًا في هذا المجلد: السنة / الشهر / النوع.',
+    pcFolder: 'مجلد الحاسوب: {{name}}', pcDone: 'تم حفظ {{count}} ملف في مجلد الحاسوب.', pcDenied: 'لا يوجد وصول إلى مجلد الحاسوب. يرجى اختياره مرة أخرى.',
+    folderOpenN: '{{count}} مستند لم يُنقل بعد إلى {{to}}.', folderOpenNoProg: '{{count}} مستند لم يُنقل بعد إلى برنامج المحاسبة.', transferAll: 'انقل الكل الآن',
+    advisorOpenN: '{{count}} مستند لم يُرسل بعد إلى المستشار الضريبي.', advisorAll: 'أرسل الكل إلى المستشار',
+    selected: 'تم اختيار {{count}}', selTransfer: 'نقل', selAdvisor: 'إلى المستشار', selPc: 'إلى الحاسوب', selClear: 'إلغاء الاختيار', selMonth: 'اختيار الشهر',
+    empty: 'لا توجد مستندات محاسبية بعد. امسح فاتورة أو إيصالًا أو إيصال تسليم.',
+    advisorTitle: 'إرسال إلى المستشار الضريبي', advisorMail: 'بريد المستشار الضريبي', advisorZip: 'ملف ZIP بـ {{count}} مستند (السنة / الشهر / النوع) مع ملخّص',
+    advisorTask: 'إرسال مستندات الشهر الماضي إلى المستشار الضريبي', advisorOk: 'تم التعليم كمُرسل إلى المستشار.',
+    linkAsk: 'هل ينتمي إلى {{kind}} „{{title}}“ بتاريخ {{date}}؟', linkYes: 'نعم، اربط', linkNo: 'لا', linked: 'مرتبط بـ: {{list}}',
+    linkedNote: 'تُرسل إيصالات التسليم المرتبطة مع الفاتورة.', unlink: 'إلغاء الربط',
+    oldInvoices: 'فواتير صادرة سابقة', oldInvoicesH: 'للعرض والتنزيل فقط',
+    movedNote: 'كتابة الفواتير والتذكيرات ومطابقة الحساب وتصدير DATEV صارت من مهام برنامج المحاسبة. يحفظ eOffis المستندات وينقلها إليه.',
+    hubAcc: 'المحاسبة', hubAccH: 'حفظ المستندات ونقلها',
+  },
+  ro: {
+    folderName: 'Contabilitate (facturi, avize)', folderTitle: 'Contabilitate',
+    type_rechnung: 'Factură', type_quittung: 'Chitanță / bon', type_lieferschein: 'Aviz de livrare', type_kontoauszug: 'Extras de cont', type_gutschrift: 'Notă de credit',
+    fileTitleAcc: 'Document contabil recunoscut: {{type}}', fileTarget: 'Dosar', fileTransfer: 'Transmite în programul de contabilitate', fileToFolder: 'Salvează în dosarul „Contabilitate”',
+    fileOther: 'Nu e document contabil? Alege alt dosar', fileSuggest: 'Propunere: salvezi în dosarul „{{folder}}”?', fileYes: 'Da, salvează în „{{folder}}”',
+    fileAsk: 'Unde aparține acest document?', fileAskH: 'Documentele contabile ajung în dosarul „Contabilitate” și pot fi transmise programului tău de contabilitate.',
+    accGroup: 'Document contabil', otherFolders: 'Alt dosar', filedIn: 'Salvat: {{path}}', fileDone: 'Salvat în {{path}}',
+    transferredTo: 'Transmis la {{to}} pe {{date}}', notTransferred: 'netransmis', advisorSent: 'trimis consultantului fiscal', pcSaved: 'salvat pe PC',
+    prog_lexware: 'Lexware Office', prog_datev: 'DATEV', prog_sevdesk: 'sevDesk', prog_other: 'Alt program',
+    pickProgram: 'Ce program de contabilitate folosești?', lexXl: 'Folosești Lexware Office cu tariful XL?',
+    lexXlH: 'Interfața (API) pentru transmitere directă și primirea documentelor pe e-mail există doar în tariful XL.', yes: 'Da', no: 'Nu',
+    lexKey: 'Cheia API Lexware Office', lexKeyH: 'În Lexware Office: Setări → Extensii → Public API → generează cheia (doar administrator, tarif XL). Cheia este păstrată protejat în contul tău eOffis.',
+    lexKeyOpen: 'Deschide pagina Lexware', lexUseMail: 'Fără cheie: pe e-mail la adresa de primire documente Lexware',
+    lexApp: 'Fără tariful XL transmiți documentele prin aplicația Lexware: atinge „Partajează” și alege „Lexware Office”. Aplicația trebuie să fie instalată pe telefon.',
+    addrDatev: 'Adresa ta DATEV Upload Mail', addrDatevH: 'Configurare în DATEV Unternehmen online: Belege → Einstellungen → Upload Mail → „Jetzt einrichten”. Trimiterea merge doar de la adresa expeditorului înregistrată acolo (PDF, până la 20 MB).',
+    addrSev: 'sevDesk Autobox', addrSevH: 'sevDesk primește documente la autobox@sevdesk.email – dar doar de la adresa de e-mail cu care ești înregistrat în sevDesk.',
+    addrLex: 'Adresa de primire documente Lexware Office', addrLexH: 'În Lexware Office: Setări → Belegempfang. Adresa ta de expeditor trebuie să fie aprobată acolo.',
+    otherName: 'Numele programului', addrOther: 'Adresa de e-mail pentru documente', addrOtherH: 'Multe programe au o adresă proprie pentru documente. De obicei o găsești în setări, la „Documente primite” sau „Încărcare”.',
+    addrBad: 'Introdu o adresă de e-mail validă.', saveContinue: 'Salvează și continuă',
+    transferTitle: 'Transmite la {{to}}', nFiles: '{{count}} fișier(e) pregătite', preparing: 'Se pregătesc fișierele …',
+    step1Copy: '1. Copiază adresa', step2Share: '2. Atinge „Partajează” → alege aplicația de e-mail → lipește adresa la „Către” → trimite', stepApp: 'Atinge „Partajează” → alege „Lexware Office”',
+    share: 'Partajează', copyAddr: 'Copiază', noShare: 'Acest dispozitiv nu poate partaja direct fișiere. Descarcă fișierele și atașează-le la un e-mail.',
+    noShareApp: 'Pe PC: descarcă fișierul și încarcă-l în Lexware Office la Belege → „Beleg hochladen”.', download: 'Descarcă', openMail: 'Deschide programul de e-mail',
+    markSent: 'Am trimis – marchează ca transmis', directNow: 'Transmite direct acum', apiBusy: 'Se transmite la Lexware Office …',
+    apiOk: '{{count}} document(e) transmise la Lexware Office.', apiFail: 'Transmiterea directă a eșuat: {{msg}}', apiKeyBad: 'Cheia API nu a fost acceptată. Verific-o în setări.',
+    apiMissing: 'Transmiterea directă nu este încă configurată. Trimite prin „Partajează”.', useShare: 'Trimite în schimb prin „Partajează”', sentOk: 'Marcat ca transmis.',
+    again: 'Deja transmis: {{list}}. Trimiți totuși din nou?', againBtn: 'Trimite din nou', changeProgram: 'Schimbă programul',
+    settingsTitle: 'Program de contabilitate', settingsNone: 'Încă neales – vei fi întrebat la prima transmitere.', keySaved: 'Cheia API salvată', keyDel: 'Șterge cheia',
+    pcSave: 'Salvează și pe acest PC', pcPick: 'Alege dosarul de pe PC', pcPickH: 'Documentele contabile se salvează în plus în acest dosar: an / lună / tip.',
+    pcFolder: 'Dosar PC: {{name}}', pcDone: '{{count}} fișier(e) salvate în dosarul PC.', pcDenied: 'Nu există acces la dosarul PC. Alege-l din nou.',
+    folderOpenN: '{{count}} document(e) încă netransmise la {{to}}.', folderOpenNoProg: '{{count}} document(e) încă netransmise programului de contabilitate.', transferAll: 'Transmite-le pe toate acum',
+    advisorOpenN: '{{count}} document(e) încă netrimise consultantului fiscal.', advisorAll: 'Trimite-le pe toate consultantului',
+    selected: '{{count}} selectate', selTransfer: 'Transmite', selAdvisor: 'La consultant', selPc: 'Pe PC', selClear: 'Anulează selecția', selMonth: 'Selectează luna',
+    empty: 'Încă nu există documente contabile. Scanează o factură, o chitanță sau un aviz.',
+    advisorTitle: 'Trimite consultantului fiscal', advisorMail: 'E-mailul consultantului fiscal', advisorZip: 'ZIP cu {{count}} documente (an / lună / tip) și rezumat',
+    advisorTask: 'Trimite documentele lunii trecute consultantului fiscal', advisorOk: 'Marcat ca trimis consultantului.',
+    linkAsk: 'Aparține de {{kind}} „{{title}}” din {{date}}?', linkYes: 'Da, leagă', linkNo: 'Nu', linked: 'Legat de: {{list}}',
+    linkedNote: 'Avizele legate se trimit împreună cu factura.', unlink: 'Anulează legătura',
+    oldInvoices: 'Facturi emise anterior', oldInvoicesH: 'Doar pentru vizualizare și descărcare',
+    movedNote: 'Emiterea facturilor, somațiile, potrivirea extraselor și exportul DATEV le face acum programul tău de contabilitate. eOffis salvează documentele și le transmite acolo.',
+    hubAcc: 'Contabilitate', hubAccH: 'Salvează și transmite documente',
+  },
+};
+for (const l of Object.keys(ACC_TEXT)) {
+  I18N[l] = I18N[l] || {};
+  I18N[l].acc = Object.assign({}, I18N[l].acc || {}, ACC_TEXT[l]);
+  I18N[l].docs = Object.assign({}, I18N[l].docs || {}, { folder_buchhaltung: ACC_TEXT[l].folderName });
+}
+
+/* ---------- Belegart, Ablagepfad, Dateiname ---------- */
+function accTypeOf(d) {
+  if (!d) return null;
+  if (ACC_TYPES.includes(d.acc_type)) return d.acc_type;
+  if (d.acc_type === 'none') return null;
+  const s = `${d.doc_type || ''} ${d.title || ''}`.toLowerCase();
+  if (/lieferschein/.test(s)) return 'lieferschein';
+  if (/kontoauszug/.test(s)) return 'kontoauszug';
+  if (/gutschrift/.test(s)) return 'gutschrift';
+  if (/quittung|kassenbon|kassenbeleg|tankbeleg|bewirtungsbeleg/.test(s)) return 'quittung';
+  if (/mahnung|zahlungserinnerung/.test(s)) return null;
+  if (d.is_incoming_invoice || /rechnung/.test(s)) return 'rechnung';
+  return null;
+}
+const accDateOf = (d) => String(d.document_date || d.created_at || todayISO()).slice(0, 10);
+function monthLabel(iso, l) { const [y, m] = iso.split('-').map(Number); try { return new Intl.DateTimeFormat(l === 'ar' ? 'ar-u-nu-latn' : l, { month: 'long' }).format(new Date(y, m - 1, 15)); } catch { return String(m); } }
+/** Ordner auf dem PC: Jahr / „11_November“ / Belegart (immer deutsche Namen, damit der Steuerberater sie versteht) */
+function accDirs(d) {
+  const iso = accDateOf(d), mm = iso.slice(5, 7);
+  return [iso.slice(0, 4), `${mm}_${monthLabel(iso, 'de').replace(/[^\wäöüÄÖÜß]/g, '')}`, ACC_DIR[accTypeOf(d) || 'rechnung']];
+}
+function accPathText(d) {
+  const iso = accDateOf(d);
+  return [t('acc.folderTitle'), iso.slice(0, 4), monthLabel(iso, lang), t('acc.type_' + (accTypeOf(d) || 'rechnung'))].join(' › ');
+}
+function accFileName(d, ext) {
+  const parts = [accDateOf(d)];
+  if (d.sender) parts.push(safeName(String(d.sender).split(/\n/)[0]).slice(0, 40));
+  const no = d.invoice_number || d.document_number;
+  if (no) parts.push(safeName(no).slice(0, 30));
+  if (typeof d.amount_gross === 'number' && isFinite(d.amount_gross)) parts.push(d.amount_gross.toFixed(2).replace('.', ',') + (d.currency && d.currency !== 'EUR' ? d.currency : 'EUR'));
+  if (parts.length === 1) parts.push(safeName(d.title).slice(0, 40));
+  return parts.join('_') + '.' + (ext || (d.file_kind === 'xml' ? 'xml' : 'pdf'));
+}
+const isTransferred = (d) => !!(d && d.transfers && d.transfers.length);
+const lastTransfer = (d) => (isTransferred(d) ? d.transfers[d.transfers.length - 1] : null);
+const accProfile = () => (S.profile && S.profile.acc) || {};
+function progName(P, to) {
+  const k = to || P.program;
+  if (k === 'other' || (k && !ACC_PROGS.includes(k))) return (P && P.name) || (k !== 'other' ? k : t('acc.prog_other'));
+  return k ? t('acc.prog_' + k) : '';
+}
+const accDocs = () => S.docs.filter((d) => d.folder === 'buchhaltung');
+async function docFile(d) {
+  const pages = (await store.where('pages', 'docId', d.id)).sort((a, b) => a.idx - b.idx);
+  if (d.file_kind === 'xml') return new File([(pages[0] && pages[0].xml) || ''], accFileName(d, 'xml'), { type: 'application/xml' });
+  return new File([pagesToPdf(pages)], accFileName(d, 'pdf'), { type: 'application/pdf' });
+}
+/** Rechnungen nehmen ihre verknüpften Lieferscheine mit */
+function withLinked(ids) {
+  const out = [];
+  for (const id of ids) {
+    if (!out.includes(id)) out.push(id);
+    const d = getDoc(id);
+    if (d && accTypeOf(d) === 'rechnung') for (const l of d.linked_ids || []) { const x = getDoc(l); if (x && accTypeOf(x) === 'lieferschein' && !out.includes(l)) out.push(l); }
+  }
+  return out.filter((id) => getDoc(id));
+}
+
+/* ---------- Karte im Beleg: Ablage-Vorschlag, zwei Möglichkeiten, Verknüpfung ---------- */
+function accCards(d, st) {
+  if (!d || d.archived || (st && st.analyzing)) return linkInfo(d);
+  return fileCard(d) + linkCard(d) + linkInfo(d);
+}
+function folderChips(d, exclude) {
+  return `<div class="chips">${FOLDERS.filter((f) => f !== 'buchhaltung' && f !== exclude).map((f) => chip(t('docs.folder_' + f), false, `data-a="fileFolder" data-v="${f}"`)).join('')}</div>`;
+}
+function typeChips(d) {
+  return `<div class="chips">${ACC_TYPES.map((k) => chip(t('acc.type_' + k), accTypeOf(d) === k, `data-a="accSetType" data-v="${k}"`)).join('')}</div>`;
+}
+function fileCard(d) {
+  const type = accTypeOf(d), P = accProfile(), lt = lastTransfer(d);
+  const actions = (filed) => `${lt ? '' : `<button class="btn" data-a="accTransfer">${ico('box')}${esc(t('acc.fileTransfer'))}${P.program ? ` · ${esc(progName(P))}` : ''}</button>`}
+      ${filed ? '' : `<button class="btn ${lt ? '' : 'sec'}" data-a="accFile">${ico('folder')}${esc(t('acc.fileToFolder'))}</button>`}
+      ${filed && pcSupported() && !d.pc_saved_at ? `<button class="btn ghost" data-a="accPc">${ico('folder')}${esc(t('acc.pcSave'))}</button>` : ''}`;
+  if (d.filed_at && d.folder === 'buchhaltung' && type) {
+    return `<div class="card acc-card ${lt ? '' : 'acc-open'}"><p class="small"><b>✓ ${esc(t('acc.filedIn', { path: accPathText(d) }))}</b></p>
+      ${lt ? `<p class="small">✓ ${esc(t('acc.transferredTo', { to: progName(P, lt.to), date: fmtDate(lt.at) }))}</p>` : ''}
+      ${d.advisor_sent_at ? `<p class="small muted">✓ ${esc(t('acc.advisorSent'))} · ${esc(fmtDate(d.advisor_sent_at))}</p>` : ''}
+      ${d.pc_saved_at ? `<p class="small muted">✓ ${esc(t('acc.pcSaved'))}</p>` : ''}
+      ${actions(true)}</div>`;
+  }
+  if (d.filed_at) return '';
+  if (type) {
+    return `<div class="card acc-card acc-open"><h2>${esc(t('acc.fileTitleAcc', { type: t('acc.type_' + type) }))}</h2>
+      <p class="small muted">${esc(t('acc.fileTarget'))}: ${esc(accPathText(d))}</p>
+      ${actions(false)}
+      <details class="small"><summary style="cursor:pointer;font-weight:700">${esc(t('acc.fileOther'))}</summary>${typeChips(d)}${folderChips(d)}</details></div>`;
+  }
+  if (d.analyzed_at && d.folder && d.folder !== 'sonstiges') {
+    const f = t('docs.folder_' + d.folder);
+    return `<div class="card acc-card"><h2>${esc(t('acc.fileSuggest', { folder: f }))}</h2>
+      <button class="btn" data-a="fileFolder" data-v="${esc(d.folder)}">${ico('folder')}${esc(t('acc.fileYes', { folder: f }))}</button>
+      <details class="small"><summary style="cursor:pointer;font-weight:700">${esc(t('acc.otherFolders'))}</summary>
+        <p class="muted small" style="margin-top:8px">${esc(t('acc.accGroup'))}</p>${typeChips(d)}<p class="muted small" style="margin-top:8px">${esc(t('acc.otherFolders'))}</p>${folderChips(d, d.folder)}</details></div>`;
+  }
+  return `<div class="card acc-card"><h2>${esc(t('acc.fileAsk'))}</h2><p class="small muted">${esc(t('acc.fileAskH'))}</p>
+    <p class="small" style="font-weight:700">${esc(t('acc.accGroup'))}</p>${typeChips(d)}
+    <p class="small" style="font-weight:700">${esc(t('acc.otherFolders'))}</p>${folderChips(d)}</div>`;
+}
+/** Lieferschein ↔ Rechnung: gleicher Absender, Nummer genannt oder zeitlich nah */
+function linkCandidate(d) {
+  const type = accTypeOf(d);
+  if (type !== 'rechnung' && type !== 'lieferschein') return null;
+  const other = type === 'rechnung' ? 'lieferschein' : 'rechnung';
+  const no = new Set((d.link_no || []).concat(d.linked_ids || []));
+  const nrm = (v) => String(v || '').replace(/[\s.\-/]/g, '').toLowerCase();
+  const myNums = new Set([d.invoice_number, d.document_number].filter(Boolean).map(nrm));
+  const myRefs = new Set((d.reference_numbers || []).map(nrm).filter((x) => x.length >= 3));
+  const sn = normName((d.sender || '').split(/[\n,]/)[0]);
+  let best = null;
+  for (const x of S.docs) {
+    if (x.id === d.id || x.archived || no.has(x.id) || accTypeOf(x) !== other) continue;
+    if ((x.link_no || []).includes(d.id)) continue;
+    if (other === 'lieferschein' && (x.linked_ids || []).some((l) => l !== d.id && accTypeOf(getDoc(l)) === 'rechnung')) continue;
+    const xs = normName((x.sender || '').split(/[\n,]/)[0]);
+    const sameSender = sn.length >= 4 && xs.length >= 4 && (sn.includes(xs) || xs.includes(sn));
+    const xNums = [x.invoice_number, x.document_number].filter(Boolean).map(nrm), xRefs = (x.reference_numbers || []).map(nrm);
+    const numHit = xNums.some((n) => myRefs.has(n)) || xRefs.some((n) => myNums.has(n) || myRefs.has(n));
+    const gap = Math.abs((fromISO(accDateOf(d)) - fromISO(accDateOf(x))) / 86400000);
+    const score = (numHit ? 3 : 0) + (sameSender && gap <= 60 ? 1 : 0);
+    if (score >= 1 && (sameSender || numHit) && (!best || score > best.score || (score === best.score && gap < best.gap))) best = { x, score, gap };
+  }
+  return best ? best.x : null;
+}
+function linkCard(d) {
+  const x = linkCandidate(d); if (!x) return '';
+  return `<div class="card acc-card"><p><b>${esc(t('acc.linkAsk', { kind: t('acc.type_' + accTypeOf(x)), title: x.title, date: fmtDate(accDateOf(x)) }))}</b></p>
+    <div class="grid2"><button class="btn sm" data-a="accLink" data-v="${x.id}">${esc(t('acc.linkYes'))}</button><button class="btn sm ghost" data-a="accLinkNo" data-v="${x.id}">${esc(t('acc.linkNo'))}</button></div></div>`;
+}
+function linkInfo(d) {
+  const list = ((d && d.linked_ids) || []).map(getDoc).filter(Boolean);
+  if (!list.length) return '';
+  return `<div class="card"><p class="small"><b>🔗 ${esc(t('acc.linked', { list: '' }))}</b></p>
+    ${group(list.map((x) => cell({ icon: 'doc', ic: 'g', title: x.title, sub: t('acc.type_' + (accTypeOf(x) || 'rechnung')) + ' · ' + fmtDate(accDateOf(x)), attrs: `data-go="doc" data-id="${x.id}"` })))}
+    ${accTypeOf(d) === 'rechnung' ? `<p class="muted small">${esc(t('acc.linkedNote'))}</p>` : ''}
+    ${list.map((x) => `<button class="btn sm ghost" data-a="accUnlink" data-v="${x.id}">${esc(t('acc.unlink'))}: ${esc(x.title)}</button>`).join('')}</div>`;
+}
+
+/* ---------- Ablegen ---------- */
+async function accFile(d, type) {
+  const patch = { folder: 'buchhaltung', acc_type: type || accTypeOf(d) || 'rechnung', filed_at: nowIso() };
+  if (d.status === 'saved') Object.assign(patch, { status: 'reviewed', reviewed_at: nowIso() });
+  const saved = await persistDoc(d, patch, t('acc.fileDone', { path: accPathText(Object.assign({}, d, patch)) }));
+  toast(t('acc.fileDone', { path: accPathText(saved) }));
+  await ensureAdvisorTask();
+  if (pcSupported() && (await idbGet('accDir').catch(() => null))) await pcWrite([saved.id], false);
+  return saved;
+}
+async function fileFolder(d, folder) {
+  const patch = { folder, filed_at: nowIso(), acc_type: 'none' };
+  if (d.status === 'saved') Object.assign(patch, { status: 'reviewed', reviewed_at: nowIso() });
+  await persistDoc(d, patch, t('docs.folder_' + folder));
+  toast(t('acc.fileDone', { path: t('docs.folder_' + folder) }));
+}
+
+/* ---------- PC-Ordner (Chrome/Edge am PC: File System Access) ---------- */
+const pcSupported = () => typeof window.showDirectoryPicker === 'function';
+function idb() {
+  return new Promise((res, rej) => { const r = indexedDB.open('eoffis-fs', 1); r.onupgradeneeded = () => r.result.createObjectStore('h'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+}
+async function idbGet(k) { const db = await idb(); return new Promise((res) => { const q = db.transaction('h').objectStore('h').get(k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); }
+async function idbSet(k, v) { const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction('h', 'readwrite'); tx.objectStore('h').put(v, k); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); }); }
+async function pcPick() {
+  const h = await window.showDirectoryPicker({ id: 'eoffis-buchhaltung', mode: 'readwrite' });
+  await idbSet('accDir', h); S.pcName = h.name; return h;
+}
+async function pcHandle(interactive) {
+  let h = await idbGet('accDir').catch(() => null);
+  if (!h) { if (!interactive) return null; h = await pcPick(); }
+  S.pcName = h.name;
+  let p = await h.queryPermission({ mode: 'readwrite' });
+  if (p !== 'granted' && interactive) p = await h.requestPermission({ mode: 'readwrite' });
+  return p === 'granted' ? h : null;
+}
+async function pcWrite(ids, interactive) {
+  let h;
+  try { h = await pcHandle(interactive); } catch (e) { if (e && e.name === 'AbortError') return 0; throw e; }
+  if (!h) { if (interactive) toast(t('acc.pcDenied')); return 0; }
+  let n = 0;
+  for (const id of ids) {
+    const d = getDoc(id); if (!d) continue;
+    let dir = h;
+    for (const part of accDirs(d)) dir = await dir.getDirectoryHandle(part, { create: true });
+    const file = await docFile(d);
+    const fh = await dir.getFileHandle(file.name, { create: true });
+    const w = await fh.createWritable(); await w.write(file); await w.close();
+    await persistDoc(getDoc(id), { pc_saved_at: nowIso() }, t('acc.pcSaved'));
+    n++;
+  }
+  if (n) toast(t('acc.pcDone', { count: n }));
+  return n;
+}
+
+/* ---------- Übertragen an das Buchhaltungsprogramm / an den Steuerberater ---------- */
+let ACC_SECRET = null;
+async function accSecret() {
+  if (ACC_SECRET) return ACC_SECRET;
+  try { ACC_SECRET = (await store.one('meta', 'accsecret')) || { id: 'accsecret' }; } catch { ACC_SECRET = { id: 'accsecret' }; }
+  // Übergang: früher im Konto gespeicherten Schlüssel einmalig verschlüsselt an den Server geben und hier löschen
+  if (ACC_SECRET.lexKey && accKeyServer()) { try { await accKeySave(ACC_SECRET.lexKey); } catch (e) { console.warn('Lexware-Schlüssel bleibt vorerst lokal', e); } }
+  return ACC_SECRET;
+}
+/* Lexware-Schlüssel: in der Web-App nur verschlüsselt auf dem Server (eoffis-api), im Konto steht nur „gespeichert“ + letzte 4 Zeichen */
+const accKeyServer = () => !!(window.EOFFIS_HOST && window.EOFFIS_HOST.fn);
+const accHasKey = (sec) => !!(sec && (sec.lexKeySet || sec.lexKey));
+async function accKeySave(k) {
+  const sec = await accSecret();
+  if (accKeyServer()) {
+    const r = await window.EOFFIS_HOST.fn('eoffis-api', { action: 'lexware_key_set', key: k });
+    delete sec.lexKey; sec.lexKeySet = true; sec.lexKeyHint = (r && r.hint) || '…' + k.slice(-4);
+  } else sec.lexKey = k;
+  await store.put('meta', sec);
+}
+async function accKeyDelete() {
+  const sec = await accSecret();
+  if (accKeyServer()) await window.EOFFIS_HOST.fn('eoffis-api', { action: 'lexware_key_delete' });
+  delete sec.lexKey; delete sec.lexKeySet; delete sec.lexKeyHint;
+  await store.put('meta', sec);
+}
+async function saveAccProfile(patch) {
+  S.profile = Object.assign({}, S.profile, { acc: Object.assign({}, accProfile(), patch) });
+  await store.setProfile(S.profile);
+}
+const accMethod = (P, M) => (M && M.forceShare ? (P.program === 'lexware' && !P.email ? 'app' : 'mail') : P.program === 'lexware' ? (P.xl ? (M && M.forceMail ? 'mail' : 'api') : 'app') : 'mail');
+async function accNextStep(M) {
+  const P = accProfile();
+  if (M.mode === 'advisor') return (S.profile && S.profile.tax_advisor_email) ? 'send' : 'addr';
+  if (!P.program) return 'program';
+  if (P.program === 'lexware' && P.xl === undefined) return 'xl';
+  const m = accMethod(P, M);
+  if (m === 'api' && !accHasKey(await accSecret())) return 'key';
+  if (m === 'mail' && !P.email) return 'addr';
+  return 'send';
+}
+async function accOpen(mode, ids) {
+  ids = mode === 'transfer' ? withLinked(ids) : [...new Set(ids)].filter((id) => getDoc(id));
+  if (!ids.length) return;
+  const list = ids.map(getDoc);
+  const done = list.filter((d) => (mode === 'advisor' ? !!d.advisor_sent_at : isTransferred(d)));
+  if (done.length && !(await ask(t('acc.again', { list: done.slice(0, 3).map((d) => d.title).join(', ') + (done.length > 3 ? ' …' : '') }), t('acc.againBtn')))) return;
+  S.accM = { mode, ids, files: null };
+  S.accM.step = await accNextStep(S.accM);
+  accModal(); accPrepare();
+}
+async function accPrepare() {
+  const M = S.accM; if (!M || M.files || M.preparing) return;
+  M.preparing = true;
+  try {
+    const docs = M.ids.map(getDoc).filter(Boolean);
+    if (M.mode === 'advisor' && docs.length > 1) M.files = [await advisorZip(docs)];
+    else { M.files = []; for (const d of docs) M.files.push(await docFile(d)); }
+  } catch (e) { console.error(e); M.err = t('web.saveFailed', { msg: errText(e) }); }
+  M.preparing = false;
+  if (S.accM === M) accModal();
+}
+async function advisorZip(docs) {
+  const zip = new JSZip();
+  const cellv = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const nf = (n) => (n == null ? '' : Number(n).toFixed(2).replace('.', ','));
+  const rows = [['Nr', 'Belegart', 'Datum', 'Absender', 'Belegnummer', 'Netto', 'USt', 'Brutto', 'Datei', 'Übertragen an', 'SHA-256'].map(cellv).join(';')];
+  const sorted = docs.slice().sort((a, b) => accDateOf(a).localeCompare(accDateOf(b)));
+  for (const [i, d] of sorted.entries()) {
+    const f = await docFile(d); const p = accDirs(d).join('/') + '/' + f.name;
+    zip.file(p, f);
+    const lt = lastTransfer(d);
+    rows.push([i + 1, ACC_DIR[accTypeOf(d) || 'rechnung'], fmtDate(accDateOf(d)), d.sender, d.invoice_number || d.document_number, nf(d.amount_net), nf(d.vat_amount), nf(d.amount_gross), p, lt ? progName(accProfile(), lt.to) : '', d.sha256].map(cellv).join(';'));
+  }
+  zip.file('Uebersicht.csv', '﻿' + rows.join('\r\n'));
+  const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+  const name = (S.profile && S.profile.company_name ? safeName(S.profile.company_name) + '_' : '') + `Belege_${todayISO()}.zip`;
+  return new File([blob], name, { type: 'application/zip' });
+}
+const canShareFiles = (files) => { try { return !!(navigator.share && navigator.canShare && files && files.length && navigator.canShare({ files })); } catch { return false; } };
+function accAddress(M) {
+  if (M.mode === 'advisor') return (S.profile && S.profile.tax_advisor_email) || '';
+  return accProfile().email || '';
+}
+function accModal() {
+  const M = S.accM, layer = $('#layer');
+  if (!M) { layer.innerHTML = ''; return; }
+  const P = accProfile(), n = M.ids.length;
+  const title = M.mode === 'advisor' ? t('acc.advisorTitle') : P.program ? t('acc.transferTitle', { to: progName(P) }) : t('acc.fileTransfer');
+  let body = '';
+  if (M.step === 'program') {
+    body = `<p><b>${esc(t('acc.pickProgram'))}</b></p>${group(ACC_PROGS.map((k) => cell({ icon: 'box', ic: 'g', title: t('acc.prog_' + k), attrs: `data-a="accProg" data-v="${k}"` })))}`;
+  } else if (M.step === 'xl') {
+    body = `<p><b>${esc(t('acc.lexXl'))}</b></p><p class="small muted">${esc(t('acc.lexXlH'))}</p>
+      <div class="grid2"><button class="btn" data-a="accXl" data-v="1">${esc(t('acc.yes'))}</button><button class="btn sec" data-a="accXl" data-v="0">${esc(t('acc.no'))}</button></div>`;
+  } else if (M.step === 'key') {
+    body = `${field('acc_key', t('acc.lexKey'), '', 'type="password" autocomplete="off" spellcheck="false"')}
+      <p class="small muted">${esc(t('acc.lexKeyH'))}</p>
+      <a class="btn sm ghost" href="${LEX_KEY_URL}" target="_blank" rel="noopener">${esc(t('acc.lexKeyOpen'))} ↗</a>
+      <button class="btn" data-a="accKeySave">${esc(t('acc.saveContinue'))}</button>
+      <button class="btn sm ghost" data-a="accUseMail">${esc(t('acc.lexUseMail'))}</button>`;
+  } else if (M.step === 'addr') {
+    const isAdv = M.mode === 'advisor', prog = P.program;
+    const label = isAdv ? t('acc.advisorMail') : prog === 'datev' ? t('acc.addrDatev') : prog === 'sevdesk' ? t('acc.addrSev') : prog === 'lexware' ? t('acc.addrLex') : t('acc.addrOther');
+    const help = isAdv ? '' : prog === 'datev' ? t('acc.addrDatevH') : prog === 'sevdesk' ? t('acc.addrSevH') : prog === 'lexware' ? t('acc.addrLexH') : t('acc.addrOtherH');
+    const pre = isAdv ? (S.profile && S.profile.tax_advisor_email) || '' : P.email || (prog === 'sevdesk' ? SEVDESK_MAIL : '');
+    body = `${!isAdv && prog === 'other' ? field('acc_name', t('acc.otherName'), P.name || '') : ''}
+      ${field('acc_addr', label, pre, 'type="email" autocomplete="off" inputmode="email"')}
+      ${help ? `<p class="small muted">${esc(help)}</p>` : ''}
+      <button class="btn" data-a="accAddrSave">${esc(t('acc.saveContinue'))}</button>`;
+  } else {
+    const method = M.mode === 'advisor' ? 'mail' : accMethod(P, M);
+    const files = M.files, ready = !!(files && files.length), share = ready && canShareFiles(files), addr = accAddress(M);
+    const list = ready ? `<p class="small">✓ ${esc(t('acc.nFiles', { count: files.length }))}</p><ul class="small muted" style="margin:0;padding-inline-start:20px;overflow-wrap:anywhere">${files.slice(0, 6).map((f) => `<li>${esc(f.name)}</li>`).join('')}${files.length > 6 ? '<li>…</li>' : ''}</ul>`
+      : `<div class="row"><div class="spin" style="width:22px;height:22px;margin:0"></div><span class="small muted">${esc(t('acc.preparing'))}</span></div>`;
+    const subject = M.mode === 'advisor' ? `Belege ${(S.profile && S.profile.company_name) || ''}`.trim() : n === 1 ? (getDoc(M.ids[0]) || {}).title || 'Beleg' : `${n} Belege`;
+    const mailto = `mailto:${encodeURIComponent(addr).replace(/%40/g, '@')}?subject=${encodeURIComponent(subject)}`;
+    if (method === 'api') {
+      body = `${list}${M.busy ? busyCard(M.busy) : `<button class="btn" data-a="accApi" ${ready ? '' : 'disabled'}>${ico('box')}${esc(t('acc.directNow'))}</button>`}
+        <button class="btn sm ghost" data-a="accForceShare">${esc(t('acc.useShare'))}</button>`;
+    } else if (method === 'app') {
+      body = `${list}<p class="small">${esc(t('acc.lexApp'))}</p>
+        ${share ? `<p class="small"><b>${esc(t('acc.stepApp'))}</b></p><button class="btn" data-a="accShare">${ico('box')}${esc(t('acc.share'))}</button>`
+          : ready ? `<p class="small muted">${esc(t('acc.noShareApp'))}</p><button class="btn sec" data-a="accDl">${esc(t('acc.download'))}</button><button class="btn ghost" data-a="accMark">${esc(t('acc.markSent'))}</button>` : ''}`;
+    } else {
+      body = `${list}<p class="small"><b>${esc(t('acc.step1Copy'))}</b></p>
+        <div class="row" style="flex-wrap:nowrap"><span class="mono grow" style="overflow-wrap:anywhere;background:var(--paper);padding:8px;border-radius:8px">${esc(addr)}</span><button class="btn sm sec" data-a="accCopyAddr">${esc(t('acc.copyAddr'))}</button></div>
+        ${share ? `<p class="small"><b>${esc(t('acc.step2Share'))}</b></p><button class="btn" data-a="accShare">${ico('box')}${esc(t('acc.share'))}</button>`
+          : ready ? `<p class="small muted">${esc(t('acc.noShare'))}</p><div class="grid2"><button class="btn sec" data-a="accDl">${esc(t('acc.download'))}</button><a class="btn ghost" href="${esc(mailto)}">${esc(t('acc.openMail'))}</a></div>
+            <button class="btn ghost" data-a="accMark">${esc(t('acc.markSent'))}</button>` : ''}`;
+    }
+  }
+  if (M.mode !== 'advisor' && M.step !== 'program') body += `<button class="btn sm ghost" data-a="accChange">${esc(t('acc.changeProgram'))}</button>`;
+  layer.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="accMT"><div class="card">
+    <h2 id="accMT">${esc(title)}</h2>${M.mode === 'advisor' && M.step === 'send' && n > 1 ? `<p class="small muted">${esc(t('acc.advisorZip', { count: n }))}</p>` : ''}
+    ${M.err ? `<div class="banner warn">${esc(M.err)}</div>` : ''}${body}
+    <button class="btn ghost" data-a="accClose">${esc(t('common.close'))}</button></div></div>`;
+}
+async function accMarkSent(via) {
+  const M = S.accM, P = accProfile();
+  for (const id of M.ids) {
+    const d = getDoc(id); if (!d) continue;
+    const patch = M.mode === 'advisor' ? { advisor_sent_at: nowIso() }
+      : { transfers: (d.transfers || []).concat([{ to: P.program === 'other' ? P.name || 'other' : P.program, via, at: nowIso() }]) };
+    if (d.folder !== 'buchhaltung' || !d.filed_at) Object.assign(patch, { folder: 'buchhaltung', acc_type: accTypeOf(d) || 'rechnung', filed_at: d.filed_at || nowIso() });
+    if (d.status === 'saved') Object.assign(patch, { status: 'reviewed', reviewed_at: nowIso() });
+    await persistDoc(d, patch, M.mode === 'advisor' ? t('acc.advisorSent') : t('acc.transferredTo', { to: progName(P), date: fmtDate(todayISO()) }));
+  }
+  const count = M.ids.length;
+  S.accM = null; S.accSel = new Set(); accModal();
+  await ensureAdvisorTask();
+  toast(M.mode === 'advisor' ? t('acc.advisorOk') : via === 'api' ? t('acc.apiOk', { count }) : t('acc.sentOk'));
+  render();
+}
+const blobToB64 = (blob) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
+async function accApi() {
+  const M = S.accM; if (!M || !M.files) return;
+  const host = window.EOFFIS_HOST;
+  if (!host || !host.fn) { M.err = t('acc.apiMissing'); return accModal(); }
+  M.busy = t('acc.apiBusy'); M.err = null; accModal();
+  try {
+    const sec = await accSecret();
+    for (const f of M.files) {
+      // Der Server nimmt den verschlüsselt gespeicherten Schlüssel; nur ein noch nicht übertragener Alt-Schlüssel wird mitgeschickt
+      const r = await host.fn('eoffis-api', Object.assign({ action: 'lexware_upload', filename: f.name, mime: f.type, data: await blobToB64(f) }, sec.lexKey ? { key: sec.lexKey } : {}));
+      if (!r || !r.id) throw Object.assign(new Error((r && r.error) || '–'), { code: r && r.code });
+    }
+    M.busy = null;
+    await accMarkSent('api');
+  } catch (e) {
+    console.warn(e); M.busy = null;
+    M.err = e.code === 'bad_key' ? t('acc.apiKeyBad') : e.code === 'not_configured' ? t('acc.apiMissing') : t('acc.apiFail', { msg: errText(e) });
+    accModal();
+  }
+}
+
+/* ---------- Monatliche Erinnerung: Belege an den Steuerberater ---------- */
+function next5th() { const n = new Date(); const d = new Date(n.getFullYear(), n.getMonth() + (n.getDate() > 5 ? 1 : 0), 5); return toISO(d); }
+async function ensureAdvisorTask() {
+  if (!accDocs().length) return;
+  if (S.tasks.some((x) => x.template_key === 'acc-advisor' && x.status !== 'done')) return;
+  const rec = { id: uid(), title: t('acc.advisorTask'), kind: 'tax', due_date: next5th(), status: 'open', priority: 'normal', notes: '', recur: 'monthly', template_key: 'acc-advisor', created_at: nowIso(), version: 0 };
+  try { const saved = await saveVersioned('tasks', rec); S.tasks.push(saved); } catch (e) { console.warn(e); }
+}
+
+/* ---------- Ordner „Buchhaltung“: Jahr → Monat → Belegart, Auswahl, Sammelaktionen ---------- */
+VIEWS.acc = {
+  title: () => t('acc.folderTitle'),
+  render() {
+    const P = accProfile(), docs = accDocs().filter((d) => !d.archived || S.filters.f === 'archived');
+    const sel = S.accSel || (S.accSel = new Set());
+    for (const id of [...sel]) if (!getDoc(id)) sel.delete(id);
+    const open = docs.filter((d) => !isTransferred(d)), adv = docs.filter((d) => !d.advisor_sent_at);
+    const head = `${open.length ? `<div class="card acc-open"><p><b>${esc(P.program ? t('acc.folderOpenN', { count: open.length, to: progName(P) }) : t('acc.folderOpenNoProg', { count: open.length }))}</b></p>
+        <button class="btn" data-a="accTransferAll">${ico('box')}${esc(t('acc.transferAll'))}</button></div>` : ''}
+      ${adv.length ? `<div class="row between"><span class="small muted">${esc(t('acc.advisorOpenN', { count: adv.length }))}</span><button class="btn sm ghost" data-a="accAdvAll">${esc(t('acc.advisorAll'))}</button></div>` : ''}
+      ${pcSupported() ? `<div class="row between"><span class="small muted">${esc(S.pcName ? t('acc.pcFolder', { name: S.pcName }) : t('acc.pcPickH'))}</span><button class="btn sm ghost" data-a="accPcPick">${esc(t('acc.pcPick'))}</button></div>` : ''}`;
+    const bar = sel.size ? `<div class="card acc-bar"><p class="small"><b>${esc(t('acc.selected', { count: sel.size }))}</b></p>
+      <div class="grid2"><button class="btn sm" data-a="accSelTransfer">${esc(t('acc.selTransfer'))}</button><button class="btn sm sec" data-a="accSelAdv">${esc(t('acc.selAdvisor'))}</button></div>
+      <div class="grid2">${pcSupported() ? `<button class="btn sm ghost" data-a="accSelPc">${esc(t('acc.selPc'))}</button>` : '<span></span>'}<button class="btn sm ghost" data-a="accSelClear">${esc(t('acc.selClear'))}</button></div>
+      <button class="btn sm ghost" data-a="shOpen">🔒 ${esc(t('unt.shTitle'))}</button></div>` : '';
+    if (!docs.length) return `<div class="empty">${ico('invoice')}<p class="muted">${esc(t('acc.empty'))}</p><button class="btn" data-go="scan">${ico('camera')}${esc(t('web.uiScanHero'))}</button></div>`;
+    const tree = {};
+    for (const d of docs) { const iso = accDateOf(d), y = iso.slice(0, 4), m = iso.slice(0, 7); ((tree[y] = tree[y] || {})[m] = tree[y][m] || []).push(d); }
+    const years = Object.keys(tree).sort().reverse();
+    const row = (d) => { const lt = lastTransfer(d);
+      return `<div class="cell acc-row ${lt ? '' : 'acc-open'}" style="padding-inline-start:8px"><input type="checkbox" data-a="accSel" data-v="${d.id}" ${sel.has(d.id) ? 'checked' : ''} aria-label="${esc(d.title)}" style="width:22px;height:22px;accent-color:var(--accent);flex:none">
+        <button class="cx" data-go="doc" data-id="${d.id}" style="border:0;background:none;text-align:start;cursor:pointer;padding:0"><span class="ct">${esc(d.title)}</span>
+        <span class="cs" style="display:block">${esc([fmtDate(accDateOf(d)), lt ? '✓ ' + progName(P, lt.to) : '● ' + t('acc.notTransferred'), d.advisor_sent_at ? '✓ ' + t('acc.selAdvisor') : '', (d.linked_ids || []).length ? '🔗' : ''].filter(Boolean).join(' · '))}</span></button>
+        <span class="cr">${d.amount_gross != null ? esc(money(d.amount_gross, d.currency)) : ''}</span></div>`; };
+    const body = years.map((y, yi) => `<details class="acc-y" ${yi === 0 ? 'open' : ''}><summary class="sec-h" style="cursor:pointer">${esc(y)} · ${tree[y] ? Object.values(tree[y]).reduce((s, l) => s + l.length, 0) : 0}</summary>
+      ${Object.keys(tree[y]).sort().reverse().map((m, mi) => { const list = tree[y][m]; const nOpen = list.filter((d) => !isTransferred(d)).length;
+        return `<details class="card acc-m" ${yi === 0 && mi === 0 ? 'open' : ''}><summary style="cursor:pointer;font-weight:700" class="row between"><span>${esc(monthLabel(m + '-15', lang))} ${esc(y)}</span><span class="small ${nOpen ? '' : 'muted'}" style="${nOpen ? 'color:var(--warn)' : ''}">${nOpen ? '● ' + nOpen : '✓'} / ${list.length}</span></summary>
+          <button class="btn sm ghost" data-a="accSelMonth" data-v="${m}">${esc(t('acc.selMonth'))}</button>
+          ${ACC_TYPES.map((ty) => { const l2 = list.filter((d) => (accTypeOf(d) || 'rechnung') === ty).sort((a, b) => accDateOf(b).localeCompare(accDateOf(a)));
+            return l2.length ? `<div class="sec-h">${esc(t('acc.type_' + ty))} · ${l2.length}</div><div class="group">${l2.map(row).join('')}</div>` : ''; }).join('')}</details>`; }).join('')}</details>`).join('');
+    return head + bar + body;
+  },
+  after() { if (pcSupported() && !S.pcName) idbGet('accDir').then((h) => { if (h && S.view === 'acc') { S.pcName = h.name; render(); } }).catch(() => {}); },
+};
+
+/* ---------- Einstellungen: Buchhaltungsprogramm ---------- */
+function accSettingsHtml() {
+  const P = accProfile(), sec = ACC_SECRET || {};
+  const desc = !P.program ? t('acc.settingsNone') : [progName(P), P.program === 'lexware' ? (P.xl ? 'XL' : t('acc.no') + ' XL') : '', P.email || '', P.program === 'lexware' && P.xl && accHasKey(sec) ? '✓ ' + t('acc.keySaved') + (sec.lexKeyHint ? ' (' + sec.lexKeyHint + ')' : '') : ''].filter(Boolean).join(' · ');
+  return `<div class="sec-h">${esc(t('acc.settingsTitle'))}</div><div class="card">
+    <p class="small">${esc(desc)}</p>
+    <div class="chips">${ACC_PROGS.map((k) => chip(t('acc.prog_' + k), P.program === k, `data-a="accSetProg" data-v="${k}"`)).join('')}</div>
+    ${P.program === 'lexware' ? `<div class="chips">${chip('XL: ' + t('acc.yes'), P.xl === true, 'data-a="accSetXl" data-v="1"')}${chip('XL: ' + t('acc.no'), P.xl === false, 'data-a="accSetXl" data-v="0"')}</div>` : ''}
+    ${P.program && P.program !== 'lexware' || (P.program === 'lexware' && P.xl) ? `${P.program === 'other' ? field('acc_s_name', t('acc.otherName'), P.name || '') : ''}${field('acc_s_addr', P.program === 'datev' ? t('acc.addrDatev') : P.program === 'sevdesk' ? t('acc.addrSev') : P.program === 'lexware' ? t('acc.addrLex') : t('acc.addrOther'), P.email || (P.program === 'sevdesk' ? SEVDESK_MAIL : ''), 'type="email" inputmode="email"')}` : ''}
+    ${P.program === 'lexware' && P.xl ? `${field('acc_s_key', t('acc.lexKey') + (accHasKey(sec) ? ' (✓)' : ''), '', 'type="password" autocomplete="off" placeholder="••••••"')}${accHasKey(sec) ? `<button class="btn sm ghost" data-a="accKeyDel">${esc(t('acc.keyDel'))}</button>` : ''}` : ''}
+    ${P.program ? `<button class="btn sec" data-a="accSettingsSave">${esc(t('common.save'))}</button>` : ''}
+    ${pcSupported() ? `<p class="small muted">${esc(S.pcName ? t('acc.pcFolder', { name: S.pcName }) : t('acc.pcPickH'))}</p><button class="btn sm ghost" data-a="accPcPick">${esc(t('acc.pcPick'))}</button>` : ''}</div>`;
+}
+const validMail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || '').trim());
+
+/* ---------- Aktionen ---------- */
+document.addEventListener('click', async (e) => {
+  const a = e.target.closest('[data-a]');
+  if (!a || a.disabled || !/^(acc|file)/.test(a.dataset.a)) return;
+  const A = a.dataset.a, v = a.dataset.v, d = getDoc(S.params.id), M = S.accM;
+  switch (A) {
+    case 'accTransfer': return guard(() => accOpen('transfer', [d.id]));
+    case 'accFile': return guard(async () => { await accFile(d); render(); });
+    case 'accSetType': return guard(async () => { await persistDoc(d, { acc_type: v, folder: 'buchhaltung' }, t('acc.type_' + v)); render(); });
+    case 'fileFolder': return guard(async () => { await fileFolder(d, v); render(); });
+    case 'accPc': return guard(async () => { await pcWrite([d.id], true); render(); });
+    case 'accPcPick': return guard(async () => { try { await pcPick(); render(); } catch (err) { if (!err || err.name !== 'AbortError') throw err; } });
+    case 'accLink': return guard(async () => { const x = getDoc(v); await persistDoc(d, { linked_ids: [...new Set((d.linked_ids || []).concat([v]))] }); await persistDoc(x, { linked_ids: [...new Set((x.linked_ids || []).concat([d.id]))] }); render(); });
+    case 'accLinkNo': return guard(async () => { await persistDoc(d, { link_no: [...new Set((d.link_no || []).concat([v]))] }); render(); });
+    case 'accUnlink': return guard(async () => { const x = getDoc(v); await persistDoc(d, { linked_ids: (d.linked_ids || []).filter((k) => k !== v), link_no: [...new Set((d.link_no || []).concat([v]))] }); if (x) await persistDoc(x, { linked_ids: (x.linked_ids || []).filter((k) => k !== d.id), link_no: [...new Set((x.link_no || []).concat([d.id]))] }); render(); });
+    case 'accSel': { const s = S.accSel || (S.accSel = new Set()); a.checked ? s.add(v) : s.delete(v); return render(); }
+    case 'accSelMonth': { const s = S.accSel || (S.accSel = new Set()); accDocs().filter((x) => accDateOf(x).slice(0, 7) === v && !x.archived).forEach((x) => s.add(x.id)); return render(); }
+    case 'accSelClear': S.accSel = new Set(); return render();
+    case 'accSelTransfer': return guard(() => accOpen('transfer', [...S.accSel]));
+    case 'accSelAdv': return guard(() => accOpen('advisor', [...S.accSel]));
+    case 'accSelPc': return guard(async () => { await pcWrite([...S.accSel], true); render(); });
+    case 'accTransferAll': return guard(() => accOpen('transfer', accDocs().filter((x) => !x.archived && !isTransferred(x)).map((x) => x.id)));
+    case 'accAdvAll': return guard(() => accOpen('advisor', accDocs().filter((x) => !x.archived && !x.advisor_sent_at).map((x) => x.id)));
+    case 'accClose': S.accM = null; return accModal();
+    case 'accProg': return guard(async () => { const keep = accProfile(); await saveAccProfile(v === 'lexware' ? { program: v, xl: undefined, email: keep.program === v ? keep.email || '' : '', name: '' } : v === keep.program ? {} : { program: v, email: '', xl: undefined, name: '' }); M.forceMail = false; M.forceShare = false; M.step = await accNextStep(M); accModal(); });
+    case 'accXl': return guard(async () => { await saveAccProfile({ xl: v === '1' }); M.step = await accNextStep(M); accModal(); });
+    case 'accUseMail': M.forceMail = true; M.step = await accNextStep(M); return accModal();
+    case 'accForceShare': M.forceShare = true; M.err = null; M.step = await accNextStep(M); return accModal();
+    case 'accKeySave': { const k = val('acc_key').trim(); if (k.length < 10) { $('#acc_key').focus(); return toast(t('acc.lexKey')); }
+      return guard(async () => { try { await accKeySave(k); } catch (e) { M.err = e.code === 'bad_key' ? t('acc.apiKeyBad') : e.code === 'not_configured' ? t('acc.apiMissing') : t('acc.apiFail', { msg: errText(e) }); return accModal(); } M.err = null; M.step = await accNextStep(M); accModal(); }); }
+    case 'accAddrSave': { const addr = val('acc_addr').trim(); if (!validMail(addr)) { toast(t('acc.addrBad')); $('#acc_addr').focus(); return; }
+      return guard(async () => {
+        if (M.mode === 'advisor') { S.profile = Object.assign({}, S.profile, { tax_advisor_email: addr }); await store.setProfile(S.profile); }
+        else await saveAccProfile(Object.assign({ email: addr }, accProfile().program === 'other' ? { name: val('acc_name').trim() } : {}));
+        M.step = await accNextStep(M); accModal();
+      }); }
+    case 'accChange': M.step = 'program'; M.err = null; return accModal();
+    case 'accCopyAddr': return copy(accAddress(M));
+    case 'accShare': {
+      if (!M || !M.files) return;
+      const P = accProfile();
+      try {
+        await navigator.share({ files: M.files, title: M.files.length === 1 ? M.files[0].name : `${M.files.length} Belege`, text: M.mode === 'advisor' ? `Belege ${(S.profile && S.profile.company_name) || ''}` : '' });
+        return guard(() => accMarkSent(M.mode === 'advisor' ? 'mail' : accMethod(P, M)));
+      } catch (err) { if (err && err.name === 'AbortError') return; M.err = errText(err); return accModal(); }
+    }
+    case 'accDl': if (!M || !M.files) return; for (const f of M.files) await saveFile(f.name, f); return;
+    case 'accMark': return guard(() => accMarkSent(M.mode === 'advisor' ? 'mail' : accMethod(accProfile(), M)));
+    case 'accApi': return accApi();
+    case 'accSetProg': return guard(async () => { const P = accProfile(); if (P.program !== v) await saveAccProfile({ program: v, email: '', xl: v === 'lexware' ? P.xl : undefined, name: '' }); render(); });
+    case 'accSetXl': return guard(async () => { await saveAccProfile({ xl: v === '1' }); render(); });
+    case 'accSettingsSave': return guard(async () => {
+      const P = accProfile(), patch = {};
+      if ($('#acc_s_addr')) { const addr = val('acc_s_addr').trim(); if (addr && !validMail(addr)) return toast(t('acc.addrBad')); patch.email = addr; }
+      if ($('#acc_s_name')) patch.name = val('acc_s_name').trim();
+      await saveAccProfile(patch);
+      const k = $('#acc_s_key') ? val('acc_s_key').trim() : '';
+      if (k) await accKeySave(k);
+      toast(t('web.toastSaved')); render(); void P;
+    });
+    case 'accKeyDel': return guard(async () => { await accKeyDelete(); render(); });
+  }
+});
+
+/* =================== Paket 2 (08.11.2026): „Heute“-Liste, Termine per Sprache, Morgen-Erinnerung, Sprachwahl, Vorauszahlungen =================== */
+const HEU_TEXT = {
+  de: {
+    todayTitle: 'Heute & demnächst', todayNone: 'Nichts Dringendes – alles erledigt.', showMore: 'Weitere anzeigen ({{count}})', showLess: 'Weniger anzeigen',
+    replyOpen: 'Antwort offen: {{who}}', firmaMissing: '{{count}} Firmenunterlagen fehlen', overdue: 'überfällig',
+    voiceBtn: 'Termin per Sprache eintragen', voiceBtnSub: 'Sprechen statt tippen – z. B. „Freitag 10 Uhr Steuerberater“',
+    voiceTitle: 'Termin oder Frist per Sprache', voiceStart: 'Jetzt sprechen', voiceListening: 'Ich höre zu … sprich jetzt', voiceStop: 'Fertig',
+    voiceText: 'Gesprochener Text (du kannst ihn korrigieren)', voiceNoMic: 'Spracherkennung ist in diesem Browser nicht verfügbar. Tippe ins Feld und nutze das Mikrofon deiner Tastatur.',
+    voiceDenied: 'Kein Zugriff auf das Mikrofon. Bitte in den Einstellungen des Browsers erlauben.', voiceExample: 'Beispiele: „Morgen 9 Uhr Termin beim Steuerberater“ · „Bis 20. November dem Finanzamt antworten“',
+    voiceUnderstand: 'Übernehmen', voiceThinking: 'Wird verstanden …', fTitle: 'Was?', fDate: 'Datum', fTime: 'Uhrzeit (optional)', fKind: 'Art',
+    saveTask: 'Speichern', saved: 'Gespeichert: {{title}} am {{date}}', toCal: 'In Handy-Kalender eintragen', toCalTimed: 'Erinnerung 24 Stunden und 1 Stunde vorher.',
+    toCalDay: 'Erinnerung 1 Woche und 1 Tag vorher.', toGoogle: 'In Google Kalender', voiceAgain: 'Noch einen Termin', notUnderstood: 'Datum nicht erkannt – bitte Datum eintragen.',
+    pushTitle: 'Tägliche Erinnerung am Morgen', pushText: 'eOffis meldet sich jeden Morgen mit deinen Fristen, Terminen und offenen Antworten.', pushOn: 'Erinnerungen einschalten',
+    pushIos: 'Auf dem iPhone: in Safari unten auf „Teilen“ → „Zum Home-Bildschirm“ tippen, eOffis über das neue Symbol öffnen und hier einschalten.',
+    pushDenied: 'Benachrichtigungen sind blockiert. Bitte in den Einstellungen des Handys für eOffis erlauben.', pushOk: 'Tägliche Erinnerung ist eingeschaltet.', pushOff: 'Ausschalten',
+    pushLater: 'Später', pushUnsupported: 'Dieses Gerät oder dieser Browser unterstützt keine Benachrichtigungen.', pushMissing: 'Die Erinnerung ist auf dem Server noch nicht eingerichtet.',
+    pushTest: 'Test-Benachrichtigung senden', pushTestOk: 'Test gesendet – sie sollte gleich erscheinen.', pushIsOn: 'Eingeschaltet auf diesem Gerät', pushHow: 'jeden Morgen gegen 7 Uhr',
+    langTitle: 'Sprache der App', vzTitle: 'Vorauszahlungen erkannt', vzTake: 'Als Fristen anlegen (vierteljährlich)', vzDone: '{{count}} Vorauszahlungs-Fristen angelegt',
+    vzReplace: 'Offene Vorauszahlungs-Fristen für {{tax}} werden durch diese ersetzt.', vzTask: '{{tax}}-Vorauszahlung {{amount}}', vzTaken: '✓ Als Fristen angelegt',
+  },
+  tr: {
+    todayTitle: 'Bugün ve yakında', todayNone: 'Acil bir şey yok – her şey tamam.', showMore: 'Devamını göster ({{count}})', showLess: 'Daha az göster',
+    replyOpen: 'Cevap bekliyor: {{who}}', firmaMissing: '{{count}} şirket belgesi eksik', overdue: 'gecikmiş',
+    voiceBtn: 'Sesle termin gir', voiceBtnSub: 'Yazmak yerine konuş – ör. „Cuma saat 10 muhasebeci“',
+    voiceTitle: 'Sesle termin veya süre', voiceStart: 'Şimdi konuş', voiceListening: 'Dinliyorum … şimdi konuş', voiceStop: 'Bitti',
+    voiceText: 'Söylenen metin (düzeltebilirsin)', voiceNoMic: 'Bu tarayıcıda konuşma tanıma yok. Alana dokun ve klavyendeki mikrofonu kullan.',
+    voiceDenied: 'Mikrofona erişim yok. Lütfen tarayıcı ayarlarından izin ver.', voiceExample: 'Örnekler: „Yarın saat 9 muhasebeci randevusu“ · „20 Kasım’a kadar vergi dairesine cevap ver“',
+    voiceUnderstand: 'Uygula', voiceThinking: 'Anlaşılıyor …', fTitle: 'Ne?', fDate: 'Tarih', fTime: 'Saat (isteğe bağlı)', fKind: 'Tür',
+    saveTask: 'Kaydet', saved: 'Kaydedildi: {{title}} – {{date}}', toCal: 'Telefon takvimine ekle', toCalTimed: '24 saat ve 1 saat önce hatırlatma.',
+    toCalDay: '1 hafta ve 1 gün önce hatırlatma.', toGoogle: 'Google Takvim’e', voiceAgain: 'Bir termin daha', notUnderstood: 'Tarih anlaşılamadı – lütfen tarihi gir.',
+    pushTitle: 'Her sabah hatırlatma', pushText: 'eOffis her sabah sürelerini, terminlerini ve bekleyen cevapları bildirir.', pushOn: 'Hatırlatmaları aç',
+    pushIos: 'iPhone’da: Safari’de alttaki „Paylaş“ → „Ana Ekrana Ekle“, eOffis’i yeni simgeden aç ve burada aç.',
+    pushDenied: 'Bildirimler engellenmiş. Lütfen telefon ayarlarından eOffis için izin ver.', pushOk: 'Her sabah hatırlatma açık.', pushOff: 'Kapat',
+    pushLater: 'Sonra', pushUnsupported: 'Bu cihaz veya tarayıcı bildirimleri desteklemiyor.', pushMissing: 'Hatırlatma sunucuda henüz kurulmadı.',
+    pushTest: 'Test bildirimi gönder', pushTestOk: 'Test gönderildi – birazdan görünmeli.', pushIsOn: 'Bu cihazda açık', pushHow: 'her sabah saat 7 civarı',
+    langTitle: 'Uygulama dili', vzTitle: 'Ön ödemeler tanındı', vzTake: 'Süre olarak ekle (üç ayda bir)', vzDone: '{{count}} ön ödeme süresi eklendi',
+    vzReplace: '{{tax}} için açık ön ödeme süreleri bunlarla değiştirilir.', vzTask: '{{tax}} ön ödemesi {{amount}}', vzTaken: '✓ Süre olarak eklendi',
+  },
+  pl: {
+    todayTitle: 'Dziś i wkrótce', todayNone: 'Nic pilnego – wszystko załatwione.', showMore: 'Pokaż więcej ({{count}})', showLess: 'Pokaż mniej',
+    replyOpen: 'Czeka na odpowiedź: {{who}}', firmaMissing: 'Brakuje dokumentów firmy: {{count}}', overdue: 'po terminie',
+    voiceBtn: 'Dodaj termin głosem', voiceBtnSub: 'Mów zamiast pisać – np. „piątek 10:00 doradca podatkowy”',
+    voiceTitle: 'Termin lub spotkanie głosem', voiceStart: 'Mów teraz', voiceListening: 'Słucham … mów teraz', voiceStop: 'Gotowe',
+    voiceText: 'Rozpoznany tekst (możesz poprawić)', voiceNoMic: 'Rozpoznawanie mowy nie jest dostępne w tej przeglądarce. Dotknij pola i użyj mikrofonu klawiatury.',
+    voiceDenied: 'Brak dostępu do mikrofonu. Zezwól w ustawieniach przeglądarki.', voiceExample: 'Przykłady: „jutro o 9 spotkanie z doradcą” · „do 20 listopada odpowiedzieć urzędowi skarbowemu”',
+    voiceUnderstand: 'Zastosuj', voiceThinking: 'Analizuję …', fTitle: 'Co?', fDate: 'Data', fTime: 'Godzina (opcjonalnie)', fKind: 'Rodzaj',
+    saveTask: 'Zapisz', saved: 'Zapisano: {{title}} – {{date}}', toCal: 'Dodaj do kalendarza telefonu', toCalTimed: 'Przypomnienie 24 godziny i 1 godzinę wcześniej.',
+    toCalDay: 'Przypomnienie tydzień i dzień wcześniej.', toGoogle: 'Do Kalendarza Google', voiceAgain: 'Kolejny termin', notUnderstood: 'Nie rozpoznano daty – wpisz datę.',
+    pushTitle: 'Codzienne przypomnienie rano', pushText: 'eOffis co rano przypomina o terminach, spotkaniach i oczekujących odpowiedziach.', pushOn: 'Włącz przypomnienia',
+    pushIos: 'Na iPhonie: w Safari dotknij „Udostępnij” → „Do ekranu początkowego”, otwórz eOffis z nowej ikony i włącz tutaj.',
+    pushDenied: 'Powiadomienia są zablokowane. Zezwól na nie dla eOffis w ustawieniach telefonu.', pushOk: 'Codzienne przypomnienie jest włączone.', pushOff: 'Wyłącz',
+    pushLater: 'Później', pushUnsupported: 'To urządzenie lub przeglądarka nie obsługuje powiadomień.', pushMissing: 'Przypomnienie nie jest jeszcze skonfigurowane na serwerze.',
+    pushTest: 'Wyślij powiadomienie testowe', pushTestOk: 'Test wysłany – zaraz się pojawi.', pushIsOn: 'Włączone na tym urządzeniu', pushHow: 'codziennie rano około 7:00',
+    langTitle: 'Język aplikacji', vzTitle: 'Rozpoznano zaliczki', vzTake: 'Dodaj jako terminy (co kwartał)', vzDone: 'Dodano terminy zaliczek: {{count}}',
+    vzReplace: 'Otwarte terminy zaliczek dla {{tax}} zostaną zastąpione.', vzTask: 'Zaliczka {{tax}} {{amount}}', vzTaken: '✓ Dodano jako terminy',
+  },
+  ru: {
+    todayTitle: 'Сегодня и скоро', todayNone: 'Ничего срочного – всё сделано.', showMore: 'Показать ещё ({{count}})', showLess: 'Показать меньше',
+    replyOpen: 'Ждёт ответа: {{who}}', firmaMissing: 'Не хватает документов фирмы: {{count}}', overdue: 'просрочено',
+    voiceBtn: 'Добавить встречу голосом', voiceBtnSub: 'Говорите вместо набора – напр. «пятница 10 часов налоговый консультант»',
+    voiceTitle: 'Встреча или срок голосом', voiceStart: 'Говорить', voiceListening: 'Слушаю … говорите', voiceStop: 'Готово',
+    voiceText: 'Распознанный текст (можно исправить)', voiceNoMic: 'Распознавание речи недоступно в этом браузере. Нажмите на поле и используйте микрофон клавиатуры.',
+    voiceDenied: 'Нет доступа к микрофону. Разрешите его в настройках браузера.', voiceExample: 'Примеры: «завтра в 9 встреча с консультантом» · «до 20 ноября ответить в налоговую»',
+    voiceUnderstand: 'Применить', voiceThinking: 'Распознаю …', fTitle: 'Что?', fDate: 'Дата', fTime: 'Время (необязательно)', fKind: 'Вид',
+    saveTask: 'Сохранить', saved: 'Сохранено: {{title}} – {{date}}', toCal: 'В календарь телефона', toCalTimed: 'Напоминание за 24 часа и за 1 час.',
+    toCalDay: 'Напоминание за неделю и за день.', toGoogle: 'В Google Календарь', voiceAgain: 'Ещё одна встреча', notUnderstood: 'Дата не распознана – укажите дату.',
+    pushTitle: 'Ежедневное утреннее напоминание', pushText: 'Каждое утро eOffis сообщает о сроках, встречах и ожидающих ответах.', pushOn: 'Включить напоминания',
+    pushIos: 'На iPhone: в Safari нажмите «Поделиться» → «На экран «Домой»», откройте eOffis с нового значка и включите здесь.',
+    pushDenied: 'Уведомления заблокированы. Разрешите их для eOffis в настройках телефона.', pushOk: 'Ежедневное напоминание включено.', pushOff: 'Выключить',
+    pushLater: 'Позже', pushUnsupported: 'Это устройство или браузер не поддерживает уведомления.', pushMissing: 'Напоминание ещё не настроено на сервере.',
+    pushTest: 'Отправить тестовое уведомление', pushTestOk: 'Тест отправлен – сейчас появится.', pushIsOn: 'Включено на этом устройстве', pushHow: 'каждое утро около 7:00',
+    langTitle: 'Язык приложения', vzTitle: 'Распознаны авансовые платежи', vzTake: 'Добавить как сроки (ежеквартально)', vzDone: 'Добавлено сроков авансов: {{count}}',
+    vzReplace: 'Открытые сроки авансов по {{tax}} будут заменены.', vzTask: 'Аванс {{tax}} {{amount}}', vzTaken: '✓ Добавлено как сроки',
+  },
+  ar: {
+    todayTitle: 'اليوم وقريبًا', todayNone: 'لا شيء عاجل – كل شيء منجز.', showMore: 'عرض المزيد ({{count}})', showLess: 'عرض أقل',
+    replyOpen: 'ينتظر الرد: {{who}}', firmaMissing: 'ينقص {{count}} من مستندات المنشأة', overdue: 'متأخر',
+    voiceBtn: 'إدخال موعد بالصوت', voiceBtnSub: 'تكلّم بدل الكتابة – مثلًا „الجمعة الساعة 10 المستشار الضريبي“',
+    voiceTitle: 'موعد أو مهلة بالصوت', voiceStart: 'تكلّم الآن', voiceListening: 'أستمع … تكلّم الآن', voiceStop: 'تم',
+    voiceText: 'النص المنطوق (يمكنك تصحيحه)', voiceNoMic: 'التعرّف على الكلام غير متاح في هذا المتصفح. اضغط على الحقل واستخدم ميكروفون لوحة المفاتيح.',
+    voiceDenied: 'لا يوجد وصول إلى الميكروفون. يرجى السماح به في إعدادات المتصفح.', voiceExample: 'أمثلة: „غدًا الساعة 9 موعد مع المستشار“ · „الرد على مكتب الضرائب حتى 20 نوفمبر“',
+    voiceUnderstand: 'تطبيق', voiceThinking: 'جارٍ الفهم …', fTitle: 'ماذا؟', fDate: 'التاريخ', fTime: 'الوقت (اختياري)', fKind: 'النوع',
+    saveTask: 'حفظ', saved: 'تم الحفظ: {{title}} – {{date}}', toCal: 'إضافة إلى تقويم الهاتف', toCalTimed: 'تذكير قبل 24 ساعة وقبل ساعة.',
+    toCalDay: 'تذكير قبل أسبوع وقبل يوم.', toGoogle: 'إلى تقويم Google', voiceAgain: 'موعد آخر', notUnderstood: 'لم يُفهم التاريخ – يرجى إدخاله.',
+    pushTitle: 'تذكير يومي صباحًا', pushText: 'يذكّرك eOffis كل صباح بالمهل والمواعيد والردود المنتظرة.', pushOn: 'تشغيل التذكيرات',
+    pushIos: 'على iPhone: في Safari اضغط „مشاركة“ ← „إضافة إلى الشاشة الرئيسية“، افتح eOffis من الأيقونة الجديدة ثم فعّل هنا.',
+    pushDenied: 'الإشعارات محظورة. يرجى السماح بها لـ eOffis في إعدادات الهاتف.', pushOk: 'التذكير اليومي مفعّل.', pushOff: 'إيقاف',
+    pushLater: 'لاحقًا', pushUnsupported: 'هذا الجهاز أو المتصفح لا يدعم الإشعارات.', pushMissing: 'التذكير غير مُعدّ على الخادم بعد.',
+    pushTest: 'إرسال إشعار تجريبي', pushTestOk: 'أُرسل الاختبار – سيظهر بعد قليل.', pushIsOn: 'مفعّل على هذا الجهاز', pushHow: 'كل صباح نحو الساعة 7',
+    langTitle: 'لغة التطبيق', vzTitle: 'تم التعرّف على دفعات مسبقة', vzTake: 'إضافة كمهل (كل ربع سنة)', vzDone: 'أُضيفت {{count}} مهلة للدفعات المسبقة',
+    vzReplace: 'ستُستبدل المهل المفتوحة للدفعات المسبقة لـ {{tax}}.', vzTask: 'دفعة مسبقة {{tax}} {{amount}}', vzTaken: '✓ أُضيفت كمهل',
+  },
+  ro: {
+    todayTitle: 'Azi și în curând', todayNone: 'Nimic urgent – totul e rezolvat.', showMore: 'Arată mai multe ({{count}})', showLess: 'Arată mai puține',
+    replyOpen: 'Răspuns în așteptare: {{who}}', firmaMissing: 'Lipsesc {{count}} documente ale firmei', overdue: 'depășit',
+    voiceBtn: 'Adaugă programare vocal', voiceBtnSub: 'Vorbește în loc să scrii – de ex. „vineri ora 10 consultant fiscal”',
+    voiceTitle: 'Programare sau termen vocal', voiceStart: 'Vorbește acum', voiceListening: 'Ascult … vorbește acum', voiceStop: 'Gata',
+    voiceText: 'Textul rostit (îl poți corecta)', voiceNoMic: 'Recunoașterea vocală nu e disponibilă în acest browser. Atinge câmpul și folosește microfonul tastaturii.',
+    voiceDenied: 'Nu există acces la microfon. Permite-l în setările browserului.', voiceExample: 'Exemple: „mâine la 9 întâlnire cu consultantul” · „până pe 20 noiembrie răspuns la Finanțe”',
+    voiceUnderstand: 'Preia', voiceThinking: 'Se interpretează …', fTitle: 'Ce?', fDate: 'Data', fTime: 'Ora (opțional)', fKind: 'Tip',
+    saveTask: 'Salvează', saved: 'Salvat: {{title}} – {{date}}', toCal: 'Adaugă în calendarul telefonului', toCalTimed: 'Memento cu 24 de ore și cu 1 oră înainte.',
+    toCalDay: 'Memento cu o săptămână și o zi înainte.', toGoogle: 'În Google Calendar', voiceAgain: 'Încă o programare', notUnderstood: 'Data nu a fost recunoscută – introdu data.',
+    pushTitle: 'Memento zilnic dimineața', pushText: 'În fiecare dimineață eOffis îți amintește termenele, programările și răspunsurile în așteptare.', pushOn: 'Pornește mementourile',
+    pushIos: 'Pe iPhone: în Safari atinge „Partajează” → „Adaugă pe ecranul principal”, deschide eOffis din noua pictogramă și pornește aici.',
+    pushDenied: 'Notificările sunt blocate. Permite-le pentru eOffis în setările telefonului.', pushOk: 'Mementoul zilnic este pornit.', pushOff: 'Oprește',
+    pushLater: 'Mai târziu', pushUnsupported: 'Acest dispozitiv sau browser nu acceptă notificări.', pushMissing: 'Mementoul nu este încă configurat pe server.',
+    pushTest: 'Trimite notificare de test', pushTestOk: 'Test trimis – ar trebui să apară imediat.', pushIsOn: 'Pornit pe acest dispozitiv', pushHow: 'în fiecare dimineață pe la ora 7',
+    langTitle: 'Limba aplicației', vzTitle: 'Plăți anticipate recunoscute', vzTake: 'Adaugă ca termene (trimestrial)', vzDone: '{{count}} termene de plată anticipată adăugate',
+    vzReplace: 'Termenele deschise de plată anticipată pentru {{tax}} vor fi înlocuite.', vzTask: 'Plată anticipată {{tax}} {{amount}}', vzTaken: '✓ Adăugate ca termene',
+  },
+};
+for (const l of Object.keys(HEU_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].heu = Object.assign({}, I18N[l].heu || {}, HEU_TEXT[l]); }
+ICON.mic = '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>';
+
+/* ---------- Sprachwahl oben rechts (Flagge + Name) ---------- */
+const LANG_FLAGS = { de: '🇩🇪', tr: '🇹🇷', pl: '🇵🇱', ru: '🇷🇺', ar: '🇸🇦', ro: '🇷🇴' };
+const LANG_NATIVE = { de: 'Deutsch', tr: 'Türkçe', pl: 'Polski', ru: 'Русский', ar: 'العربية', ro: 'Română' };
+function langModal() {
+  $('#layer').innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="lgT" id="modalBg"><div class="card">
+    <h2 id="lgT">${esc(t('heu.langTitle'))}</h2>
+    <div class="group">${LANGS.map((l) => `<button class="cell" data-a="langPick" data-v="${l}" ${lang === l ? 'aria-current="true"' : ''}><span class="flag" aria-hidden="true">${LANG_FLAGS[l]}</span><span class="cx"><span class="ct" ${l === 'ar' ? 'dir="rtl"' : ''}>${esc(LANG_NATIVE[l])}</span></span>${lang === l ? '<span class="cr">✓</span>' : ''}</button>`).join('')}</div>
+    <button class="btn ghost" data-a="closeModal">${esc(t('common.close'))}</button></div></div>`;
+}
+const langButton = () => `<button class="langbtn" data-a="langOpen" aria-label="${esc(t('heu.langTitle'))}: ${esc(LANG_NATIVE[lang])}"><span aria-hidden="true">${LANG_FLAGS[lang]}</span><span class="ln">${esc(LANG_NATIVE[lang])}</span></button>`;
+
+/* ---------- „Heute & demnächst“ auf der Startseite ---------- */
+function todayItems() {
+  const items = [];
+  for (const x of S.tasks) {
+    if (x.status === 'done' || !x.due_date) continue;
+    const d = daysUntil(x.due_date);
+    items.push({ key: 't' + x.id, d, sortKey: `${x.due_date}T${x.due_time || '23:59'}`, icon: 'clock', ic: d < 0 ? 'r' : d <= 3 ? 'o' : d <= 7 ? 'o' : 'g',
+      title: x.title, sub: [fmtDate(x.due_date) + (x.due_time ? ' · ' + x.due_time : ''), t('tasks.kind_' + x.kind)].join(' · '), right: dueLabel(d), attrs: `data-go="task" data-id="${x.id}"` });
+  }
+  const replied = new Set(S.replies.map((r) => r.docId));
+  const taskDocs = new Set(S.tasks.filter((x) => x.status !== 'done' && x.kind === 'reply').map((x) => x.document_id));
+  for (const doc of S.docs) {
+    if (doc.archived || doc.status === 'done' || replied.has(doc.id) || taskDocs.has(doc.id)) continue;
+    const sa = doc.suggested_action || {};
+    if (!['reply', 'statement'].includes(sa.type)) continue;
+    const due = (doc.dates || []).find((x) => x.kind === 'reply' && x.date);
+    const d = due ? daysUntil(due.date) : null;
+    items.push({ key: 'r' + doc.id, d, sortKey: due ? `${due.date}T23:58` : '9999-12-30', icon: 'pen', ic: d !== null && d < 0 ? 'r' : 'o',
+      title: t('heu.replyOpen', { who: doc.sender || doc.title }), sub: doc.title + (due ? ' · ' + fmtDate(due.date) : ''), right: d !== null ? dueLabel(d) : '', attrs: `data-go="doc" data-id="${doc.id}"` });
+  }
+  const miss = CHECK_FIRMA.filter(([, re]) => !S.docs.some((x) => re.test(docText(x)))).length;
+  if (miss && S.docs.length) items.push({ key: 'firma', d: null, sortKey: '9999-12-31', icon: 'gear', ic: 'g', title: t('heu.firmaMissing', { count: miss }), sub: t('web.uiChecklist'), right: '', attrs: 'data-a="openList" data-v="f:firma"' });
+  return items.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+}
+function todayHtml() {
+  const items = todayItems(), all = !!S.todayAll, N = 5;
+  const shown = all ? items : items.slice(0, N);
+  return `<div class="sec-h row between"><span>${esc(t('heu.todayTitle'))}</span>${items.length ? `<button class="sec-link" data-go="tasks">${esc(t('web.uiAll'))} ›</button>` : ''}</div>
+    ${items.length ? `<div class="group" id="today">${shown.map((it) => cell(it)).join('')}</div>
+      ${items.length > N ? `<button class="btn sm ghost" data-a="todayMore">${esc(all ? t('heu.showLess') : t('heu.showMore', { count: items.length - N }))}</button>` : ''}`
+      : `<div class="group">${cell({ icon: 'check', ic: 'g', title: t('heu.todayNone'), attrs: 'data-go="tasks"' })}</div>`}`;
+}
+const voiceButton = (cls = '') => `<button class="voicebtn ${cls}" data-a="voiceOpen"><span class="si">${ico('mic')}</span><span class="st"><b>${esc(t('heu.voiceBtn'))}</b><small>${esc(t('heu.voiceBtnSub'))}</small></span><span class="chev" aria-hidden="true">›</span></button>`;
+
+/* ---------- Termin per Sprache ---------- */
+const SR = () => window.SpeechRecognition || window.webkitSpeechRecognition || null;
+const SR_LANG = { de: 'de-DE', tr: 'tr-TR', pl: 'pl-PL', ru: 'ru-RU', ar: 'ar-SA', ro: 'ro-RO' };
+let REC = null;
+function voiceModal() {
+  const V = S.voice; if (!V) { $('#layer').innerHTML = ''; return; }
+  let body;
+  if (V.saved) {
+    const x = S.tasks.find((k) => k.id === V.saved);
+    body = `<div class="banner">✓ ${esc(t('heu.saved', { title: x ? x.title : '', date: x ? fmtDate(x.due_date) + (x.due_time ? ' ' + x.due_time : '') : '' }))}</div>
+      ${x ? `<button class="btn" data-a="voiceCal">${ico('cal')}${esc(t('heu.toCal'))}</button><p class="small muted">${esc(x.due_time ? t('heu.toCalTimed') : t('heu.toCalDay'))}</p>
+      <a class="btn sm ghost" href="${esc(gcalLink(x))}" target="_blank" rel="noopener">${esc(t('heu.toGoogle'))} ↗</a>` : ''}
+      <button class="btn sec" data-a="voiceAgain">${ico('mic')}${esc(t('heu.voiceAgain'))}</button>`;
+  } else if (V.parsed) {
+    const P = V.parsed;
+    body = `${!P.date ? `<div class="banner warn">${esc(t('heu.notUnderstood'))}</div>` : ''}
+      ${field('v_title', t('heu.fTitle'), P.title || '')}
+      <div class="grid2">${field('v_date', t('heu.fDate'), P.date ? fmtDate(P.date) : '', `placeholder="${esc(t('common.dateHint'))}" inputmode="numeric"`)}${field('v_time', t('heu.fTime'), P.time || '', 'placeholder="10:00" inputmode="numeric"')}</div>
+      <p class="small" style="font-weight:700">${esc(t('heu.fKind'))}</p><div class="chips">${KINDS.map((k) => chip(t('tasks.kind_' + k), (P.kind || 'other') === k, `data-a="voiceKind" data-v="${k}"`)).join('')}</div>
+      <button class="btn" data-a="voiceSave">${esc(t('heu.saveTask'))}</button>`;
+  } else {
+    const has = !!SR();
+    body = `${has ? `<button class="btn big ${V.listening ? 'danger' : ''}" data-a="${V.listening ? 'voiceStop' : 'voiceListen'}">${ico('mic')}${esc(V.listening ? t('heu.voiceStop') : t('heu.voiceStart'))}</button>
+        ${V.listening ? `<p class="small" role="status" style="text-align:center;font-weight:700;color:var(--accent)">● ${esc(t('heu.voiceListening'))}</p>` : ''}` : `<p class="small muted">${esc(t('heu.voiceNoMic'))}</p>`}
+      ${V.err ? `<div class="banner warn">${esc(V.err)}</div>` : ''}
+      ${area('v_text', t('heu.voiceText'), V.text || '', 'style="min-height:80px"')}
+      <p class="small muted">${esc(t('heu.voiceExample'))}</p>
+      ${V.busy ? busyCard(t('heu.voiceThinking')) : `<button class="btn sec" data-a="voiceParse">${esc(t('heu.voiceUnderstand'))} ›</button>`}`;
+  }
+  $('#layer').innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="vT"><div class="card"><h2 id="vT">${ico('mic')} ${esc(t('heu.voiceTitle'))}</h2>${body}
+    <button class="btn ghost" data-a="voiceClose">${esc(t('common.close'))}</button></div></div>`;
+  const ta = $('#v_text'); if (ta) ta.oninput = () => { V.text = ta.value; };
+}
+function voiceListen() {
+  const C = SR(), V = S.voice; if (!C || !V) return;
+  try { if (REC) REC.abort(); } catch {}
+  const r = new C(); REC = r;
+  r.lang = SR_LANG[lang] || 'de-DE'; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
+  let finalText = V.text ? V.text.trim() + ' ' : '';
+  r.onresult = (ev) => {
+    let interim = '';
+    for (let i = ev.resultIndex; i < ev.results.length; i++) { const tr = ev.results[i][0].transcript; if (ev.results[i].isFinal) finalText += tr + ' '; else interim += tr; }
+    V.text = (finalText + interim).trim(); const ta = $('#v_text'); if (ta) ta.value = V.text;
+  };
+  r.onerror = (ev) => { V.listening = false; V.err = ev.error === 'not-allowed' || ev.error === 'service-not-allowed' ? t('heu.voiceDenied') : ev.error === 'no-speech' ? '' : String(ev.error || ''); voiceModal(); };
+  r.onend = () => { const was = V.listening; V.listening = false; REC = null; if (S.voice === V) { voiceModal(); if (was && V.text && V.text.trim()) voiceParse(); } };
+  V.listening = true; V.err = ''; voiceModal();
+  try { r.start(); } catch (e) { V.listening = false; V.err = errText(e); voiceModal(); }
+}
+/** Einfache Erkennung ohne KI (Zeit „10 Uhr“/„10:30“, Datum „20.11.“, „morgen“, „übermorgen“, „heute“) */
+const WEEKDAYS = [ // Index = getDay() (0 = Sonntag); längere Wörter zuerst prüfen (cumartesi vor cuma)
+  ['sonntag', 'pazar', 'niedziel', 'воскресень', 'duminică', 'duminica', 'الأحد'], ['montag', 'pazartesi', 'poniedział', 'понедельник', 'luni', 'الاثنين'],
+  ['dienstag', 'salı', 'wtorek', 'вторник', 'marți', 'marti', 'الثلاثاء'], ['mittwoch', 'çarşamba', 'środ', 'сред', 'miercuri', 'الأربعاء'],
+  ['donnerstag', 'perşembe', 'czwart', 'четверг', 'joi', 'الخميس'], ['freitag', 'cuma', 'piąt', 'пятниц', 'vineri', 'الجمعة'],
+  ['samstag', 'cumartesi', 'sobot', 'суббот', 'sâmbătă', 'sambata', 'السبت'],
+];
+function weekdayDate(low) {
+  let best = null;
+  WEEKDAYS.forEach((names, wd) => names.forEach((n) => { const i = low.indexOf(n); if (i >= 0 && (!best || n.length > best.len)) best = { wd, len: n.length, n }; }));
+  if (!best) return null;
+  const d = new Date(); const diff = (best.wd - d.getDay() + 7) % 7 || 7;
+  return { date: addDays(todayISO(), diff), word: best.n };
+}
+function voiceFallback(text) {
+  const s = String(text || ''), low = s.toLowerCase();
+  let date = null, time = null, m, title = s;
+  if ((m = s.match(/(\d{1,2})\.(\d{1,2})\.(\d{2,4})?/))) { const y = m[3] ? (m[3].length === 2 ? 2000 + +m[3] : +m[3]) : new Date().getFullYear(); date = parseDate(`${m[1]}.${m[2]}.${y}`); if (date && date < todayISO() && !m[3]) date = parseDate(`${m[1]}.${m[2]}.${y + 1}`); }
+  else if (/übermorgen|yarından sonra|pojutrze|послезавтра/.test(low)) date = addDays(todayISO(), 2);
+  else if (/morgen|yarın|jutro|завтра|mâine|غد/.test(low)) date = addDays(todayISO(), 1);
+  else if (/heute|bugün|dziś|dzisiaj|сегодня|azi|اليوم/.test(low)) date = todayISO();
+  else { const w = weekdayDate(low); if (w) { date = w.date; title = title.replace(new RegExp(w.word + '\\S*', 'i'), ''); } }
+  const noDates = s.replace(/\b\d{1,2}\.\d{1,2}\.(\d{2,4})?/g, ' ');
+  if ((m = noDates.match(/\b(\d{1,2})[:.](\d{2})\s*(uhr|h)?\b/i)) && +m[1] < 24 && +m[2] < 60) time = `${m[1].padStart(2, '0')}:${m[2]}`;
+  else if ((m = noDates.match(/\b(\d{1,2})\s*(uhr|saat|h\b|godz|час)/i)) && +m[1] < 24) time = `${m[1].padStart(2, '0')}:00`;
+  else if ((m = noDates.match(/saat\s*(\d{1,2})/i)) && +m[1] < 24) time = `${m[1].padStart(2, '0')}:00`;
+  const kind = /finanzamt|steuer|vergi|podat|налог|fiscal/i.test(low) ? 'tax' : /antwort|cevap|odpowied|ответ|răspuns/i.test(low) ? 'reply' : /zahl|überweis|ödeme|płat|оплат|plat/i.test(low) ? 'payment' : 'other';
+  title = title.replace(/\b(bis|am|ab|до|do|până)?\s*\d{1,2}\.\d{1,2}\.(\d{2,4})?/gi, ' ').replace(/\b(übermorgen|morgen|heute|yarın|bugün|jutro|dziś|завтра|сегодня|mâine|azi)\b/gi, '').replace(/\b(um|am|bis|saat|o|в|la|ora)?\s*\d{1,2}([:.]\d{2})?\s*(uhr|h|godz\.?|час\w*)?\b/gi, (x) => (/\d{1,2}\.\d{1,2}\./.test(x) ? x : '')).replace(/\s{2,}/g, ' ').trim();
+  return { title: (title || s).trim().slice(0, 120), date, time, kind };
+}
+async function voiceParse() {
+  const V = S.voice; if (!V) return;
+  const ta = $('#v_text'); if (ta) V.text = ta.value;
+  const text = String(V.text || '').trim(); if (!text) { if (ta) ta.focus(); return; }
+  V.busy = true; voiceModal();
+  let P = voiceFallback(text);
+  if (S.sample) {
+    try {
+      const wd = new Intl.DateTimeFormat('de-DE', { weekday: 'long' }).format(new Date());
+      const r = await aiJson(`Heute ist ${wd}, ${todayISO()} (Zeitzone Europe/Berlin). Ein kleiner Betrieb hat diesen Termin oder diese Frist gesprochen (Sprache: ${LANG_NAMES[lang]}):\n"""${text.slice(0, 600)}"""\nErmittle Titel, Datum und ggf. Uhrzeit. Relative Angaben („morgen“, „nächsten Freitag“, „in zwei Wochen“) in ein Datum umrechnen; ein Datum ohne Jahr liegt in der Zukunft. Titel kurz, ohne Datum und Uhrzeit, in der gesprochenen Sprache. "kind" ist einer von: ${KINDS.join(', ')}.\nAntworte nur mit JSON: {"title":string,"date":"YYYY-MM-DD"|null,"time":"HH:MM"|null,"kind":string}`);
+      if (r && typeof r === 'object') P = { title: String(r.title || P.title).slice(0, 120), date: parseDate(r.date || '') || P.date, time: /^\d{2}:\d{2}$/.test(r.time || '') ? r.time : P.time, kind: KINDS.includes(r.kind) ? r.kind : P.kind };
+    } catch (e) { console.warn(e); }
+  }
+  V.busy = false; V.parsed = P; voiceModal();
+}
+async function voiceSave() {
+  const V = S.voice, P = V.parsed;
+  P.title = val('v_title').trim(); const dt = parseDate(val('v_date').trim()); const tm = val('v_time').trim().replace('.', ':');
+  if (!P.title) { $('#v_title').focus(); return toast(t('tasks.name')); }
+  if (!dt) { $('#v_date').focus(); return toast(t('common.invalidDate')); }
+  if (tm && !/^([01]?\d|2[0-3]):[0-5]\d$/.test(tm)) { $('#v_time').focus(); return toast(t('heu.fTime')); }
+  const rec = { id: uid(), title: P.title, kind: P.kind || 'other', due_date: dt, due_time: tm ? tm.padStart(5, '0') : null, status: 'open', priority: 'normal', notes: V.text || '', source: 'voice', created_at: nowIso(), version: 0 };
+  const saved = await saveVersioned('tasks', rec); S.tasks.push(saved);
+  V.saved = saved.id; voiceModal(); render();
+}
+
+/* ---------- Morgen-Erinnerung (Push) ---------- */
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isStandalone = () => (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+function pushState() {
+  const H = window.EOFFIS_HOST, P = H && H.push;
+  if (!P || !P.supported()) return isIOS() && !isStandalone() ? 'ios' : 'unsupported';
+  if (P.permission() === 'denied') return 'denied';
+  return P.enabledHere() ? 'on' : 'off';
+}
+function pushCard(inSettings) {
+  const st = pushState(), dismissed = (S.profile && S.profile.push_later) || '';
+  if (!inSettings && (st === 'on' || st === 'unsupported' || (dismissed && dismissed > addDays(todayISO(), -14)))) return '';
+  const head = `<h2>${ico('bell')} ${esc(t('heu.pushTitle'))}</h2><p class="small">${esc(t('heu.pushText'))} <span class="muted">(${esc(t('heu.pushHow'))})</span></p>`;
+  let body = '';
+  if (st === 'on') body = `<p class="small"><b>✓ ${esc(t('heu.pushIsOn'))}</b></p><div class="grid2"><button class="btn sm sec" data-a="pushTest">${esc(t('heu.pushTest'))}</button><button class="btn sm ghost" data-a="pushOff">${esc(t('heu.pushOff'))}</button></div>`;
+  else if (st === 'ios') body = `<p class="small">${esc(t('heu.pushIos'))}</p>`;
+  else if (st === 'denied') body = `<div class="banner warn">${esc(t('heu.pushDenied'))}</div>`;
+  else if (st === 'unsupported') body = `<p class="small muted">${esc(t('heu.pushUnsupported'))}</p>`;
+  else body = `<button class="btn" data-a="pushOn">${ico('bell')}${esc(t('heu.pushOn'))}</button>`;
+  return `<div class="card ${inSettings ? '' : 'acc-card'}" ${inSettings ? '' : 'style="border:2px solid var(--accent)"'}>${head}${body}
+    ${!inSettings && st !== 'on' ? `<button class="btn sm ghost" data-a="pushLater">${esc(t('heu.pushLater'))}</button>` : ''}</div>`;
+}
+async function pushOn() {
+  const H = window.EOFFIS_HOST;
+  try { await H.push.enable(lang, store.space); toast(t('heu.pushOk')); }
+  catch (e) {
+    console.warn(e);
+    toast(e && e.code === 'denied' ? t('heu.pushDenied') : e && e.code === 'not_configured' ? t('heu.pushMissing') : e && e.code === 'unsupported' ? t('heu.pushUnsupported') : t('web.saveFailed', { msg: errText(e) }));
+  }
+  render();
+}
+
+/* ---------- Vorauszahlungen aus dem Finanzamt-Bescheid ---------- */
+function prepayCard(d) {
+  const list = (d && d.prepayments) || [];
+  if (!list.length || d.archived) return '';
+  const fut = list.filter((x) => x.due_date >= todayISO());
+  const taken = d.prepay_taken_at;
+  const taxes = [...new Set(list.map((x) => x.tax || 'Steuer'))].join(', ');
+  return `<div class="card acc-card" style="border:2px solid var(--accent)"><h2>${ico('cal')} ${esc(t('heu.vzTitle'))}</h2>
+    <div class="group">${list.map((x) => `<div class="cell noicon" style="cursor:default"><span class="cx"><span class="ct">${esc(x.tax || 'Steuer')}</span><span class="cs" style="display:block">${esc(fmtDate(x.due_date))}</span></span><span class="cr num">${esc(money(x.amount))}</span></div>`).join('')}</div>
+    ${taken ? `<p class="small"><b>${esc(t('heu.vzTaken'))}</b></p>` : fut.length ? `<p class="small muted">${esc(t('heu.vzReplace', { tax: taxes }))}</p><button class="btn" data-a="vzTake">${esc(t('heu.vzTake'))}</button>` : ''}</div>`;
+}
+async function vzTake(d) {
+  const list = (d.prepayments || []).filter((x) => x.due_date >= todayISO()).sort((a, b) => a.due_date.localeCompare(b.due_date));
+  const byTax = {};
+  for (const x of list) (byTax[x.tax || 'Steuer'] = byTax[x.tax || 'Steuer'] || []).push(x);
+  let n = 0; const ids = [];
+  for (const [tax, rows] of Object.entries(byTax)) {
+    const key = 'vz:' + safeName(tax).toLowerCase();
+    for (const old of S.tasks.filter((x) => x.template_key === key && x.status !== 'done')) { await store.del('tasks', old.id); S.tasks = S.tasks.filter((k) => k.id !== old.id); }
+    for (const [i, x] of rows.entries()) {
+      const rec = { id: uid(), document_id: d.id, title: t('heu.vzTask', { tax, amount: money(x.amount) }), kind: 'tax', due_date: x.due_date, status: 'open', priority: 'high', notes: d.title, template_key: key, recur: i === rows.length - 1 ? 'quarterly' : null, created_at: nowIso(), version: 0 };
+      const saved = await saveVersioned('tasks', rec); S.tasks.push(saved); ids.push(saved.id); n++;
+    }
+  }
+  await persistDoc(getDoc(d.id), { prepay_taken_at: nowIso() }, t('heu.vzTitle'));
+  S.docUi = Object.assign({}, S.docUi, { calIds: ids, calDismissed: false });
+  toast(t('heu.vzDone', { count: n }));
+}
+
+/* ---------- Aktionen ---------- */
+document.addEventListener('click', async (e) => {
+  const a = e.target.closest('[data-a]');
+  if (!a || a.disabled || !/^(lang|today|voice|push|vz)/.test(a.dataset.a)) return;
+  const A = a.dataset.a, v = a.dataset.v, V = S.voice;
+  switch (A) {
+    case 'langOpen': return langModal();
+    case 'langPick': $('#layer').innerHTML = ''; return guard(async () => { setLang(v); if (S.profile) { S.profile = Object.assign({}, S.profile, { language: v }); await store.setProfile(S.profile); } render(); const H = window.EOFFIS_HOST; if (H && H.push) H.push.updateLang(v, store.space).catch(() => {}); });
+    case 'todayMore': S.todayAll = !S.todayAll; return render();
+    case 'voiceOpen': S.voice = { text: '' }; voiceModal(); if (SR()) voiceListen(); return;
+    case 'voiceListen': return voiceListen();
+    case 'voiceStop': try { if (REC) REC.stop(); } catch {} return;
+    case 'voiceParse': try { if (REC) REC.abort(); } catch {} V.listening = false; return voiceParse();
+    case 'voiceKind': V.parsed.title = val('v_title'); V.parsed._date = val('v_date'); V.parsed._time = val('v_time'); V.parsed.kind = v; voiceModal(); $('#v_title').value = V.parsed.title; $('#v_date').value = V.parsed._date; $('#v_time').value = V.parsed._time; return;
+    case 'voiceSave': return guard(voiceSave);
+    case 'voiceCal': { const x = S.tasks.find((k) => k.id === V.saved); if (x) await saveFile(`eOffis_${safeName(x.title).slice(0, 40)}.ics`, buildIcs([x.id], x.due_time ? null : [7, 1])); return; }
+    case 'voiceAgain': S.voice = { text: '' }; voiceModal(); if (SR()) voiceListen(); return;
+    case 'voiceClose': try { if (REC) REC.abort(); } catch {} S.voice = null; return voiceModal();
+    case 'pushOn': return pushOn();
+    case 'pushOff': return guard(async () => { await window.EOFFIS_HOST.push.disable(); render(); });
+    case 'pushTest': return guard(async () => { await window.EOFFIS_HOST.push.test(lang); toast(t('heu.pushTestOk')); });
+    case 'pushLater': return guard(async () => { S.profile = Object.assign({}, S.profile, { push_later: todayISO() }); await store.setProfile(S.profile); render(); });
+    case 'vzTake': return guard(async () => { await vzTake(getDoc(S.params.id)); render(); });
+  }
+});
+
+/* =================== Paket 3 (08.11.2026): Verfahrensdokumentation, Verträge & Versicherungen, Firmenunterlagen-Paket, Freigabe-Link =================== */
+const UNT_TEXT = {
+  de: {
+    vdTitle: 'Verfahrensdokumentation (GoBD)', vdH: 'Pflicht für jeden Betrieb: beschreibt, wie Belege bei dir ankommen, geprüft, digitalisiert und aufbewahrt werden. eOffis erstellt sie aus deinen Antworten.',
+    vdBasic: 'Einfach (2–3 Seiten)', vdBasicH: 'Für Einzelunternehmen und kleine Betriebe', vdFull: 'Vollständig (4 Teile)', vdFullH: 'Mit Organisation, Technik, Kontrollen und Betrieb',
+    vdStep: 'Frage {{n}} von {{count}}', vdBack: 'Zurück', vdNext: 'Weiter', vdMake: 'Verfahrensdokumentation erstellen', vdDone: 'Verfahrensdokumentation erstellt und unter „Firma & Stammdaten“ abgelegt.',
+    vdNote: 'Muster auf Grundlage deiner Angaben – bitte mit deinem Steuerberater abstimmen. Keine Rechts- oder Steuerberatung.', vdOpen: 'Verfahrensdokumentation öffnen', vdRedo: 'Neu erstellen / aktualisieren',
+    vdTask: 'Verfahrensdokumentation prüfen und aktualisieren', vdHave: 'Erstellt am {{date}} ({{kind}})', vdMissing: 'fehlt – jetzt erstellen', vdOther: 'Sonstiges (eintragen)',
+    q_owner: 'Rechtsform und verantwortliche Person', q_ownerH: 'z. B. Einzelunternehmen, Inhaber Max Muster', q_staff: 'Wer legt die Belege ab und prüft sie?', q_staffH: 'Name(n) und Aufgabe',
+    q_software: 'Buchhaltungsprogramm und Steuerberater', q_softwareH: 'z. B. Lexware Office; Steuerkanzlei Muster, Köln', q_inbound: 'Wie kommen Belege bei dir an?',
+    q_scan: 'Werden Papierbelege mit eOffis gescannt?', q_original: 'Was passiert danach mit dem Papier-Original?', q_when: 'Wann wird gescannt?', q_check: 'Wer prüft die Scans auf Lesbarkeit und Vollständigkeit?',
+    q_cash: 'Bargeld und Kasse', q_bank: 'Geschäftskonto (Bank) und Kontoauszüge', q_bankH: 'z. B. Sparkasse, Kontoauszüge als PDF', q_backup: 'Zusätzliche Datensicherung', q_access: 'Wer hat Zugriff auf das eOffis-Konto?',
+    q_org: 'Mitarbeiter und Zuständigkeiten', q_orgH: 'z. B. Frau A: Eingangspost; Herr B: Kasse', q_hw: 'Eingesetzte Geräte', q_hwH: 'z. B. iPhone 15, Büro-PC Windows 11, Drucker', q_ics: 'Interne Kontrollen',
+    q_change: 'Wie werden Änderungen an den Abläufen festgehalten?',
+    ctrTitle: 'Verträge & Versicherungen', ctrYear: 'Kosten im Jahr: {{sum}}', ctrNone: 'Noch keine Verträge. Scanne einen Vertrag oder eine Versicherungspolice – eOffis liest Laufzeit, Kündigungsfrist und Kosten.',
+    ctrCancelBy: 'kündbar bis {{date}}', ctrEnds: 'endet {{date}}', ctrAuto: 'verlängert sich automatisch', ctrEdit: 'Vertragsdaten bearbeiten', ctrCancel: 'Kündigung schreiben',
+    ctrParty: 'Vertragspartner', ctrNo: 'Vertrags-/Policennummer', ctrStart: 'Beginn', ctrEnd: 'Ende', ctrCancelDate: 'Kündigung muss zugehen bis', ctrNotice: 'Kündigungsfrist',
+    ctrNoticeH: 'z. B. 3 Monate zum Ende der Laufzeit', ctrRenew: 'Verlängert sich automatisch', ctrCost: 'Kosten', ctrInterval: 'Zahlweise', ctrCoverage: 'Leistung / Versicherungsschutz (kurz)',
+    iv_monthly: 'monatlich', iv_quarterly: 'vierteljährlich', iv_yearly: 'jährlich', iv_once: 'einmalig', ctrSaved: 'Vertragsdaten gespeichert. Erinnerung 30 und 7 Tage vor der Kündigungsfrist.',
+    ctrSoon: 'Kündigungsfrist in {{count}} Tagen', ctrOpenDoc: 'Dokument öffnen',
+    pkTitle: 'Firmenunterlagen als ein PDF', pkH: 'Für Bank, Lieferanten oder Ausschreibungen: alle gewählten Unterlagen in einer Datei.', pkFor: 'Für wen? (optional, für den Aufdruck)',
+    pkForH: 'Wenn ausgefüllt, steht auf jeder Seite schräg „Nur zur Vorlage bei … – Datum“. So kann die Kopie nicht für andere Zwecke verwendet werden.', pkMake: 'PDF erstellen', pkNone: 'Bitte mindestens eine Unterlage wählen.',
+    pkDone: 'PDF erstellt', pkShare: 'Teilen', pkStamp: 'Nur zur Vorlage bei {{who}} – {{date}}',
+    shTitle: 'Freigabe-Link für den Steuerberater', shH: 'Der Steuerberater öffnet die Belege über einen Link – verschlüsselt, mit Code und nur für begrenzte Zeit.', shDays: 'Gültig für',
+    shDays7: '7 Tage', shDays30: '30 Tage', shMake: 'Link erstellen', shBusy: 'Wird verschlüsselt und hochgeladen …', shLink: 'Link', shCode: 'Code (getrennt mitteilen, z. B. per Telefon)',
+    shCopyLink: 'Link kopieren', shCopyCode: 'Code kopieren', shShare: 'Link teilen', shUntil: 'gültig bis {{date}}', shRevoke: 'Sperren', shRevoked: 'Link gesperrt.', shList: 'Aktive Freigabe-Links',
+    shMissing: 'Freigabe-Links sind auf dem Server noch nicht eingerichtet. Bitte „Teilen“ oder ZIP verwenden.', shNone: 'Keine aktiven Links.', shFiles: '{{count}} Beleg(e)', shExpired: 'abgelaufen',
+    shMsg: 'Guten Tag,\nhier die Belege von {{company}} zum Herunterladen (gültig bis {{date}}):\n{{link}}\nDen Code teile ich Ihnen separat mit.\nMit freundlichen Grüßen',
+  },
+  tr: {
+    vdTitle: 'Süreç dokümantasyonu (GoBD)', vdH: 'Her işletme için zorunlu: belgelerin nasıl geldiğini, kontrol edildiğini, dijitalleştirildiğini ve saklandığını anlatır. eOffis bunu cevaplarından hazırlar.',
+    vdBasic: 'Basit (2–3 sayfa)', vdBasicH: 'Şahıs şirketleri ve küçük işletmeler için', vdFull: 'Tam (4 bölüm)', vdFullH: 'Organizasyon, teknik, kontroller ve işletim ile',
+    vdStep: 'Soru {{n}} / {{count}}', vdBack: 'Geri', vdNext: 'İleri', vdMake: 'Süreç dokümantasyonunu oluştur', vdDone: 'Süreç dokümantasyonu oluşturuldu ve „Firma ve temel bilgiler“ klasörüne kaydedildi.',
+    vdNote: 'Verdiğin bilgilere dayalı örnek – lütfen muhasebecinle kontrol et. Hukuki veya vergi danışmanlığı değildir.', vdOpen: 'Süreç dokümantasyonunu aç', vdRedo: 'Yeniden oluştur / güncelle',
+    vdTask: 'Süreç dokümantasyonunu kontrol et ve güncelle', vdHave: '{{date}} tarihinde oluşturuldu ({{kind}})', vdMissing: 'eksik – şimdi oluştur', vdOther: 'Diğer (yaz)',
+    q_owner: 'Şirket türü ve sorumlu kişi', q_ownerH: 'ör. şahıs şirketi, sahibi Max Muster', q_staff: 'Belgeleri kim dosyalıyor ve kontrol ediyor?', q_staffH: 'İsim(ler) ve görev',
+    q_software: 'Muhasebe programı ve muhasebeci', q_softwareH: 'ör. Lexware Office; Muster muhasebe bürosu, Köln', q_inbound: 'Belgeler sana nasıl geliyor?',
+    q_scan: 'Kâğıt belgeler eOffis ile taranıyor mu?', q_original: 'Sonra kâğıt asıl belgeye ne oluyor?', q_when: 'Ne zaman taranıyor?', q_check: 'Taramaların okunaklı ve eksiksiz olduğunu kim kontrol ediyor?',
+    q_cash: 'Nakit ve kasa', q_bank: 'İşletme hesabı (banka) ve hesap dökümleri', q_bankH: 'ör. Sparkasse, dökümler PDF olarak', q_backup: 'Ek veri yedekleme', q_access: 'eOffis hesabına kimin erişimi var?',
+    q_org: 'Çalışanlar ve görevler', q_orgH: 'ör. A Hanım: gelen posta; B Bey: kasa', q_hw: 'Kullanılan cihazlar', q_hwH: 'ör. iPhone 15, ofis PC Windows 11, yazıcı', q_ics: 'İç kontroller',
+    q_change: 'Süreçlerdeki değişiklikler nasıl kayda geçiriliyor?',
+    ctrTitle: 'Sözleşmeler ve sigortalar', ctrYear: 'Yıllık maliyet: {{sum}}', ctrNone: 'Henüz sözleşme yok. Bir sözleşme veya sigorta poliçesi tara – eOffis süreyi, iptal süresini ve maliyeti okur.',
+    ctrCancelBy: '{{date}} tarihine kadar iptal edilebilir', ctrEnds: '{{date}} tarihinde biter', ctrAuto: 'otomatik uzar', ctrEdit: 'Sözleşme bilgilerini düzenle', ctrCancel: 'İptal mektubu yaz',
+    ctrParty: 'Sözleşme tarafı', ctrNo: 'Sözleşme/poliçe numarası', ctrStart: 'Başlangıç', ctrEnd: 'Bitiş', ctrCancelDate: 'İptalin ulaşması gereken son tarih', ctrNotice: 'İptal süresi',
+    ctrNoticeH: 'ör. süre sonundan 3 ay önce', ctrRenew: 'Otomatik uzar', ctrCost: 'Maliyet', ctrInterval: 'Ödeme şekli', ctrCoverage: 'Hizmet / sigorta kapsamı (kısa)',
+    iv_monthly: 'aylık', iv_quarterly: 'üç aylık', iv_yearly: 'yıllık', iv_once: 'tek seferlik', ctrSaved: 'Sözleşme bilgileri kaydedildi. İptal süresinden 30 ve 7 gün önce hatırlatma.',
+    ctrSoon: 'İptal süresine {{count}} gün', ctrOpenDoc: 'Belgeyi aç',
+    pkTitle: 'Şirket belgeleri tek PDF', pkH: 'Banka, tedarikçi veya ihaleler için: seçilen tüm belgeler tek dosyada.', pkFor: 'Kim için? (isteğe bağlı, damga için)',
+    pkForH: 'Doldurulursa her sayfaya çapraz „Nur zur Vorlage bei … – tarih“ yazılır. Böylece kopya başka amaçla kullanılamaz.', pkMake: 'PDF oluştur', pkNone: 'Lütfen en az bir belge seç.',
+    pkDone: 'PDF oluşturuldu', pkShare: 'Paylaş', pkStamp: 'Nur zur Vorlage bei {{who}} – {{date}}',
+    shTitle: 'Muhasebeci için paylaşım linki', shH: 'Muhasebeci belgeleri bir linkle açar – şifreli, kodlu ve sınırlı süre için.', shDays: 'Geçerlilik',
+    shDays7: '7 gün', shDays30: '30 gün', shMake: 'Link oluştur', shBusy: 'Şifreleniyor ve yükleniyor …', shLink: 'Link', shCode: 'Kod (ayrıca bildir, ör. telefonla)',
+    shCopyLink: 'Linki kopyala', shCopyCode: 'Kodu kopyala', shShare: 'Linki paylaş', shUntil: '{{date}} tarihine kadar geçerli', shRevoke: 'Kapat', shRevoked: 'Link kapatıldı.', shList: 'Aktif paylaşım linkleri',
+    shMissing: 'Paylaşım linkleri sunucuda henüz kurulmadı. Lütfen „Paylaş“ veya ZIP kullan.', shNone: 'Aktif link yok.', shFiles: '{{count}} belge', shExpired: 'süresi doldu',
+    shMsg: 'Guten Tag,\nhier die Belege von {{company}} zum Herunterladen (gültig bis {{date}}):\n{{link}}\nDen Code teile ich Ihnen separat mit.\nMit freundlichen Grüßen',
+  },
+  pl: {
+    vdTitle: 'Dokumentacja procedur (GoBD)', vdH: 'Obowiązkowa dla każdej firmy: opisuje, jak dokumenty trafiają do Ciebie, są sprawdzane, digitalizowane i przechowywane. eOffis tworzy ją z Twoich odpowiedzi.',
+    vdBasic: 'Prosta (2–3 strony)', vdBasicH: 'Dla jednoosobowych i małych firm', vdFull: 'Pełna (4 części)', vdFullH: 'Z organizacją, techniką, kontrolą i eksploatacją',
+    vdStep: 'Pytanie {{n}} z {{count}}', vdBack: 'Wstecz', vdNext: 'Dalej', vdMake: 'Utwórz dokumentację procedur', vdDone: 'Dokumentację utworzono i zapisano w „Firma i dane podstawowe”.',
+    vdNote: 'Wzór na podstawie Twoich odpowiedzi – uzgodnij go z doradcą podatkowym. To nie jest porada prawna ani podatkowa.', vdOpen: 'Otwórz dokumentację', vdRedo: 'Utwórz ponownie / zaktualizuj',
+    vdTask: 'Sprawdź i zaktualizuj dokumentację procedur', vdHave: 'Utworzono {{date}} ({{kind}})', vdMissing: 'brak – utwórz teraz', vdOther: 'Inne (wpisz)',
+    q_owner: 'Forma prawna i osoba odpowiedzialna', q_ownerH: 'np. jednoosobowa firma, właściciel Max Muster', q_staff: 'Kto archiwizuje i sprawdza dokumenty?', q_staffH: 'Imię i zadanie',
+    q_software: 'Program księgowy i doradca podatkowy', q_softwareH: 'np. Lexware Office; kancelaria Muster, Kolonia', q_inbound: 'Jak trafiają do Ciebie dokumenty?',
+    q_scan: 'Czy papierowe dokumenty są skanowane w eOffis?', q_original: 'Co dzieje się potem z oryginałem?', q_when: 'Kiedy skanujesz?', q_check: 'Kto sprawdza czytelność i kompletność skanów?',
+    q_cash: 'Gotówka i kasa', q_bank: 'Konto firmowe (bank) i wyciągi', q_bankH: 'np. Sparkasse, wyciągi w PDF', q_backup: 'Dodatkowa kopia zapasowa', q_access: 'Kto ma dostęp do konta eOffis?',
+    q_org: 'Pracownicy i zadania', q_orgH: 'np. Pani A: poczta przychodząca; Pan B: kasa', q_hw: 'Używane urządzenia', q_hwH: 'np. iPhone 15, PC biurowy Windows 11, drukarka', q_ics: 'Kontrole wewnętrzne',
+    q_change: 'Jak dokumentowane są zmiany procedur?',
+    ctrTitle: 'Umowy i ubezpieczenia', ctrYear: 'Koszt roczny: {{sum}}', ctrNone: 'Brak umów. Zeskanuj umowę lub polisę – eOffis odczyta okres, termin wypowiedzenia i koszty.',
+    ctrCancelBy: 'do wypowiedzenia do {{date}}', ctrEnds: 'kończy się {{date}}', ctrAuto: 'przedłuża się automatycznie', ctrEdit: 'Edytuj dane umowy', ctrCancel: 'Napisz wypowiedzenie',
+    ctrParty: 'Strona umowy', ctrNo: 'Numer umowy/polisy', ctrStart: 'Początek', ctrEnd: 'Koniec', ctrCancelDate: 'Wypowiedzenie musi dotrzeć do', ctrNotice: 'Okres wypowiedzenia',
+    ctrNoticeH: 'np. 3 miesiące przed końcem okresu', ctrRenew: 'Przedłuża się automatycznie', ctrCost: 'Koszt', ctrInterval: 'Płatność', ctrCoverage: 'Świadczenie / zakres ochrony (krótko)',
+    iv_monthly: 'miesięcznie', iv_quarterly: 'kwartalnie', iv_yearly: 'rocznie', iv_once: 'jednorazowo', ctrSaved: 'Zapisano dane umowy. Przypomnienie 30 i 7 dni przed terminem wypowiedzenia.',
+    ctrSoon: 'Termin wypowiedzenia za {{count}} dni', ctrOpenDoc: 'Otwórz dokument',
+    pkTitle: 'Dokumenty firmy w jednym PDF', pkH: 'Dla banku, dostawców lub przetargów: wszystkie wybrane dokumenty w jednym pliku.', pkFor: 'Dla kogo? (opcjonalnie, do nadruku)',
+    pkForH: 'Po wypełnieniu na każdej stronie pojawi się ukośny napis „Nur zur Vorlage bei … – data”. Kopii nie da się wtedy użyć w innym celu.', pkMake: 'Utwórz PDF', pkNone: 'Wybierz co najmniej jeden dokument.',
+    pkDone: 'Utworzono PDF', pkShare: 'Udostępnij', pkStamp: 'Nur zur Vorlage bei {{who}} – {{date}}',
+    shTitle: 'Link dla doradcy podatkowego', shH: 'Doradca otwiera dokumenty przez link – zaszyfrowany, z kodem i ograniczony czasowo.', shDays: 'Ważny przez',
+    shDays7: '7 dni', shDays30: '30 dni', shMake: 'Utwórz link', shBusy: 'Szyfrowanie i wysyłanie …', shLink: 'Link', shCode: 'Kod (przekaż osobno, np. telefonicznie)',
+    shCopyLink: 'Kopiuj link', shCopyCode: 'Kopiuj kod', shShare: 'Udostępnij link', shUntil: 'ważny do {{date}}', shRevoke: 'Zablokuj', shRevoked: 'Link zablokowany.', shList: 'Aktywne linki',
+    shMissing: 'Linki nie są jeszcze skonfigurowane na serwerze. Użyj „Udostępnij” lub ZIP.', shNone: 'Brak aktywnych linków.', shFiles: 'Dokumenty: {{count}}', shExpired: 'wygasł',
+    shMsg: 'Guten Tag,\nhier die Belege von {{company}} zum Herunterladen (gültig bis {{date}}):\n{{link}}\nDen Code teile ich Ihnen separat mit.\nMit freundlichen Grüßen',
+  },
+  ru: {
+    vdTitle: 'Описание процедур (GoBD)', vdH: 'Обязательно для каждого предприятия: описывает, как документы поступают, проверяются, оцифровываются и хранятся. eOffis составит его по вашим ответам.',
+    vdBasic: 'Простое (2–3 страницы)', vdBasicH: 'Для ИП и малых предприятий', vdFull: 'Полное (4 части)', vdFullH: 'С организацией, техникой, контролем и эксплуатацией',
+    vdStep: 'Вопрос {{n}} из {{count}}', vdBack: 'Назад', vdNext: 'Далее', vdMake: 'Создать описание процедур', vdDone: 'Описание создано и сохранено в «Фирма и основные данные».',
+    vdNote: 'Образец по вашим данным – согласуйте с налоговым консультантом. Не является юридической или налоговой консультацией.', vdOpen: 'Открыть описание', vdRedo: 'Создать заново / обновить',
+    vdTask: 'Проверить и обновить описание процедур', vdHave: 'Создано {{date}} ({{kind}})', vdMissing: 'нет – создать сейчас', vdOther: 'Другое (ввести)',
+    q_owner: 'Правовая форма и ответственное лицо', q_ownerH: 'напр. ИП, владелец Max Muster', q_staff: 'Кто раскладывает и проверяет документы?', q_staffH: 'Имя и задача',
+    q_software: 'Бухгалтерская программа и налоговый консультант', q_softwareH: 'напр. Lexware Office; бюро Muster, Кёльн', q_inbound: 'Как к вам поступают документы?',
+    q_scan: 'Бумажные документы сканируются в eOffis?', q_original: 'Что потом происходит с бумажным оригиналом?', q_when: 'Когда сканируется?', q_check: 'Кто проверяет читаемость и полноту сканов?',
+    q_cash: 'Наличные и касса', q_bank: 'Бизнес-счёт (банк) и выписки', q_bankH: 'напр. Sparkasse, выписки в PDF', q_backup: 'Дополнительное резервное копирование', q_access: 'У кого есть доступ к аккаунту eOffis?',
+    q_org: 'Сотрудники и обязанности', q_orgH: 'напр. г-жа A: входящая почта; г-н B: касса', q_hw: 'Используемые устройства', q_hwH: 'напр. iPhone 15, офисный ПК Windows 11, принтер', q_ics: 'Внутренний контроль',
+    q_change: 'Как фиксируются изменения процедур?',
+    ctrTitle: 'Договоры и страховки', ctrYear: 'Расходы в год: {{sum}}', ctrNone: 'Договоров пока нет. Отсканируйте договор или полис – eOffis прочитает срок, срок расторжения и стоимость.',
+    ctrCancelBy: 'расторгнуть до {{date}}', ctrEnds: 'заканчивается {{date}}', ctrAuto: 'продлевается автоматически', ctrEdit: 'Изменить данные договора', ctrCancel: 'Написать расторжение',
+    ctrParty: 'Контрагент', ctrNo: 'Номер договора/полиса', ctrStart: 'Начало', ctrEnd: 'Окончание', ctrCancelDate: 'Расторжение должно поступить до', ctrNotice: 'Срок расторжения',
+    ctrNoticeH: 'напр. 3 месяца до окончания срока', ctrRenew: 'Продлевается автоматически', ctrCost: 'Стоимость', ctrInterval: 'Оплата', ctrCoverage: 'Услуга / страховое покрытие (кратко)',
+    iv_monthly: 'ежемесячно', iv_quarterly: 'ежеквартально', iv_yearly: 'ежегодно', iv_once: 'единоразово', ctrSaved: 'Данные договора сохранены. Напоминание за 30 и 7 дней до срока расторжения.',
+    ctrSoon: 'Срок расторжения через {{count}} дн.', ctrOpenDoc: 'Открыть документ',
+    pkTitle: 'Документы фирмы одним PDF', pkH: 'Для банка, поставщиков или тендеров: все выбранные документы в одном файле.', pkFor: 'Для кого? (необязательно, для надпечатки)',
+    pkForH: 'Если заполнено, на каждой странице будет наискосок «Nur zur Vorlage bei … – дата». Тогда копию нельзя использовать для других целей.', pkMake: 'Создать PDF', pkNone: 'Выберите хотя бы один документ.',
+    pkDone: 'PDF создан', pkShare: 'Поделиться', pkStamp: 'Nur zur Vorlage bei {{who}} – {{date}}',
+    shTitle: 'Ссылка для налогового консультанта', shH: 'Консультант открывает документы по ссылке – зашифровано, с кодом и на ограниченное время.', shDays: 'Действует',
+    shDays7: '7 дней', shDays30: '30 дней', shMake: 'Создать ссылку', shBusy: 'Шифрование и загрузка …', shLink: 'Ссылка', shCode: 'Код (сообщите отдельно, напр. по телефону)',
+    shCopyLink: 'Копировать ссылку', shCopyCode: 'Копировать код', shShare: 'Поделиться ссылкой', shUntil: 'действует до {{date}}', shRevoke: 'Заблокировать', shRevoked: 'Ссылка заблокирована.', shList: 'Активные ссылки',
+    shMissing: 'Ссылки ещё не настроены на сервере. Используйте «Поделиться» или ZIP.', shNone: 'Нет активных ссылок.', shFiles: 'Документов: {{count}}', shExpired: 'истекла',
+    shMsg: 'Guten Tag,\nhier die Belege von {{company}} zum Herunterladen (gültig bis {{date}}):\n{{link}}\nDen Code teile ich Ihnen separat mit.\nMit freundlichen Grüßen',
+  },
+  ar: {
+    vdTitle: 'توثيق الإجراءات (GoBD)', vdH: 'إلزامي لكل منشأة: يصف كيف تصل المستندات وكيف تُراجع وتُرقمن وتُحفظ. ينشئه eOffis من إجاباتك.',
+    vdBasic: 'مبسّط (2–3 صفحات)', vdBasicH: 'للمنشآت الفردية والصغيرة', vdFull: 'كامل (4 أجزاء)', vdFullH: 'مع التنظيم والتقنية والرقابة والتشغيل',
+    vdStep: 'السؤال {{n}} من {{count}}', vdBack: 'رجوع', vdNext: 'التالي', vdMake: 'إنشاء توثيق الإجراءات', vdDone: 'تم إنشاء التوثيق وحفظه في „المنشأة والبيانات الأساسية“.',
+    vdNote: 'نموذج مبني على إجاباتك – يرجى مراجعته مع المستشار الضريبي. ليس استشارة قانونية أو ضريبية.', vdOpen: 'فتح التوثيق', vdRedo: 'إنشاء من جديد / تحديث',
+    vdTask: 'مراجعة وتحديث توثيق الإجراءات', vdHave: 'أُنشئ في {{date}} ({{kind}})', vdMissing: 'ناقص – أنشئه الآن', vdOther: 'أخرى (اكتب)',
+    q_owner: 'الشكل القانوني والشخص المسؤول', q_ownerH: 'مثلًا منشأة فردية، المالك Max Muster', q_staff: 'من يحفظ المستندات ويراجعها؟', q_staffH: 'الاسم والمهمة',
+    q_software: 'برنامج المحاسبة والمستشار الضريبي', q_softwareH: 'مثلًا Lexware Office؛ مكتب Muster، كولونيا', q_inbound: 'كيف تصلك المستندات؟',
+    q_scan: 'هل تُمسح المستندات الورقية بـ eOffis؟', q_original: 'ماذا يحدث بعد ذلك للأصل الورقي؟', q_when: 'متى يتم المسح؟', q_check: 'من يراجع وضوح المسح واكتماله؟',
+    q_cash: 'النقد والصندوق', q_bank: 'الحساب التجاري (البنك) وكشوف الحساب', q_bankH: 'مثلًا Sparkasse، كشوف بصيغة PDF', q_backup: 'نسخ احتياطي إضافي', q_access: 'من لديه وصول إلى حساب eOffis؟',
+    q_org: 'الموظفون والمسؤوليات', q_orgH: 'مثلًا السيدة A: البريد الوارد؛ السيد B: الصندوق', q_hw: 'الأجهزة المستخدمة', q_hwH: 'مثلًا iPhone 15، حاسوب المكتب Windows 11، طابعة', q_ics: 'الرقابة الداخلية',
+    q_change: 'كيف تُوثّق التغييرات على الإجراءات؟',
+    ctrTitle: 'العقود والتأمينات', ctrYear: 'التكلفة السنوية: {{sum}}', ctrNone: 'لا توجد عقود بعد. امسح عقدًا أو وثيقة تأمين – يقرأ eOffis المدة ومهلة الإلغاء والتكلفة.',
+    ctrCancelBy: 'قابل للإلغاء حتى {{date}}', ctrEnds: 'ينتهي في {{date}}', ctrAuto: 'يتجدد تلقائيًا', ctrEdit: 'تعديل بيانات العقد', ctrCancel: 'كتابة خطاب إلغاء',
+    ctrParty: 'الطرف المتعاقد', ctrNo: 'رقم العقد/الوثيقة', ctrStart: 'البداية', ctrEnd: 'النهاية', ctrCancelDate: 'يجب أن يصل الإلغاء حتى', ctrNotice: 'مهلة الإلغاء',
+    ctrNoticeH: 'مثلًا 3 أشهر قبل نهاية المدة', ctrRenew: 'يتجدد تلقائيًا', ctrCost: 'التكلفة', ctrInterval: 'طريقة الدفع', ctrCoverage: 'الخدمة / التغطية التأمينية (باختصار)',
+    iv_monthly: 'شهريًا', iv_quarterly: 'كل ربع سنة', iv_yearly: 'سنويًا', iv_once: 'مرة واحدة', ctrSaved: 'تم حفظ بيانات العقد. تذكير قبل 30 و7 أيام من مهلة الإلغاء.',
+    ctrSoon: 'مهلة الإلغاء بعد {{count}} يوم', ctrOpenDoc: 'فتح المستند',
+    pkTitle: 'مستندات المنشأة في ملف PDF واحد', pkH: 'للبنك أو الموردين أو المناقصات: كل المستندات المختارة في ملف واحد.', pkFor: 'لمن؟ (اختياري، للطباعة على الصفحات)',
+    pkForH: 'عند التعبئة يُطبع على كل صفحة بشكل مائل „Nur zur Vorlage bei … – التاريخ“، فلا يمكن استخدام النسخة لغرض آخر.', pkMake: 'إنشاء PDF', pkNone: 'يرجى اختيار مستند واحد على الأقل.',
+    pkDone: 'تم إنشاء PDF', pkShare: 'مشاركة', pkStamp: 'Nur zur Vorlage bei {{who}} – {{date}}',
+    shTitle: 'رابط مشاركة للمستشار الضريبي', shH: 'يفتح المستشار المستندات عبر رابط – مشفّر وبرمز ولمدة محدودة.', shDays: 'صالح لمدة',
+    shDays7: '7 أيام', shDays30: '30 يومًا', shMake: 'إنشاء الرابط', shBusy: 'جارٍ التشفير والرفع …', shLink: 'الرابط', shCode: 'الرمز (أبلغه منفصلًا، مثلًا بالهاتف)',
+    shCopyLink: 'نسخ الرابط', shCopyCode: 'نسخ الرمز', shShare: 'مشاركة الرابط', shUntil: 'صالح حتى {{date}}', shRevoke: 'إيقاف', shRevoked: 'تم إيقاف الرابط.', shList: 'روابط المشاركة النشطة',
+    shMissing: 'روابط المشاركة غير مُعدّة على الخادم بعد. يرجى استخدام „مشاركة“ أو ZIP.', shNone: 'لا توجد روابط نشطة.', shFiles: '{{count}} مستند', shExpired: 'منتهي',
+    shMsg: 'Guten Tag,\nhier die Belege von {{company}} zum Herunterladen (gültig bis {{date}}):\n{{link}}\nDen Code teile ich Ihnen separat mit.\nMit freundlichen Grüßen',
+  },
+  ro: {
+    vdTitle: 'Documentația procedurilor (GoBD)', vdH: 'Obligatorie pentru orice firmă: descrie cum ajung documentele, cum sunt verificate, digitalizate și păstrate. eOffis o creează din răspunsurile tale.',
+    vdBasic: 'Simplă (2–3 pagini)', vdBasicH: 'Pentru PFA și firme mici', vdFull: 'Completă (4 părți)', vdFullH: 'Cu organizare, tehnică, control și operare',
+    vdStep: 'Întrebarea {{n}} din {{count}}', vdBack: 'Înapoi', vdNext: 'Mai departe', vdMake: 'Creează documentația', vdDone: 'Documentația a fost creată și salvată în „Firmă și date de bază”.',
+    vdNote: 'Model pe baza datelor tale – stabilește-l cu consultantul fiscal. Nu este consultanță juridică sau fiscală.', vdOpen: 'Deschide documentația', vdRedo: 'Creează din nou / actualizează',
+    vdTask: 'Verifică și actualizează documentația procedurilor', vdHave: 'Creată pe {{date}} ({{kind}})', vdMissing: 'lipsește – creează acum', vdOther: 'Altele (scrie)',
+    q_owner: 'Forma juridică și persoana responsabilă', q_ownerH: 'ex. întreprindere individuală, proprietar Max Muster', q_staff: 'Cine arhivează și verifică documentele?', q_staffH: 'Nume și sarcină',
+    q_software: 'Programul de contabilitate și consultantul fiscal', q_softwareH: 'ex. Lexware Office; cabinet Muster, Köln', q_inbound: 'Cum ajung documentele la tine?',
+    q_scan: 'Documentele pe hârtie sunt scanate cu eOffis?', q_original: 'Ce se întâmplă apoi cu originalul pe hârtie?', q_when: 'Când se scanează?', q_check: 'Cine verifică lizibilitatea și completitudinea scanărilor?',
+    q_cash: 'Numerar și casă', q_bank: 'Cont de firmă (bancă) și extrase', q_bankH: 'ex. Sparkasse, extrase ca PDF', q_backup: 'Copie de siguranță suplimentară', q_access: 'Cine are acces la contul eOffis?',
+    q_org: 'Angajați și responsabilități', q_orgH: 'ex. dna A: corespondență; dl B: casă', q_hw: 'Dispozitive folosite', q_hwH: 'ex. iPhone 15, PC birou Windows 11, imprimantă', q_ics: 'Controale interne',
+    q_change: 'Cum se consemnează modificările procedurilor?',
+    ctrTitle: 'Contracte și asigurări', ctrYear: 'Cost anual: {{sum}}', ctrNone: 'Încă nu există contracte. Scanează un contract sau o poliță – eOffis citește durata, termenul de reziliere și costul.',
+    ctrCancelBy: 'se poate rezilia până la {{date}}', ctrEnds: 'se termină pe {{date}}', ctrAuto: 'se prelungește automat', ctrEdit: 'Editează datele contractului', ctrCancel: 'Scrie rezilierea',
+    ctrParty: 'Partener contractual', ctrNo: 'Număr contract/poliță', ctrStart: 'Început', ctrEnd: 'Sfârșit', ctrCancelDate: 'Rezilierea trebuie să ajungă până la', ctrNotice: 'Termen de reziliere',
+    ctrNoticeH: 'ex. 3 luni înainte de sfârșitul perioadei', ctrRenew: 'Se prelungește automat', ctrCost: 'Cost', ctrInterval: 'Mod de plată', ctrCoverage: 'Prestație / acoperire (scurt)',
+    iv_monthly: 'lunar', iv_quarterly: 'trimestrial', iv_yearly: 'anual', iv_once: 'o singură dată', ctrSaved: 'Datele contractului au fost salvate. Memento cu 30 și 7 zile înainte de termenul de reziliere.',
+    ctrSoon: 'Termen de reziliere în {{count}} zile', ctrOpenDoc: 'Deschide documentul',
+    pkTitle: 'Documentele firmei într-un PDF', pkH: 'Pentru bancă, furnizori sau licitații: toate documentele alese într-un singur fișier.', pkFor: 'Pentru cine? (opțional, pentru imprimare)',
+    pkForH: 'Dacă e completat, pe fiecare pagină apare înclinat „Nur zur Vorlage bei … – data”. Astfel copia nu poate fi folosită în alt scop.', pkMake: 'Creează PDF', pkNone: 'Alege cel puțin un document.',
+    pkDone: 'PDF creat', pkShare: 'Partajează', pkStamp: 'Nur zur Vorlage bei {{who}} – {{date}}',
+    shTitle: 'Link de partajare pentru consultantul fiscal', shH: 'Consultantul deschide documentele printr-un link – criptat, cu cod și pe timp limitat.', shDays: 'Valabil',
+    shDays7: '7 zile', shDays30: '30 de zile', shMake: 'Creează link', shBusy: 'Se criptează și se încarcă …', shLink: 'Link', shCode: 'Cod (comunică-l separat, ex. la telefon)',
+    shCopyLink: 'Copiază linkul', shCopyCode: 'Copiază codul', shShare: 'Partajează linkul', shUntil: 'valabil până la {{date}}', shRevoke: 'Blochează', shRevoked: 'Link blocat.', shList: 'Linkuri active',
+    shMissing: 'Linkurile nu sunt încă configurate pe server. Folosește „Partajează” sau ZIP.', shNone: 'Niciun link activ.', shFiles: '{{count}} document(e)', shExpired: 'expirat',
+    shMsg: 'Guten Tag,\nhier die Belege von {{company}} zum Herunterladen (gültig bis {{date}}):\n{{link}}\nDen Code teile ich Ihnen separat mit.\nMit freundlichen Grüßen',
+  },
+};
+for (const l of Object.keys(UNT_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].unt = Object.assign({}, I18N[l].unt || {}, UNT_TEXT[l]); }
+CHECK_FIRMA.push(['vdoc', /verfahrensdokumentation/]);
+for (const l of Object.keys(UNT_TEXT)) I18N[l].web = Object.assign({}, I18N[l].web || {}, { uiCk_vdoc: UNT_TEXT[l].vdTitle });
+
+/* =================== 17. Verfahrensdokumentation =================== */
+// Antworten und Dokument immer auf Deutsch (für Finanzamt/Steuerberater); die Fragen erscheinen in der App-Sprache.
+const VD_Q = [
+  { k: 'owner', type: 'text', help: 'q_ownerH', pre: () => (S.profile && S.profile.company_name ? `${S.profile.company_name}` : '') },
+  { k: 'staff', type: 'text', help: 'q_staffH' },
+  { k: 'software', type: 'text', help: 'q_softwareH', pre: () => { const P = (S.profile && S.profile.acc) || {}; return P.program ? progName(P) : ''; } },
+  { k: 'inbound', type: 'multi', opts: ['Papier per Post', 'E-Mail mit PDF-Anhang', 'E-Rechnung (XRechnung/ZUGFeRD)', 'Kassenbons/Quittungen', 'Download aus Online-Portalen'] },
+  { k: 'scan', type: 'one', opts: ['Ja, alle Papierbelege werden mit eOffis (Handy-Kamera) gescannt', 'Teilweise', 'Nein'] },
+  { k: 'original', type: 'one', opts: ['Original wird zusätzlich in Papier aufbewahrt', 'Original wird nach Prüfung des Scans vernichtet (ersetzendes Scannen)'] },
+  { k: 'when', type: 'one', opts: ['Sofort bei Eingang', 'Täglich', 'Wöchentlich'] },
+  { k: 'check', type: 'text', help: 'q_staffH' },
+  { k: 'cash', type: 'one', opts: ['Kein Bargeld', 'Elektronische Registrierkasse mit TSE', 'Offene Ladenkasse mit Kassenbuch'] },
+  { k: 'bank', type: 'text', help: 'q_bankH' },
+  { k: 'backup', type: 'multi', opts: ['eOffis-Konto (Server in der EU)', 'Zusätzlich PC-Ordner (Jahr/Monat/Belegart)', 'Externe Festplatte', 'Cloud-Speicher'] },
+  { k: 'access', type: 'text', help: 'q_staffH' },
+];
+const VD_FULL = [
+  { k: 'org', type: 'text', help: 'q_orgH' },
+  { k: 'hw', type: 'text', help: 'q_hwH' },
+  { k: 'ics', type: 'multi', opts: ['Vier-Augen-Prinzip bei Zahlungen', 'Freigabe von Rechnungen vor Zahlung', 'Monatlicher Abgleich mit dem Kontoauszug', 'Belegnummern/Vollständigkeitskontrolle'] },
+  { k: 'change', type: 'one', opts: ['Neue Version dieser Dokumentation mit Datum (jährliche Prüfung)', 'Änderungsprotokoll in eOffis'] },
+];
+const vdQuestions = (kind) => (kind === 'full' ? VD_Q.concat(VD_FULL) : VD_Q);
+const vdDoc = () => S.docs.filter((d) => d.generated === 'vdoc' && !d.archived).sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))[0] || null;
+VIEWS.vdoc = {
+  title: () => t('unt.vdTitle'),
+  render() {
+    const W = S.vd;
+    if (!W || !W.kind) {
+      const have = vdDoc();
+      return `<div class="card"><h2>${esc(t('unt.vdTitle'))}</h2><p class="small">${esc(t('unt.vdH'))}</p>
+        ${have ? `<p class="small"><b>✓ ${esc(t('unt.vdHave', { date: fmtDate(have.created_at), kind: have.vdoc_kind === 'full' ? t('unt.vdFull') : t('unt.vdBasic') }))}</b></p><button class="btn sec" data-go="doc" data-id="${have.id}">${esc(t('unt.vdOpen'))}</button>` : ''}</div>
+        ${group([cell({ icon: 'doc', ic: 'g', title: t('unt.vdBasic'), sub: t('unt.vdBasicH'), attrs: 'data-a="vdKind" data-v="basic"' }), cell({ icon: 'doc', ic: 'g', title: t('unt.vdFull'), sub: t('unt.vdFullH'), attrs: 'data-a="vdKind" data-v="full"' })], have ? t('unt.vdRedo') : '')}
+        <p class="muted small">${esc(t('unt.vdNote'))}</p>`;
+    }
+    const Q = vdQuestions(W.kind), q = Q[W.i], a = W.a[q.k];
+    let input;
+    if (q.type === 'text') input = area('vd_in', t('unt.q_' + q.k), a !== undefined ? a : q.pre ? q.pre() : '', `placeholder="${esc(t('unt.' + q.help))}" style="min-height:70px"`);
+    else {
+      const sel = Array.isArray(a) ? a : a ? [a] : [];
+      input = `<p style="font-weight:700">${esc(t('unt.q_' + q.k))}</p><div class="group">${q.opts.map((o, j) => `<label class="cell" style="cursor:pointer"><input type="${q.type === 'multi' ? 'checkbox' : 'radio'}" name="vd_opt" value="${j}" ${sel.includes(o) ? 'checked' : ''} style="width:22px;height:22px;accent-color:var(--accent)"><span class="cx"><span class="ct">${esc(o)}</span></span></label>`).join('')}</div>
+        ${field('vd_other', t('unt.vdOther'), sel.filter((x) => !q.opts.includes(x)).join(', '))}`;
+    }
+    return `<p class="muted small">${esc(t('unt.vdStep', { n: W.i + 1, count: Q.length }))} · ${esc(W.kind === 'full' ? t('unt.vdFull') : t('unt.vdBasic'))}</p>
+      <div class="meter"><i style="width:${Math.round(((W.i + 1) / Q.length) * 100)}%"></i></div>
+      <div class="card">${input}</div>
+      <div class="grid2"><button class="btn ghost" data-a="vdPrev">${esc(t('unt.vdBack'))}</button>${W.i < Q.length - 1 ? `<button class="btn" data-a="vdNext">${esc(t('unt.vdNext'))} ›</button>` : `<button class="btn" data-a="vdMake">${esc(t('unt.vdMake'))}</button>`}</div>
+      <p class="muted small">${esc(t('unt.vdNote'))}</p>`;
+  },
+};
+function vdRead() {
+  const W = S.vd, q = vdQuestions(W.kind)[W.i];
+  if (q.type === 'text') { W.a[q.k] = val('vd_in').trim(); return; }
+  const picked = [...document.querySelectorAll('input[name="vd_opt"]:checked')].map((x) => q.opts[+x.value]);
+  const other = val('vd_other').trim();
+  if (other) picked.push(other);
+  W.a[q.k] = q.type === 'multi' ? picked : picked[0] || other || '';
+}
+const vdVal = (A, k, alt) => { const v = A[k]; const s = Array.isArray(v) ? v.join(', ') : String(v || '').trim(); return s || alt || 'nicht angegeben'; };
+/** Text der Verfahrensdokumentation (deutsch), gegliedert nach den vier Teilen der GoBD-Musterdokumentation */
+function vdSections(A, kind) {
+  const p = S.profile || {}, c = companyData(p);
+  const firm = [p.company_name, c.street, [c.zip, c.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+  const scanned = !/^Nein/.test(vdVal(A, 'scan'));
+  const destroy = /vernichtet/.test(vdVal(A, 'original'));
+  const S1 = ['1. Allgemeine Beschreibung', [
+    `Unternehmen: ${firm || '–'}${p.tax_number ? `, Steuernummer ${p.tax_number}` : ''}${p.vat_id ? `, USt-IdNr. ${p.vat_id}` : ''}.`,
+    `Rechtsform und Verantwortliche: ${vdVal(A, 'owner')}.`,
+    `Diese Verfahrensdokumentation beschreibt, wie steuerlich relevante Belege (Eingangsrechnungen, Quittungen, Lieferscheine, Kontoauszüge, Gutschriften sowie Schreiben von Behörden) empfangen, erfasst, geprüft, digitalisiert, an die Buchführung weitergegeben und aufbewahrt werden (GoBD, BMF-Schreiben vom 28.11.2019).`,
+    `Buchführung: ${vdVal(A, 'software')}.${p.tax_advisor_email ? ` Kontakt Steuerberatung: ${p.tax_advisor_email}.` : ''}`,
+  ]];
+  const S2 = ['2. Anwenderdokumentation (Ablauf)', [
+    `Belegeingang: ${vdVal(A, 'inbound')}.`,
+    `Zuständig für Ablage und Prüfung: ${vdVal(A, 'staff')}.`,
+    scanned ? `Digitalisierung: ${vdVal(A, 'scan')}. Zeitpunkt: ${vdVal(A, 'when')}. Jede Seite wird mit der Handy-Kamera aufgenommen, auf DIN A4 zugeschnitten und als Bild-PDF in eOffis gespeichert. Für jedes Dokument speichert eOffis eine Prüfsumme (SHA-256) und ein Änderungsprotokoll.` : `Digitalisierung: ${vdVal(A, 'scan')}.`,
+    `Kontrolle der Scans auf Lesbarkeit und Vollständigkeit durch: ${vdVal(A, 'check')}. Unleserliche Scans werden sofort wiederholt.`,
+    `Papier-Original: ${vdVal(A, 'original')}.${destroy ? ' Vernichtet wird erst nach der Kontrolle des Scans; Originale, deren Aufbewahrung gesetzlich vorgeschrieben ist (z. B. Zollbelege, notarielle Urkunden), werden nicht vernichtet.' : ''}`,
+    'E-Rechnungen (XRechnung/ZUGFeRD) werden im empfangenen Format unverändert gespeichert; die maschinenlesbaren Daten bleiben erhalten.',
+    'Ordnung: Buchhaltungsbelege liegen im Ordner „Buchhaltung“ nach Jahr, Monat und Belegart (Rechnungen, Quittungen, Lieferscheine, Kontoauszüge, Gutschriften); andere Unterlagen in eigenen Ordnern (Firma, Finanzamt, Bank, Versicherungen, Personal, Behörden, Mietverträge).',
+    `Weitergabe an die Buchführung: Belege werden aus eOffis an ${vdVal(A, 'software', 'das Buchhaltungsprogramm')} übertragen bzw. monatlich an die Steuerberatung gesendet; eOffis vermerkt Datum und Empfänger jeder Übertragung.`,
+    `Kasse: ${vdVal(A, 'cash')}.`,
+    `Bank: ${vdVal(A, 'bank')}.`,
+  ]];
+  const S3 = ['3. Technische Systemdokumentation', [
+    'eOffis (Web-App im Browser, auch als Startbildschirm-App). Daten im eOffis-Konto auf Servern in der EU (Supabase); Zugriff nur nach Anmeldung, Datenbank mit Zeilensicherheit je Konto.',
+    'Belegauswertung mit KI (Claude, Anthropic) nur zum Vorschlagen von Angaben; alle Angaben werden vom Betrieb geprüft.',
+    kind === 'full' ? `Eingesetzte Geräte: ${vdVal(A, 'hw')}.` : '',
+    `Datensicherung: ${vdVal(A, 'backup')}.`,
+    `Zugriffsberechtigte: ${vdVal(A, 'access')}.`,
+  ].filter(Boolean)];
+  const S4 = ['4. Betriebsdokumentation', [
+    'Aufbewahrung: Rechnungen und Buchungsbelege 8 Jahre, Bücher, Jahresabschlüsse und Arbeitsanweisungen 10 Jahre, Handels- und Geschäftsbriefe 6 Jahre (§ 147 AO, § 257 HGB, Stand 2026). Archivierte Belege werden in eOffis gesperrt und nicht verändert.',
+    kind === 'full' ? `Organisation und Zuständigkeiten: ${vdVal(A, 'org')}.` : '',
+    kind === 'full' ? `Internes Kontrollsystem: ${vdVal(A, 'ics')}.` : '',
+    kind === 'full' ? `Änderungen der Verfahren: ${vdVal(A, 'change')}.` : 'Diese Dokumentation wird jährlich geprüft und bei Änderungen der Abläufe aktualisiert; frühere Fassungen bleiben aufbewahrt.',
+  ].filter(Boolean)];
+  return [S1, S2, S3, S4];
+}
+function vdPdf(A, kind, createdIso) {
+  const { jsPDF } = window.jspdf; const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
+  const p = S.profile || {};
+  let y = 22;
+  const line = (txt, size, bold, gap) => {
+    pdf.setFont('helvetica', bold ? 'bold' : 'normal'); pdf.setFontSize(size);
+    for (const l of pdf.splitTextToSize(txt, 170)) { if (y > 280) { pdf.addPage(); y = 20; } pdf.text(l, 20, y); y += size * 0.45; }
+    y += gap || 2;
+  };
+  line('Verfahrensdokumentation nach GoBD', 16, true, 3);
+  line(`${p.company_name || ''} · ${kind === 'full' ? 'vollständige Fassung' : 'vereinfachte Fassung für kleine Betriebe'} · Stand ${fmtDate(createdIso)}`, 10, false, 6);
+  for (const [head, paras] of vdSections(A, kind)) { line(head, 12.5, true, 2); for (const t2 of paras) line(t2, 10, false, 2.5); y += 3; }
+  line('Hinweis: Muster auf Grundlage der Angaben des Betriebs, erstellt mit eOffis. Bitte mit der Steuerberatung abstimmen. Keine Rechts- oder Steuerberatung.', 8.5, false, 4);
+  line('Unterschrift / Datum: ______________________________', 10, false, 0);
+  return pdf.output('blob');
+}
+async function vdMake() {
+  const W = S.vd, created = nowIso();
+  const rec = { id: uid(), title: `Verfahrensdokumentation ${created.slice(0, 4)}`, doc_type: 'Verfahrensdokumentation', generated: 'vdoc', vdoc_kind: W.kind, vdoc_answers: clone(W.a),
+    folder: 'firma', acc_type: 'none', file_kind: 'pdf', page_count: 0, status: 'done', filed_at: created, analyzed_at: created, explanation: t('unt.vdNote'), next_steps: [], dates: [],
+    sha256: await sha256(JSON.stringify(W.a) + created), created_at: created, version: 0 };
+  const saved = await saveVersioned('docs', rec, t('unt.vdTitle')); upsertLocal('docs', saved);
+  // jährliche Erinnerung (eine offene je Betrieb)
+  for (const old of S.tasks.filter((x) => x.template_key === 'vdoc' && x.status !== 'done')) { await store.del('tasks', old.id); S.tasks = S.tasks.filter((k) => k.id !== old.id); }
+  const task = { id: uid(), document_id: saved.id, title: t('unt.vdTask'), kind: 'other', due_date: addDays(todayISO(), 365), status: 'open', priority: 'normal', notes: '', recur: 'yearly', template_key: 'vdoc', created_at: nowIso(), version: 0 };
+  S.tasks.push(await saveVersioned('tasks', task));
+  await saveFile(`Verfahrensdokumentation_${safeName((S.profile && S.profile.company_name) || '')}_${todayISO()}.pdf`, vdPdf(W.a, W.kind, created));
+  S.vd = null; toast(t('unt.vdDone'));
+  S.docUi = null; go('doc', { id: saved.id }, { replace: true });
+}
+
+/* =================== 18. Verträge & Versicherungen =================== */
+const IV = ['monthly', 'quarterly', 'yearly', 'once'];
+const isContractDoc = (d) => !d.archived && (d.is_contract || d.contract_end || d.cancellation_date || d.contract_number && ['versicherungen', 'mietvertraege'].includes(d.folder));
+const yearlyCost = (d) => (typeof d.cost_amount !== 'number' ? 0 : d.cost_interval === 'monthly' ? d.cost_amount * 12 : d.cost_interval === 'quarterly' ? d.cost_amount * 4 : d.cost_interval === 'yearly' ? d.cost_amount : 0);
+VIEWS.contracts = {
+  title: () => t('unt.ctrTitle'),
+  render() {
+    const list = S.docs.filter(isContractDoc).sort((a, b) => (a.cancellation_date || a.contract_end || '9999').localeCompare(b.cancellation_date || b.contract_end || '9999'));
+    if (!list.length) return `<div class="empty">${ico('pen')}<p class="muted">${esc(t('unt.ctrNone'))}</p><button class="btn" data-go="scan">${ico('camera')}${esc(t('web.uiScanHero'))}</button></div>`;
+    const sum = list.reduce((s, d) => s + yearlyCost(d), 0);
+    return `${sum ? `<div class="card"><p><b>${esc(t('unt.ctrYear', { sum: money(Math.round(sum * 100) / 100) }))}</b></p></div>` : ''}
+      <div class="group">${list.map((d) => { const dl = d.cancellation_date ? daysUntil(d.cancellation_date) : null;
+        return cell({ icon: d.folder === 'versicherungen' ? 'check' : 'pen', ic: dl !== null && dl < 0 ? '' : dl !== null && dl <= 30 ? 'r' : dl !== null && dl <= 90 ? 'o' : 'g',
+          title: d.contract_party || d.sender || d.title,
+          sub: [d.cost_amount != null ? t('unt.iv_' + (d.cost_interval || 'monthly')) : '', d.contract_number, d.cancellation_date ? t('unt.ctrCancelBy', { date: fmtDate(d.cancellation_date) }) : d.contract_end ? t('unt.ctrEnds', { date: fmtDate(d.contract_end) }) : '', d.auto_renew ? '↻ ' + t('unt.ctrAuto') : '', d.coverage].filter(Boolean).join(' · '),
+          right: d.cost_amount != null ? money(d.cost_amount) : dl !== null && dl >= 0 && dl <= 90 ? dueLabel(dl) : '', attrs: `data-go="contract" data-id="${d.id}"` }); }).join('')}</div>`;
+  },
+};
+VIEWS.contract = {
+  title: () => { const d = getDoc(S.params.id); return d ? d.contract_party || d.sender || d.title : t('unt.ctrTitle'); },
+  render() {
+    const d = getDoc(S.params.id); if (!d) return '';
+    const dl = d.cancellation_date ? daysUntil(d.cancellation_date) : null;
+    return `${dl !== null && dl >= 0 && dl <= 60 ? `<div class="banner warn">${esc(t('unt.ctrSoon', { count: dl }))}</div>` : ''}
+      <div class="card">${field('ct_party', t('unt.ctrParty'), d.contract_party || d.sender || '')}${field('ct_no', t('unt.ctrNo'), d.contract_number || '')}
+      <div class="grid2">${field('ct_start', t('unt.ctrStart'), d.contract_start ? fmtDate(d.contract_start) : '', `placeholder="${esc(t('common.dateHint'))}"`)}${field('ct_end', t('unt.ctrEnd'), d.contract_end ? fmtDate(d.contract_end) : '', `placeholder="${esc(t('common.dateHint'))}"`)}</div>
+      ${field('ct_cancel', t('unt.ctrCancelDate'), d.cancellation_date ? fmtDate(d.cancellation_date) : '', `placeholder="${esc(t('common.dateHint'))}"`)}
+      ${field('ct_notice', t('unt.ctrNotice'), d.notice_period || '', `placeholder="${esc(t('unt.ctrNoticeH'))}"`)}
+      <label class="check"><input type="checkbox" id="ct_renew" ${d.auto_renew ? 'checked' : ''}>${esc(t('unt.ctrRenew'))}</label>
+      <div class="grid2">${field('ct_cost', t('unt.ctrCost') + ' (€)', numStr(d.cost_amount), 'inputmode="decimal"')}<label class="f" for="ct_iv">${esc(t('unt.ctrInterval'))}<select class="in" id="ct_iv">${IV.map((k) => `<option value="${k}" ${(d.cost_interval || 'monthly') === k ? 'selected' : ''}>${esc(t('unt.iv_' + k))}</option>`).join('')}</select></label></div>
+      ${area('ct_cov', t('unt.ctrCoverage'), d.coverage || '', 'style="min-height:60px"')}
+      <button class="btn" data-a="ctrSave">${esc(t('common.save'))}</button></div>
+      <button class="btn sec" data-a="ctrCancel">${ico('pen')}${esc(t('unt.ctrCancel'))}</button>
+      <button class="btn ghost" data-go="doc" data-id="${d.id}">${esc(t('unt.ctrOpenDoc'))}</button>`;
+  },
+};
+async function ctrSave() {
+  const d = getDoc(S.params.id);
+  const dates = {}; for (const [k, f] of [['contract_start', 'ct_start'], ['contract_end', 'ct_end'], ['cancellation_date', 'ct_cancel']]) { const v = val(f).trim(); if (v && !parseDate(v)) { $('#' + f).focus(); return toast(t('common.invalidDate')); } dates[k] = v ? parseDate(v) : null; }
+  const patch = Object.assign(dates, { contract_party: val('ct_party').trim() || null, contract_number: val('ct_no').trim() || null, notice_period: val('ct_notice').trim() || null,
+    auto_renew: $('#ct_renew').checked, cost_amount: parseMoney(val('ct_cost')), cost_interval: val('ct_iv'), coverage: val('ct_cov').trim() || null, is_contract: true });
+  const saved = await persistDoc(d, patch, t('unt.ctrEdit'));
+  // Kündigungsfrist als Frist pflegen (eine offene je Vertrag)
+  const open = S.tasks.find((x) => x.document_id === d.id && x.kind === 'cancellation' && x.status !== 'done');
+  if (saved.cancellation_date) {
+    if (open && open.due_date !== saved.cancellation_date) { const u = await saveVersioned('tasks', Object.assign({}, open, { due_date: saved.cancellation_date })); S.tasks[S.tasks.findIndex((k) => k.id === open.id)] = u; }
+    else if (!open && saved.cancellation_date >= todayISO()) S.tasks.push(await saveVersioned('tasks', taskFromDate(saved, { kind: 'cancellation', date: saved.cancellation_date, description: t('web.cancelBy') })));
+  }
+  toast(t('unt.ctrSaved')); render();
+}
+
+/* =================== 19. Firmenunterlagen als ein PDF (mit Aufdruck) =================== */
+function firmaDocs() { return S.docs.filter((d) => d.folder === 'firma' && !d.generated && d.page_count); }
+function pkModal() {
+  const P = S.pk; if (!P) { $('#layer').innerHTML = ''; return; }
+  const list = firmaDocs();
+  $('#layer').innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="pkT"><div class="card"><h2 id="pkT">${esc(t('unt.pkTitle'))}</h2><p class="small muted">${esc(t('unt.pkH'))}</p>
+    <div class="group">${list.map((d) => `<label class="cell" style="cursor:pointer"><input type="checkbox" data-a="pkSel" data-v="${d.id}" ${P.sel.has(d.id) ? 'checked' : ''} style="width:22px;height:22px;accent-color:var(--accent)"><span class="cx"><span class="ct">${esc(d.title)}</span><span class="cs" style="display:block">${esc(fmtDate(d.document_date || d.created_at))} · ${esc(String(d.page_count))} S.</span></span></label>`).join('')}</div>
+    ${field('pk_for', t('unt.pkFor'), P.who || '', 'placeholder="z. B. Sparkasse Leverkusen"')}<p class="small muted">${esc(t('unt.pkForH'))}</p>
+    ${P.busy ? busyCard(t('web.pdfRender')) : `<button class="btn" data-a="pkMake">${ico('doc')}${esc(t('unt.pkMake'))}</button>`}
+    ${P.file ? `<p class="small"><b>✓ ${esc(t('unt.pkDone'))}: ${esc(P.file.name)}</b></p>${canShareFiles([P.file]) ? `<button class="btn sec" data-a="pkShare">${esc(t('unt.pkShare'))}</button>` : ''}` : ''}
+    <button class="btn ghost" data-a="pkClose">${esc(t('common.close'))}</button></div></div>`;
+  const w = $('#pk_for'); if (w) w.oninput = () => { P.who = w.value; };
+}
+async function pkMake() {
+  const P = S.pk, docs = firmaDocs().filter((d) => P.sel.has(d.id));
+  if (!docs.length) return toast(t('unt.pkNone'));
+  P.who = val('pk_for').trim(); P.busy = true; P.file = null; pkModal();
+  try {
+    const { jsPDF } = window.jspdf; const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
+    const stamp = P.who ? t('unt.pkStamp', { who: P.who, date: fmtDate(todayISO()) }) : '';
+    const deco = () => {
+      if (!stamp) return;
+      pdf.setTextColor(200, 40, 40); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(26);
+      try { if (pdf.GState) pdf.setGState(new pdf.GState({ opacity: 0.35 })); } catch { /* ältere jsPDF-Version */ }
+      for (const y of [95, 175, 255]) pdf.text(stamp, 25, y, { angle: 35, maxWidth: 260 });
+      try { if (pdf.GState) pdf.setGState(new pdf.GState({ opacity: 1 })); } catch { /* egal */ }
+      pdf.setTextColor(0, 0, 0);
+    };
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(15); pdf.text(`Firmenunterlagen ${(S.profile && S.profile.company_name) || ''}`, 20, 25);
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(10); let y = 36;
+    docs.forEach((d, i) => { pdf.text(`${i + 1}. ${d.title}`, 20, y, { maxWidth: 170 }); y += 6; });
+    if (stamp) { pdf.setFontSize(10); pdf.text(stamp, 20, y + 6); }
+    deco();
+    for (const d of docs) {
+      const pages = (await store.where('pages', 'docId', d.id)).sort((a, b) => a.idx - b.idx);
+      for (const pg of pages.filter((x) => x.dataUrl)) {
+        pdf.addPage();
+        const sc = Math.min(200 / pg.w, 287 / pg.h), w = pg.w * sc, h = pg.h * sc;
+        pdf.addImage(pg.dataUrl, 'JPEG', (210 - w) / 2, (297 - h) / 2, w, h);
+        deco();
+      }
+    }
+    const name = `Firmenunterlagen_${safeName((S.profile && S.profile.company_name) || '')}${P.who ? '_fuer_' + safeName(P.who).slice(0, 30) : ''}_${todayISO()}.pdf`;
+    P.file = new File([pdf.output('blob')], name, { type: 'application/pdf' });
+    await saveFile(name, P.file);
+  } catch (e) { console.error(e); toast(t('web.saveFailed', { msg: errText(e) })); }
+  P.busy = false; pkModal();
+}
+
+/* =================== 20. Freigabe-Link für den Steuerberater (verschlüsselt, mit Code, befristet) =================== */
+// Ablauf: ZIP im Browser bauen → mit AES-GCM verschlüsseln (Schlüssel aus Zufallswert im Link + 6-stelligem Code, PBKDF2)
+// → nur der verschlüsselte Inhalt geht an den Server (Supabase Storage). Ohne Link UND Code kann niemand – auch nicht der Server – die Belege lesen.
+const SHARE_PAGE = (window.EOFFIS_HOST ? window.EOFFIS_HOST.siteUrl.replace(/index\.html$/, '') : '') + 'freigabe.html';
+const b64url = (u8) => btoa(String.fromCharCode(...u8)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+async function shareKey(secretB64u, code, salt) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(secretB64u + ':' + code), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function shareCreate(ids, days) {
+  const H = window.EOFFIS_HOST;
+  if (!H || !H.share) throw Object.assign(new Error(t('unt.shMissing')), { code: 'not_configured' });
+  const docs = ids.map(getDoc).filter(Boolean);
+  const file = docs.length > 1 ? await advisorZip(docs) : await docFile(docs[0]);
+  const secret = b64url(crypto.getRandomValues(new Uint8Array(24)));
+  const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0');
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await shareKey(secret, code, salt);
+  const plain = new Uint8Array(await file.arrayBuffer());
+  const enc = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plain));
+  const blob = new Blob([new Uint8Array([1]), salt, iv, enc], { type: 'application/octet-stream' }); // Format: Version | Salz | IV | Inhalt
+  const expires = addDays(todayISO(), days);
+  const rec = await H.share.create({ blob, filename: file.name, size: file.size, count: docs.length, expires, days });
+  const link = `${SHARE_PAGE}#${rec.id}.${secret}`;
+  for (const d of docs) await persistDoc(getDoc(d.id), { advisor_sent_at: d.advisor_sent_at || nowIso() }, t('unt.shTitle'));
+  return { id: rec.id, link, code, expires, count: docs.length, filename: file.name };
+}
+function shModal() {
+  const M = S.sh; if (!M) { $('#layer').innerHTML = ''; return; }
+  const R = M.result;
+  const msg = R ? t('unt.shMsg', { company: (S.profile && S.profile.company_name) || '', date: fmtDate(R.expires), link: R.link }) : '';
+  $('#layer').innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="shT"><div class="card"><h2 id="shT">${esc(t('unt.shTitle'))}</h2><p class="small muted">${esc(t('unt.shH'))}</p>
+    ${M.err ? `<div class="banner warn">${esc(M.err)}</div>` : ''}
+    ${R ? `<p class="small"><b>${esc(t('unt.shLink'))}</b> · ${esc(t('unt.shUntil', { date: fmtDate(R.expires) }))} · ${esc(t('unt.shFiles', { count: R.count }))}</p>
+      <p class="mono small" style="overflow-wrap:anywhere;background:var(--paper);padding:8px;border-radius:8px;user-select:all">${esc(R.link)}</p>
+      <div class="grid2"><button class="btn sm sec" data-a="shCopyLink">${esc(t('unt.shCopyLink'))}</button>${navigator.share ? `<button class="btn sm" data-a="shShare">${esc(t('unt.shShare'))}</button>` : `<a class="btn sm" href="mailto:${esc((S.profile && S.profile.tax_advisor_email) || '')}?subject=${encodeURIComponent('Belege ' + ((S.profile && S.profile.company_name) || ''))}&body=${encodeURIComponent(msg)}">${esc(t('acc.openMail'))}</a>`}</div>
+      <p class="small"><b>${esc(t('unt.shCode'))}</b></p><p class="mono" style="font-size:1.6rem;letter-spacing:.2em;text-align:center">${esc(R.code)}</p>
+      <button class="btn sm ghost" data-a="shCopyCode">${esc(t('unt.shCopyCode'))}</button>`
+    : M.busy ? busyCard(t('unt.shBusy')) : `<p class="small" style="font-weight:700">${esc(t('unt.shDays'))}</p>${seg([['7', t('unt.shDays7')], ['30', t('unt.shDays30')]], String(M.days), 'shDays')}
+      <p class="small">${esc(t('unt.shFiles', { count: M.ids.length }))}</p><button class="btn" data-a="shMake">${esc(t('unt.shMake'))}</button>`}
+    <button class="btn ghost" data-a="shClose">${esc(t('common.close'))}</button></div></div>`;
+}
+async function shareListHtml() {
+  const H = window.EOFFIS_HOST;
+  if (!H || !H.share) return '';
+  let rows = [];
+  try { rows = await H.share.list(); } catch { return ''; }
+  const live = rows.filter((r) => !r.revoked_at);
+  return `<div class="sec-h">${esc(t('unt.shList'))}</div>${live.length ? `<div class="group">${live.map((r) => { const exp = r.expires_at && r.expires_at.slice(0, 10) < todayISO();
+    return `<div class="cell noicon" style="cursor:default"><span class="cx"><span class="ct">${esc(r.filename || '')}</span><span class="cs" style="display:block">${esc(exp ? t('unt.shExpired') : t('unt.shUntil', { date: fmtDate(r.expires_at) }))} · ${esc(t('unt.shFiles', { count: r.count || 1 }))}</span></span><button class="btn sm ghost" data-a="shRevoke" data-v="${esc(r.id)}">${esc(t('unt.shRevoke'))}</button></div>`; }).join('')}</div>` : `<p class="small muted">${esc(t('unt.shNone'))}</p>`}`;
+}
+
+/* ---------- Einstiege: Firma-Ordner, Verträge, Ablage, Mehr, Buchhaltung ---------- */
+function firmaExtraHtml() {
+  const v = vdDoc();
+  return `<div class="group">${cell({ icon: 'doc', ic: v ? 'g' : 'o', title: t('unt.vdTitle'), sub: v ? t('unt.vdHave', { date: fmtDate(v.created_at), kind: v.vdoc_kind === 'full' ? t('unt.vdFull') : t('unt.vdBasic') }) : t('unt.vdMissing'), attrs: 'data-a="vdOpen"' })}
+    ${firmaDocs().length ? cell({ icon: 'box', ic: 'g', title: t('unt.pkTitle'), sub: t('unt.pkH'), attrs: 'data-a="pkOpen"' }) : ''}</div>`;
+}
+
+/* ---------- Aktionen ---------- */
+document.addEventListener('click', async (e) => {
+  const a = e.target.closest('[data-a]');
+  if (!a || a.disabled || !/^(vd|ctr|pk|sh)/.test(a.dataset.a)) return;
+  const A = a.dataset.a, v = a.dataset.v;
+  switch (A) {
+    case 'vdOpen': S.vd = null; return go('vdoc');
+    case 'vdKind': S.vd = { kind: v, i: 0, a: Object.assign({}, (vdDoc() || {}).vdoc_answers || {}) }; return render();
+    case 'vdNext': vdRead(); S.vd.i++; render(); window.scrollTo(0, 0); return;
+    case 'vdPrev': vdRead(); if (S.vd.i === 0) S.vd = null; else S.vd.i--; return render();
+    case 'vdMake': vdRead(); return guard(vdMake);
+    case 'ctrSave': return guard(ctrSave);
+    case 'ctrCancel': { const d = getDoc(v || S.params.id); S.replyUi = { step: 'questions', kind: 'cancellation', questions: null, answers: {} }; go('reply', { id: d.id }); return replyStart(); }
+    case 'pkOpen': S.pk = { sel: new Set(CHECK_FIRMA.map(([, re]) => firmaDocs().find((d) => re.test(docText(d)))).filter(Boolean).map((d) => d.id)), who: '' }; if (!S.pk.sel.size) firmaDocs().forEach((d) => S.pk.sel.add(d.id)); return pkModal();
+    case 'pkSel': a.checked ? S.pk.sel.add(v) : S.pk.sel.delete(v); return;
+    case 'pkMake': return pkMake();
+    case 'pkShare': try { await navigator.share({ files: [S.pk.file], title: S.pk.file.name }); } catch (err) { if (!err || err.name !== 'AbortError') toast(errText(err)); } return;
+    case 'pkClose': S.pk = null; return pkModal();
+    case 'shOpen': S.sh = { ids: [...(S.accSel || [])], days: 30 }; return shModal();
+    case 'shDays': S.sh.days = +v; return shModal();
+    case 'shMake': {
+      const M = S.sh; M.busy = true; M.err = null; shModal();
+      try { M.result = await shareCreate(M.ids, M.days); S.accSel = new Set(); render(); }
+      catch (err) { console.warn(err); M.err = err && err.code === 'not_configured' ? t('unt.shMissing') : t('web.saveFailed', { msg: errText(err) }); }
+      M.busy = false; return shModal();
+    }
+    case 'shCopyLink': return copy(S.sh.result.link);
+    case 'shCopyCode': return copy(S.sh.result.code);
+    case 'shShare': { const R = S.sh.result; try { await navigator.share({ title: 'Belege', text: t('unt.shMsg', { company: (S.profile && S.profile.company_name) || '', date: fmtDate(R.expires), link: R.link }) }); } catch (err) { if (!err || err.name !== 'AbortError') toast(errText(err)); } return; }
+    case 'shClose': S.sh = null; return shModal();
+    case 'shRevoke': return guard(async () => { await window.EOFFIS_HOST.share.revoke(v); toast(t('unt.shRevoked')); render(); });
+  }
+});
+
+/* aktive Freigabe-Links im Buchhaltungsordner anzeigen (nur wenn der Server eingerichtet ist) */
+{
+  const accAfter = VIEWS.acc.after;
+  VIEWS.acc.after = function () {
+    if (accAfter) accAfter.apply(this, arguments);
+    if (!window.EOFFIS_HOST || !window.EOFFIS_HOST.share) return;
+    const app = document.getElementById('main');
+    if (!app || document.getElementById('shList')) return;
+    const box = document.createElement('div'); box.id = 'shList'; app.appendChild(box);
+    shareListHtml().then((h) => { if (S.view === 'acc') box.innerHTML = h; });
+  };
+}
+
+/* erzeugte Verfahrensdokumentation: im Dokument PDF erneut herunterladen oder aktualisieren */
+{
+  const docRender = VIEWS.doc.render;
+  VIEWS.doc.render = function () {
+    const html = docRender.apply(this, arguments);
+    const d = getDoc(S.params.id);
+    if (!d || d.generated !== 'vdoc') return html;
+    return `<div class="card"><h2>${esc(t('unt.vdTitle'))}</h2><p class="small">${esc(t('unt.vdHave', { date: fmtDate(d.created_at), kind: d.vdoc_kind === 'full' ? t('unt.vdFull') : t('unt.vdBasic') }))}</p>
+      <div class="grid2"><button class="btn sm" data-a="vdPdf" data-v="${d.id}">${ico('doc')}PDF</button><button class="btn sm sec" data-a="vdOpen">${esc(t('unt.vdRedo'))}</button></div>
+      <p class="muted small">${esc(t('unt.vdNote'))}</p></div>${html}`;
+  };
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('[data-a="vdPdf"]'); if (!a) return;
+  const d = getDoc(a.dataset.v); if (!d) return;
+  guard(() => saveFile(`Verfahrensdokumentation_${safeName((S.profile && S.profile.company_name) || '')}_${(d.created_at || '').slice(0, 10)}.pdf`, vdPdf(d.vdoc_answers || {}, d.vdoc_kind, d.created_at)));
+});
+
+/* =================== Design 2026 (08.11.2026): Navigationsleiste, große Titel, Start mit Begrüßung und Überblick, Willkommensseite =================== */
+const DS_TEXT = {
+  de: { gM: 'Guten Morgen', gD: 'Guten Tag', gE: 'Guten Abend', sDue: 'Fristen in 7 Tagen', sRev: 'Zu prüfen', sAcc: 'Nicht übertragen', wT: 'Willkommen bei eOffis', wS: 'Dein digitaler Büroassistent – eingerichtet in einer Minute.', w1: 'Post fotografieren – die KI erklärt sie', w2: 'Keine Frist mehr verpassen', w3: 'Belege an Buchhaltung und Steuerberater', allDone: 'Alles erledigt' },
+  tr: { gM: 'Günaydın', gD: 'İyi günler', gE: 'İyi akşamlar', sDue: '7 gün içinde süreler', sRev: 'Kontrol edilecek', sAcc: 'Aktarılmadı', wT: 'eOffis’e hoş geldin', wS: 'Dijital büro asistanın – bir dakikada hazır.', w1: 'Postayı fotoğrafla – yapay zekâ açıklasın', w2: 'Hiçbir süreyi kaçırma', w3: 'Belgeler muhasebeye ve muhasebeciye', allDone: 'Hepsi tamam' },
+  pl: { gM: 'Dzień dobry', gD: 'Dzień dobry', gE: 'Dobry wieczór', sDue: 'Terminy w 7 dni', sRev: 'Do sprawdzenia', sAcc: 'Nieprzekazane', wT: 'Witaj w eOffis', wS: 'Twój cyfrowy asystent biurowy – gotowy w minutę.', w1: 'Zrób zdjęcie poczty – AI ją wyjaśni', w2: 'Nie przegap żadnego terminu', w3: 'Dokumenty do księgowości i doradcy', allDone: 'Wszystko zrobione' },
+  ru: { gM: 'Доброе утро', gD: 'Добрый день', gE: 'Добрый вечер', sDue: 'Сроки за 7 дней', sRev: 'На проверку', sAcc: 'Не передано', wT: 'Добро пожаловать в eOffis', wS: 'Ваш цифровой офисный помощник – настройка за минуту.', w1: 'Сфотографируйте почту – ИИ объяснит', w2: 'Ни одного пропущенного срока', w3: 'Документы в бухгалтерию и консультанту', allDone: 'Всё сделано' },
+  ar: { gM: 'صباح الخير', gD: 'نهارك سعيد', gE: 'مساء الخير', sDue: 'مواعيد خلال 7 أيام', sRev: 'للمراجعة', sAcc: 'لم تُنقل', wT: 'مرحبًا بك في eOffis', wS: 'مساعدك المكتبي الرقمي – جاهز خلال دقيقة.', w1: 'صوّر البريد – ويشرحه الذكاء الاصطناعي', w2: 'لن يفوتك أي موعد', w3: 'المستندات إلى المحاسبة والمستشار', allDone: 'كل شيء منجز' },
+  ro: { gM: 'Bună dimineața', gD: 'Bună ziua', gE: 'Bună seara', sDue: 'Termene în 7 zile', sRev: 'De verificat', sAcc: 'Netransferate', wT: 'Bun venit la eOffis', wS: 'Asistentul tău digital de birou – gata într-un minut.', w1: 'Fotografiază poșta – AI o explică', w2: 'Niciun termen ratat', w3: 'Documente la contabilitate și consultant', allDone: 'Totul rezolvat' },
+};
+for (const l of Object.keys(DS_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].ds = Object.assign({}, I18N[l].ds || {}, DS_TEXT[l]); }
+ICON.chevL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
+const APP_ICON = 'icon.svg';
+// Dokument-Illustration auf der Scan-Karte (Blatt mit Scan-Ecken)
+const SCAN_ART = `<svg class="art" viewBox="0 0 92 112" aria-hidden="true"><rect x="8" y="6" width="76" height="100" rx="8" fill="#fff" opacity=".96"/><path d="M62 6v14a6 6 0 0 0 6 6h16" fill="none" stroke="rgba(10,107,91,.25)" stroke-width="2"/>
+  <rect x="18" y="34" width="40" height="5" rx="2.5" fill="#0a6b5b"/><rect x="18" y="46" width="56" height="4" rx="2" fill="#0a6b5b" opacity=".35"/><rect x="18" y="56" width="50" height="4" rx="2" fill="#0a6b5b" opacity=".35"/><rect x="18" y="66" width="30" height="4" rx="2" fill="#0a6b5b" opacity=".35"/>
+  <rect x="52" y="82" width="22" height="12" rx="3" fill="#f5a524"/><g fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".9"><path d="M2 18V6a4 4 0 0 1 4-4h12M74 2h12a4 4 0 0 1 4 4v12M90 94v12a4 4 0 0 1-4 4H74M18 110H6a4 4 0 0 1-4-4V94"/></g></svg>`;
+const LARGE_TITLE = new Set(['docs', 'tasks', 'more']);
+
+renderTop = function () {
+  const v = VIEWS[S.view] || VIEWS.home;
+  const title = v.title ? v.title() : '';
+  const showBack = !ROOTS.has(S.view) && S.view !== 'setup' || (S.view === 'more' && S.stack.length);
+  const plus = S.loaded && v.topPlus ? `<button class="gear plus" ${v.topPlus} aria-label="${esc(t('web.uiNew'))}">${ico('plus')}</button>` : '';
+  const gear = S.loaded && S.view !== 'setup' && S.view !== 'more' && ROOTS.has(S.view) ? `<button class="gear" data-a="openSearch" aria-label="${esc(t('common.search'))}">${ico('search')}</button>` : '';
+  const lg = S.loaded ? langButton().replace('<span class="ln">', `<span class="lc" aria-hidden="true">${esc(lang)}</span><span class="ln">`) : '';
+  const big = LARGE_TITLE.has(S.view) && !showBack || S.view === 'doc';
+  $('#top').innerHTML = (showBack ? `<button class="back" data-a="back" aria-label="${esc(t('common.back'))}">${ICON.chevL}</button>` : '') +
+    (S.view === 'home' || S.view === 'setup' ? `<span class="brand"><img src="${APP_ICON}" alt="">eOffis</span>`
+      : `<h1 class="${big ? 'lt-hide' : ''}">${esc(title)}</h1>`) + plus + gear + lg;
+};
+// Große Titel auf den Hauptseiten (wie Mail, Dateien, Einstellungen)
+for (const k of LARGE_TITLE) {
+  const r = VIEWS[k].render;
+  VIEWS[k].render = function () { const h = r.apply(this, arguments); const showBack = S.view === 'more' && S.stack.length; return (showBack ? '' : `<h1 class="lt">${esc(VIEWS[k].title())}</h1>`) + h; };
+}
+// Start: Begrüßung + Überblick in drei Zahlen + Scan-Karte mit Illustration
+{
+  const homeRender = VIEWS.home.render;
+  VIEWS.home.render = function () {
+    let h = homeRender.apply(this, arguments);
+    const p = S.profile; if (!p) return h;
+    const hr = new Date().getHours(), greet = hr < 11 ? t('ds.gM') : hr < 18 ? t('ds.gD') : t('ds.gE');
+    const due = S.tasks.filter((x) => x.status !== 'done' && x.due_date && daysUntil(x.due_date) <= 7);
+    const over = due.some((x) => daysUntil(x.due_date) < 0);
+    const rev = S.docs.filter((d) => !d.archived && d.status === 'saved').length;
+    const acc = typeof isTransferred === 'function' ? S.docs.filter((d) => !d.archived && d.folder === 'buchhaltung' && !isTransferred(d)).length : 0;
+    const tile = (n, label, cls, icon, attrs) => `<button class="${n ? cls : 's-ok'}" ${attrs}><i>${ico(n ? icon : 'check')}</i><b>${n}</b><span>${esc(label)}</span></button>`;
+    const hello = `<div class="hello"><small>${esc(fmtDate(todayISO()))}</small><b>${esc(greet)}</b><span>${esc(p.company_name || '')}</span></div>
+      <div class="sum">${tile(due.length, t('ds.sDue'), over ? 's-red' : 's-orange', 'clock', 'data-go="tasks"')}${tile(rev, t('ds.sRev'), 's-blue', 'doc', 'data-a="openList" data-v="review"')}${tile(acc, t('ds.sAcc'), 's-orange', 'invoice', 'data-a="openAcc"')}</div>`;
+    h = h.replace(/<p class="muted company">[\s\S]*?<\/p>/, hello);
+    return h.replace('<button class="scanhero" data-go="scan">', `<button class="scanhero" data-go="scan">${SCAN_ART}`);
+  };
+}
+// Einrichtung: Willkommensseite mit App-Symbol und drei Kernnutzen
+{
+  const setupRender = VIEWS.setup.render;
+  VIEWS.setup.render = function () {
+    const li = (icon, color, txt) => `<li><i style="background:${color}">${ico(icon)}</i><span>${esc(txt)}</span></li>`;
+    return `<div class="welcome"><img src="${APP_ICON}" alt=""><h1>${esc(t('ds.wT'))}</h1><p>${esc(t('ds.wS'))}</p>
+      <ul>${li('camera', '#0a6b5b', t('ds.w1'))}${li('clock', '#ff9500', t('ds.w2'))}${li('invoice', '#007aff', t('ds.w3'))}</ul></div>` + setupRender.apply(this, arguments);
+  };
+}
+
+/* =================== Paket B (08.11.2026): Probezeit, Speicher, Konto sichern, Abo =================== */
+// Ablauf: Start ohne E-Mail → 4 Wochen voller Umfang (+ 7 Tage nach der Nachricht „endet in 7 Tagen“) → 30 Tage nur lesen → Löschung.
+// Die Regeln selbst stehen in der Datenbank (supabase/schema.sql: eoffis_plan, eoffis_account); hier nur Anzeige und Hinweise.
+const KTO_TEXT = {
+  de: {
+    trialLeft: 'Kostenloser Test · noch {{n}} Tage', trialLeft1: 'Kostenloser Test · noch 1 Tag', secure: 'Konto sichern',
+    endsIn: 'Dein Testzugang endet in {{n}} Tagen', endsIn1: 'Dein Testzugang endet morgen', aboBtn: 'Abo abschließen',
+    roBanner: 'Testzeitraum abgelaufen – ansehen und herunterladen bis {{date}}.',
+    quotaWarn: 'Speicher zu {{p}} % belegt ({{used}} von {{max}} MB)', quotaMore: 'Mehr Speicher',
+    secureTitle: 'Unterlagen sichern', secureText: 'Mit deiner E-Mail-Adresse erinnern wir dich an Fristen, deine Unterlagen bleiben gesichert und du kannst eOffis auch auf anderen Geräten nutzen. Alles, was du bisher gescannt hast, bleibt erhalten.',
+    secureFrist: 'eOffis hat eine Frist erkannt. Sollen wir dich per E-Mail daran erinnern?',
+    secureAi: 'Ohne E-Mail sind 5 KI-Auswertungen pro Tag möglich. Mit deiner E-Mail-Adresse nutzt du den vollen Umfang.',
+    emailLabel: 'E-Mail-Adresse', sendLink: 'Bestätigungslink senden', or: 'oder',
+    linkSent: 'Fast geschafft: Wir haben einen Link an {{mail}} geschickt. Nach dem Bestätigen ist dein Konto gesichert.',
+    emailBad: 'Bitte eine gültige E-Mail-Adresse eingeben.', emailTaken: 'Für diese E-Mail-Adresse gibt es schon ein Konto. Melde dich dort an oder nimm eine andere Adresse.',
+    later: 'Später', google: 'Mit Google sichern', apple: 'Mit Apple sichern',
+    aboTitle: 'eOffis Abo', aboText: 'Mit dem Abo nutzt du eOffis ohne Unterbrechung weiter – alle Unterlagen, Fristen und Einstellungen bleiben erhalten.',
+    aboF1: 'Post scannen, verstehen und ablegen (200 MB Speicher)', aboF2: 'KI-Auswertung von Briefen, Rechnungen und Fristen', aboF3: 'Erinnerungen per Push und E-Mail',
+    aboReq: 'Abo anfragen', aboSoon: 'Die Online-Bezahlung wird gerade eingerichtet. Tippe auf „Abo anfragen“ – wir schalten dein Konto frei und melden uns.',
+    aboDone: 'Danke! Deine Anfrage ist eingegangen. Wir melden uns in Kürze.', aboActive: 'Dein Abo ist aktiv. Danke!', aboNeedMail: 'Damit wir dich erreichen können, sichere bitte zuerst dein Konto mit deiner E-Mail-Adresse.',
+    stTrial: 'Testzugang bis {{date}}', stRo: 'Nur lesen bis {{date}} – danach werden die Unterlagen gelöscht', stActive: 'Abo aktiv',
+    storage: 'Speicher: {{used}} von {{max}} MB', anonAccount: 'Testzugang ohne E-Mail', pending: 'Bestätigung ausstehend: {{mail}}',
+    roTitle: 'Nur noch lesen', roText: 'Dein Testzeitraum ist abgelaufen. Ansehen und Herunterladen geht weiter bis {{date}}. Neues scannen und auswerten kannst du mit einem Abo.',
+    roAi: 'Dein Testzeitraum ist abgelaufen. KI-Auswertungen gibt es wieder mit einem Abo.',
+    quotaTitle: 'Speicher voll', quotaText: 'Dein Speicher ({{max}} MB) ist voll. Lösche nicht mehr benötigte Unterlagen oder erweitere deinen Speicher.',
+    quotaAnon: 'Ohne E-Mail stehen 20 MB zur Verfügung. Mit deiner E-Mail-Adresse bekommst du 200 MB.', quotaFree: 'Platz freimachen', quotaSoon: 'Mehr Speicher gibt es bald als Erweiterung zum Abo. Frag uns gern über „Abo anfragen“.',
+  },
+  tr: {
+    trialLeft: 'Ücretsiz deneme · {{n}} gün kaldı', trialLeft1: 'Ücretsiz deneme · 1 gün kaldı', secure: 'Hesabı güvenceye al',
+    endsIn: 'Deneme süren {{n}} gün içinde bitiyor', endsIn1: 'Deneme süren yarın bitiyor', aboBtn: 'Abone ol',
+    roBanner: 'Deneme süresi bitti – {{date}} tarihine kadar görüntüleyip indirebilirsin.',
+    quotaWarn: 'Depolama %{{p}} dolu ({{used}} / {{max}} MB)', quotaMore: 'Daha fazla alan',
+    secureTitle: 'Belgelerini güvenceye al', secureText: 'E-posta adresinle sana süreleri hatırlatırız, belgelerin güvende kalır ve eOffis’i başka cihazlarda da kullanabilirsin. Şimdiye kadar taradığın her şey korunur.',
+    secureFrist: 'eOffis bir süre tespit etti. Sana e-postayla hatırlatalım mı?',
+    secureAi: 'E-posta olmadan günde 5 yapay zekâ değerlendirmesi mümkün. E-posta adresinle tüm kapsamı kullanırsın.',
+    emailLabel: 'E-posta adresi', sendLink: 'Onay bağlantısı gönder', or: 'veya',
+    linkSent: 'Neredeyse tamam: {{mail}} adresine bir bağlantı gönderdik. Onayladıktan sonra hesabın güvende.',
+    emailBad: 'Lütfen geçerli bir e-posta adresi gir.', emailTaken: 'Bu e-posta adresiyle zaten bir hesap var. Oradan giriş yap veya başka bir adres kullan.',
+    later: 'Sonra', google: 'Google ile güvenceye al', apple: 'Apple ile güvenceye al',
+    aboTitle: 'eOffis aboneliği', aboText: 'Abonelikle eOffis’i kesintisiz kullanırsın – tüm belgeler, süreler ve ayarlar korunur.',
+    aboF1: 'Postayı tara, anla ve arşivle (200 MB alan)', aboF2: 'Mektup, fatura ve sürelerin yapay zekâ ile değerlendirilmesi', aboF3: 'Bildirim ve e-posta ile hatırlatmalar',
+    aboReq: 'Abonelik talep et', aboSoon: 'Çevrim içi ödeme şu anda kuruluyor. “Abonelik talep et”e dokun – hesabını açar ve sana döneriz.',
+    aboDone: 'Teşekkürler! Talebin alındı. Kısa süre içinde sana döneceğiz.', aboActive: 'Aboneliğin aktif. Teşekkürler!', aboNeedMail: 'Sana ulaşabilmemiz için önce hesabını e-posta adresinle güvenceye al.',
+    stTrial: 'Deneme {{date}} tarihine kadar', stRo: '{{date}} tarihine kadar yalnızca okuma – sonra belgeler silinir', stActive: 'Abonelik aktif',
+    storage: 'Depolama: {{used}} / {{max}} MB', anonAccount: 'E-postasız deneme hesabı', pending: 'Onay bekleniyor: {{mail}}',
+    roTitle: 'Yalnızca okuma', roText: 'Deneme süren bitti. {{date}} tarihine kadar görüntüleyip indirebilirsin. Yeni tarama ve değerlendirme için abonelik gerekir.',
+    roAi: 'Deneme süren bitti. Yapay zekâ değerlendirmeleri abonelikle tekrar kullanılabilir.',
+    quotaTitle: 'Depolama dolu', quotaText: 'Depolama alanın ({{max}} MB) dolu. Gereksiz belgeleri sil veya alanını genişlet.',
+    quotaAnon: 'E-posta olmadan 20 MB kullanılabilir. E-posta adresinle 200 MB alırsın.', quotaFree: 'Yer aç', quotaSoon: 'Ek alan yakında aboneliğe ek olarak sunulacak. “Abonelik talep et” ile bize yazabilirsin.',
+  },
+  pl: {
+    trialLeft: 'Bezpłatny test · zostało {{n}} dni', trialLeft1: 'Bezpłatny test · został 1 dzień', secure: 'Zabezpiecz konto',
+    endsIn: 'Twój dostęp testowy kończy się za {{n}} dni', endsIn1: 'Twój dostęp testowy kończy się jutro', aboBtn: 'Wykup abonament',
+    roBanner: 'Okres testowy minął – przeglądanie i pobieranie do {{date}}.',
+    quotaWarn: 'Pamięć zajęta w {{p}} % ({{used}} z {{max}} MB)', quotaMore: 'Więcej miejsca',
+    secureTitle: 'Zabezpiecz dokumenty', secureText: 'Dzięki adresowi e-mail przypomnimy Ci o terminach, Twoje dokumenty pozostaną bezpieczne i możesz używać eOffis także na innych urządzeniach. Wszystko, co już zeskanowałeś, zostaje.',
+    secureFrist: 'eOffis rozpoznał termin. Przypomnieć Ci o nim e-mailem?',
+    secureAi: 'Bez e-maila możliwych jest 5 analiz AI dziennie. Z adresem e-mail korzystasz z pełnego zakresu.',
+    emailLabel: 'Adres e-mail', sendLink: 'Wyślij link potwierdzający', or: 'lub',
+    linkSent: 'Prawie gotowe: wysłaliśmy link na {{mail}}. Po potwierdzeniu Twoje konto jest zabezpieczone.',
+    emailBad: 'Podaj prawidłowy adres e-mail.', emailTaken: 'Dla tego adresu istnieje już konto. Zaloguj się tam lub użyj innego adresu.',
+    later: 'Później', google: 'Zabezpiecz przez Google', apple: 'Zabezpiecz przez Apple',
+    aboTitle: 'Abonament eOffis', aboText: 'Z abonamentem korzystasz z eOffis bez przerwy – wszystkie dokumenty, terminy i ustawienia zostają.',
+    aboF1: 'Skanowanie, rozumienie i archiwizacja poczty (200 MB)', aboF2: 'Analiza AI listów, faktur i terminów', aboF3: 'Przypomnienia push i e-mail',
+    aboReq: 'Poproś o abonament', aboSoon: 'Płatność online jest właśnie konfigurowana. Dotknij „Poproś o abonament” – odblokujemy konto i odezwiemy się.',
+    aboDone: 'Dziękujemy! Prośba dotarła. Wkrótce się odezwiemy.', aboActive: 'Twój abonament jest aktywny. Dziękujemy!', aboNeedMail: 'Abyśmy mogli się z Tobą skontaktować, najpierw zabezpiecz konto adresem e-mail.',
+    stTrial: 'Dostęp testowy do {{date}}', stRo: 'Tylko odczyt do {{date}} – potem dokumenty zostaną usunięte', stActive: 'Abonament aktywny',
+    storage: 'Pamięć: {{used}} z {{max}} MB', anonAccount: 'Dostęp testowy bez e-maila', pending: 'Oczekuje na potwierdzenie: {{mail}}',
+    roTitle: 'Tylko odczyt', roText: 'Okres testowy minął. Przeglądać i pobierać możesz do {{date}}. Nowe skany i analizy są dostępne z abonamentem.',
+    roAi: 'Okres testowy minął. Analizy AI są znów dostępne z abonamentem.',
+    quotaTitle: 'Pamięć pełna', quotaText: 'Twoja pamięć ({{max}} MB) jest pełna. Usuń niepotrzebne dokumenty lub rozszerz pamięć.',
+    quotaAnon: 'Bez e-maila dostępne jest 20 MB. Z adresem e-mail otrzymasz 200 MB.', quotaFree: 'Zwolnij miejsce', quotaSoon: 'Dodatkowa pamięć wkrótce jako rozszerzenie abonamentu. Napisz do nas przez „Poproś o abonament”.',
+  },
+  ru: {
+    trialLeft: 'Бесплатный тест · осталось {{n}} дн.', trialLeft1: 'Бесплатный тест · остался 1 день', secure: 'Сохранить аккаунт',
+    endsIn: 'Пробный доступ закончится через {{n}} дн.', endsIn1: 'Пробный доступ закончится завтра', aboBtn: 'Оформить подписку',
+    roBanner: 'Пробный период истёк – просмотр и скачивание до {{date}}.',
+    quotaWarn: 'Память занята на {{p}} % ({{used}} из {{max}} МБ)', quotaMore: 'Больше памяти',
+    secureTitle: 'Сохраните документы', secureText: 'С вашим e-mail мы напомним о сроках, документы будут в безопасности, и eOffis можно использовать на других устройствах. Всё, что вы уже отсканировали, сохранится.',
+    secureFrist: 'eOffis нашёл срок. Напомнить вам о нём по e-mail?',
+    secureAi: 'Без e-mail доступно 5 ИИ-анализов в день. С e-mail – полный объём.',
+    emailLabel: 'Адрес e-mail', sendLink: 'Отправить ссылку', or: 'или',
+    linkSent: 'Почти готово: мы отправили ссылку на {{mail}}. После подтверждения аккаунт сохранён.',
+    emailBad: 'Введите корректный адрес e-mail.', emailTaken: 'Для этого адреса уже есть аккаунт. Войдите в него или укажите другой адрес.',
+    later: 'Позже', google: 'Сохранить через Google', apple: 'Сохранить через Apple',
+    aboTitle: 'Подписка eOffis', aboText: 'С подпиской eOffis работает без перерыва – все документы, сроки и настройки сохраняются.',
+    aboF1: 'Сканирование, понимание и архив почты (200 МБ)', aboF2: 'ИИ-анализ писем, счетов и сроков', aboF3: 'Напоминания push и e-mail',
+    aboReq: 'Запросить подписку', aboSoon: 'Онлайн-оплата сейчас настраивается. Нажмите «Запросить подписку» – мы активируем аккаунт и свяжемся с вами.',
+    aboDone: 'Спасибо! Запрос получен. Мы скоро свяжемся с вами.', aboActive: 'Подписка активна. Спасибо!', aboNeedMail: 'Чтобы мы могли связаться с вами, сначала сохраните аккаунт с e-mail.',
+    stTrial: 'Пробный доступ до {{date}}', stRo: 'Только чтение до {{date}} – затем документы будут удалены', stActive: 'Подписка активна',
+    storage: 'Память: {{used}} из {{max}} МБ', anonAccount: 'Пробный доступ без e-mail', pending: 'Ожидает подтверждения: {{mail}}',
+    roTitle: 'Только чтение', roText: 'Пробный период истёк. Просматривать и скачивать можно до {{date}}. Новые сканы и анализ – с подпиской.',
+    roAi: 'Пробный период истёк. ИИ-анализ снова доступен с подпиской.',
+    quotaTitle: 'Память заполнена', quotaText: 'Ваша память ({{max}} МБ) заполнена. Удалите ненужные документы или расширьте память.',
+    quotaAnon: 'Без e-mail доступно 20 МБ. С e-mail вы получите 200 МБ.', quotaFree: 'Освободить место', quotaSoon: 'Дополнительная память скоро появится как расширение подписки. Напишите нам через «Запросить подписку».',
+  },
+  ar: {
+    trialLeft: 'تجربة مجانية · متبقٍ {{n}} يومًا', trialLeft1: 'تجربة مجانية · متبقٍ يوم واحد', secure: 'تأمين الحساب',
+    endsIn: 'تنتهي تجربتك خلال {{n}} أيام', endsIn1: 'تنتهي تجربتك غدًا', aboBtn: 'اشترك',
+    roBanner: 'انتهت الفترة التجريبية – العرض والتنزيل حتى {{date}}.',
+    quotaWarn: 'التخزين ممتلئ بنسبة {{p}} % ({{used}} من {{max}} ميغابايت)', quotaMore: 'مساحة أكبر',
+    secureTitle: 'تأمين مستنداتك', secureText: 'مع بريدك الإلكتروني نذكّرك بالمواعيد، وتبقى مستنداتك محفوظة ويمكنك استخدام eOffis على أجهزة أخرى. كل ما مسحته يبقى محفوظًا.',
+    secureFrist: 'اكتشف eOffis موعدًا نهائيًا. هل نذكّرك به عبر البريد الإلكتروني؟',
+    secureAi: 'بدون بريد إلكتروني: 5 تحليلات ذكاء اصطناعي يوميًا. مع بريدك تحصل على الاستخدام الكامل.',
+    emailLabel: 'البريد الإلكتروني', sendLink: 'إرسال رابط التأكيد', or: 'أو',
+    linkSent: 'اقتربنا: أرسلنا رابطًا إلى {{mail}}. بعد التأكيد يصبح حسابك مؤمَّنًا.',
+    emailBad: 'يرجى إدخال بريد إلكتروني صالح.', emailTaken: 'يوجد حساب بهذا البريد بالفعل. سجّل الدخول إليه أو استخدم بريدًا آخر.',
+    later: 'لاحقًا', google: 'التأمين عبر Google', apple: 'التأمين عبر Apple',
+    aboTitle: 'اشتراك eOffis', aboText: 'مع الاشتراك تواصل استخدام eOffis دون انقطاع – تبقى كل المستندات والمواعيد والإعدادات.',
+    aboF1: 'مسح البريد وفهمه وأرشفته (200 ميغابايت)', aboF2: 'تحليل الرسائل والفواتير والمواعيد بالذكاء الاصطناعي', aboF3: 'تذكيرات عبر الإشعارات والبريد',
+    aboReq: 'طلب اشتراك', aboSoon: 'يتم الآن إعداد الدفع عبر الإنترنت. اضغط «طلب اشتراك» – سنفعّل حسابك ونتواصل معك.',
+    aboDone: 'شكرًا! وصل طلبك. سنتواصل معك قريبًا.', aboActive: 'اشتراكك فعّال. شكرًا!', aboNeedMail: 'لكي نتمكن من التواصل معك، أمّن حسابك أولًا ببريدك الإلكتروني.',
+    stTrial: 'التجربة حتى {{date}}', stRo: 'قراءة فقط حتى {{date}} – بعدها تُحذف المستندات', stActive: 'الاشتراك فعّال',
+    storage: 'التخزين: {{used}} من {{max}} ميغابايت', anonAccount: 'حساب تجريبي بدون بريد', pending: 'بانتظار التأكيد: {{mail}}',
+    roTitle: 'قراءة فقط', roText: 'انتهت فترتك التجريبية. يمكنك العرض والتنزيل حتى {{date}}. المسح والتحليل الجديد مع الاشتراك.',
+    roAi: 'انتهت فترتك التجريبية. التحليل بالذكاء الاصطناعي متاح مجددًا مع الاشتراك.',
+    quotaTitle: 'التخزين ممتلئ', quotaText: 'مساحة التخزين ({{max}} ميغابايت) ممتلئة. احذف المستندات غير المطلوبة أو وسّع المساحة.',
+    quotaAnon: 'بدون بريد إلكتروني تتوفر 20 ميغابايت. مع بريدك تحصل على 200 ميغابايت.', quotaFree: 'إفراغ مساحة', quotaSoon: 'ستتوفر مساحة إضافية قريبًا كإضافة للاشتراك. راسلنا عبر «طلب اشتراك».',
+  },
+  ro: {
+    trialLeft: 'Test gratuit · mai ai {{n}} zile', trialLeft1: 'Test gratuit · mai ai 1 zi', secure: 'Securizează contul',
+    endsIn: 'Accesul de test se încheie în {{n}} zile', endsIn1: 'Accesul de test se încheie mâine', aboBtn: 'Abonează-te',
+    roBanner: 'Perioada de test a expirat – vizualizare și descărcare până la {{date}}.',
+    quotaWarn: 'Spațiu ocupat {{p}} % ({{used}} din {{max}} MB)', quotaMore: 'Mai mult spațiu',
+    secureTitle: 'Securizează documentele', secureText: 'Cu adresa ta de e-mail îți amintim de termene, documentele rămân în siguranță și poți folosi eOffis și pe alte dispozitive. Tot ce ai scanat rămâne păstrat.',
+    secureFrist: 'eOffis a găsit un termen. Să îți amintim prin e-mail?',
+    secureAi: 'Fără e-mail sunt posibile 5 analize AI pe zi. Cu adresa de e-mail folosești totul.',
+    emailLabel: 'Adresă de e-mail', sendLink: 'Trimite link de confirmare', or: 'sau',
+    linkSent: 'Aproape gata: am trimis un link la {{mail}}. După confirmare, contul tău este securizat.',
+    emailBad: 'Introdu o adresă de e-mail validă.', emailTaken: 'Există deja un cont pentru această adresă. Autentifică-te acolo sau folosește altă adresă.',
+    later: 'Mai târziu', google: 'Securizează cu Google', apple: 'Securizează cu Apple',
+    aboTitle: 'Abonament eOffis', aboText: 'Cu abonamentul folosești eOffis fără întrerupere – toate documentele, termenele și setările rămân.',
+    aboF1: 'Scanează, înțelege și arhivează corespondența (200 MB)', aboF2: 'Analiză AI pentru scrisori, facturi și termene', aboF3: 'Mementouri prin notificări și e-mail',
+    aboReq: 'Solicită abonament', aboSoon: 'Plata online este în curs de configurare. Atinge „Solicită abonament” – îți activăm contul și te contactăm.',
+    aboDone: 'Mulțumim! Cererea a ajuns. Te contactăm în curând.', aboActive: 'Abonamentul tău este activ. Mulțumim!', aboNeedMail: 'Ca să te putem contacta, securizează mai întâi contul cu adresa ta de e-mail.',
+    stTrial: 'Acces de test până la {{date}}', stRo: 'Doar citire până la {{date}} – apoi documentele sunt șterse', stActive: 'Abonament activ',
+    storage: 'Spațiu: {{used}} din {{max}} MB', anonAccount: 'Acces de test fără e-mail', pending: 'Confirmare în așteptare: {{mail}}',
+    roTitle: 'Doar citire', roText: 'Perioada de test a expirat. Poți vizualiza și descărca până la {{date}}. Scanări și analize noi cu abonament.',
+    roAi: 'Perioada de test a expirat. Analizele AI sunt din nou disponibile cu abonament.',
+    quotaTitle: 'Spațiu plin', quotaText: 'Spațiul tău ({{max}} MB) este plin. Șterge documentele de care nu mai ai nevoie sau extinde spațiul.',
+    quotaAnon: 'Fără e-mail ai 20 MB. Cu adresa de e-mail primești 200 MB.', quotaFree: 'Eliberează spațiu', quotaSoon: 'Spațiul suplimentar va fi disponibil în curând ca extensie la abonament. Scrie-ne prin „Solicită abonament”.',
+  },
+};
+for (const l of Object.keys(KTO_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].kto = Object.assign({}, I18N[l].kto || {}, KTO_TEXT[l]); }
+
+const KH = () => (window.EOFFIS_HOST && window.EOFFIS_HOST.account ? window.EOFFIS_HOST : null);
+const ktoMb = (b) => Math.max(0, Math.round((Number(b) || 0) / 1048576));
+const ktoDays = (iso) => Math.max(0, Math.ceil((new Date(iso) - Date.now()) / 86400000));
+const ktoState = () => (S.acct && S.acct.state) || 'unknown';
+const ktoRO = () => ktoState() === 'readonly' || ktoState() === 'expired';
+const ktoAnon = () => !!(KH() && KH().isDemo());
+const ktoPct = () => (S.acct && S.acct.quota_bytes ? Math.min(100, Math.round((S.acct.used_bytes / S.acct.quota_bytes) * 100)) : 0);
+const ktoLS = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { return null; } return null; };
+
+async function kontoRefresh() {
+  const H = KH(); if (!H) return;
+  try { const a = await H.account.info(); if (a) S.acct = a; } catch (e) { console.warn(e); }
+}
+let KTO_TIMER = null;
+// Nur den Stand merken – nie im Hintergrund neu zeichnen (sonst gehen halb ausgefüllte Formulare verloren); die Hinweise erscheinen beim nächsten Seitenwechsel
+const kontoRefreshSoon = () => { clearTimeout(KTO_TIMER); KTO_TIMER = setTimeout(kontoRefresh, 2500); };
+const ktoSafeRender = () => { const el = document.activeElement; if (S.loaded && !$('#layer').innerHTML && !(el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) render(); };
+
+// Kontostatus mit den Unterlagen laden; nach dem Speichern Belegung aktualisieren
+{
+  const orig = reloadAll;
+  reloadAll = async function () { const r = await orig.apply(this, arguments); await kontoRefresh(); return r; };
+  const put = store.put.bind(store);
+  store.put = async function () { const r = await put(...arguments); if (KH()) kontoRefreshSoon(); return r; };
+}
+window.addEventListener('eoffis-account', async () => { await kontoRefresh(); ktoSafeRender(); });
+
+/* ---------- Hinweise oben ---------- */
+{
+  const orig = banners;
+  banners = function () {
+    let h = orig.apply(this, arguments);
+    const A = S.acct; if (!A || !KH()) return h;
+    const st = A.state;
+    if (st === 'readonly' || st === 'expired') {
+      h = `<div class="banner warn kto-b"><span>${esc(t('kto.roBanner', { date: fmtDate(A.delete_at) }))}</span><button class="btn sm" data-go="abo">${esc(t('kto.aboBtn'))}</button></div>` + h;
+    } else if (st === 'trial' && (S.view === 'home' || S.view === 'more')) {
+      const n = ktoDays(A.trial_end), warn = Date.now() >= new Date(A.warn_at).getTime();
+      if (warn) h = `<div class="banner warn kto-b"><span>${esc(n <= 1 ? t('kto.endsIn1') : t('kto.endsIn', { n }))}</span><button class="btn sm" data-go="abo">${esc(t('kto.aboBtn'))}</button></div>` + h;
+      else if (ktoAnon()) h = `<div class="demo-line kto-line"><span>${ico('spark')}${esc(n <= 1 ? t('kto.trialLeft1') : t('kto.trialLeft', { n }))}</span><button data-a="ktoSecure">${esc(t('kto.secure'))}</button></div>` + h;
+    }
+    const p = ktoPct();
+    if (p >= 80 && (S.view === 'home' || S.view === 'docs' || S.view === 'scan' || S.view === 'more')) {
+      h = `<div class="banner ${p >= 95 ? 'warn' : ''} kto-b"><span>${esc(t('kto.quotaWarn', { p, used: ktoMb(A.used_bytes), max: ktoMb(A.quota_bytes) }))}</span><button class="btn sm" data-a="ktoQuota">${esc(t('kto.quotaMore'))}</button></div>` + h;
+    }
+    return h;
+  };
+}
+
+/* ---------- Konto sichern (E-Mail oder Apple/Google) – Daten bleiben erhalten ---------- */
+function ktoSecure(reason) {
+  const H = KH(); if (!H) return;
+  if (reason) ktoLS('eoffis.askMail', String(Date.now()));
+  const why = reason === 'frist' ? t('kto.secureFrist') : reason === 'ai' ? t('kto.secureAi') : reason === 'quota' ? t('kto.quotaAnon') : reason === 'abo' ? t('kto.aboNeedMail') : '';
+  const prov = H.account.providers || [];
+  const sent = S.ktoSent;
+  $('#layer').innerHTML = `<div class="modal" role="dialog" aria-modal="true" id="modalBg"><div class="card kto-sheet">
+    <h2>${esc(t('kto.secureTitle'))}</h2>
+    ${why ? `<p class="banner">${esc(why)}</p>` : ''}
+    <p class="small">${esc(t('kto.secureText'))}</p>
+    ${sent ? `<p class="banner" role="status">${esc(t('kto.linkSent', { mail: sent }))}</p>` : `
+      <label class="f" for="kto_mail">${esc(t('kto.emailLabel'))}<input class="in" id="kto_mail" type="email" inputmode="email" autocomplete="email"></label>
+      <p class="small kto-err" id="kto_err" role="alert"></p>
+      <button class="btn" data-a="ktoSend">${esc(t('kto.sendLink'))}</button>
+      ${prov.length ? `<p class="muted small" style="text-align:center">${esc(t('kto.or'))}</p>${prov.map((p) => `<button class="btn sec" data-a="ktoOAuth" data-v="${p}">${esc(t('kto.' + p))}</button>`).join('')}` : ''}`}
+    <button class="btn ghost" data-a="ktoLater">${esc(sent ? t('common.close') : t('kto.later'))}</button></div></div>`;
+  const m = $('#kto_mail'); if (m) m.focus();
+}
+// Im passenden Moment fragen: wenn eOffis die erste Frist erkannt hat (höchstens alle 3 Tage, nie während eines Dialogs)
+function ktoMaybeAsk() {
+  if (!ktoAnon() || ktoRO() || S.ktoAsked || !S.loaded || $('#layer').innerHTML) return;
+  const last = Number(ktoLS('eoffis.askMail') || 0); if (Date.now() - last < 3 * 86400000) return;
+  if (S.view === 'doc' && S.params && S.tasks.some((x) => x.document_id === S.params.id && x.due_date)) { S.ktoAsked = true; setTimeout(() => ktoSecure('frist'), 600); }
+}
+
+/* ---------- Abo-Seite ---------- */
+VIEWS.abo = {
+  title: () => t('kto.aboTitle'),
+  render() {
+    const A = S.acct || {};
+    const st = A.state === 'active' ? t('kto.stActive') : A.state === 'readonly' || A.state === 'expired' ? t('kto.stRo', { date: fmtDate(A.delete_at) }) : A.trial_end ? t('kto.stTrial', { date: fmtDate(A.trial_end) }) : '';
+    if (A.state === 'active') return `<div class="card"><p>${esc(t('kto.aboActive'))}</p></div>`;
+    return `<div class="card kto-abo"><p>${esc(t('kto.aboText'))}</p>
+      <ul class="kto-feat"><li>${ico('camera')}${esc(t('kto.aboF1'))}</li><li>${ico('spark')}${esc(t('kto.aboF2'))}</li><li>${ico('bell')}${esc(t('kto.aboF3'))}</li></ul>
+      ${st ? `<p class="small muted">${esc(st)}</p>` : ''}
+      ${A.abo_requested || S.ktoAboDone ? `<p class="banner" role="status">${esc(t('kto.aboDone'))}</p>` : `<p class="small">${esc(t('kto.aboSoon'))}</p><button class="btn" data-a="ktoAbo">${esc(t('kto.aboReq'))}</button>`}
+      ${ktoAnon() ? `<button class="btn sec" data-a="ktoSecure">${esc(t('kto.secure'))}</button>` : ''}</div>`;
+  },
+};
+
+/* ---------- Nur lesen / Speicher voll: verständlich erklären statt Fehlermeldung ---------- */
+function ktoBlocked(code) {
+  const A = S.acct || {};
+  if (code === 'read_only') {
+    showModal(`<h2>${esc(t('kto.roTitle'))}</h2><p>${esc(t('kto.roText', { date: fmtDate(A.delete_at) }))}</p><button class="btn" data-go="abo">${esc(t('kto.aboBtn'))}</button>`);
+  } else {
+    showModal(`<h2>${esc(t('kto.quotaTitle'))}</h2><p>${esc(t('kto.quotaText', { max: ktoMb(A.quota_bytes) || (ktoAnon() ? 20 : 200) }))}</p>
+      ${ktoAnon() ? `<p class="banner">${esc(t('kto.quotaAnon'))}</p><button class="btn" data-a="ktoSecureQ">${esc(t('kto.secure'))}</button>` : `<p class="small muted">${esc(t('kto.quotaSoon'))}</p>`}
+      <button class="btn sec" data-go="docs">${esc(t('kto.quotaFree'))}</button>`);
+  }
+  kontoRefresh();
+}
+{
+  const orig = guard;
+  guard = async function (fn) {
+    try { return await fn(); } catch (e) {
+      if (e && (e.code === 'read_only' || e.code === 'quota')) { console.warn(e); return ktoBlocked(e.code); }
+      return orig(() => { throw e; });
+    }
+  };
+  const origAi = aiError;
+  aiError = function (e) {
+    if (e && e.code === 'read_only') { setTimeout(() => ktoBlocked('read_only'), 200); return t('kto.roAi'); }
+    if (e && e.code === 'rate_limited' && e.anon) { setTimeout(() => ktoSecure('ai'), 400); return e.message || t('kto.secureAi'); }
+    return origAi(e);
+  };
+}
+// Navigation aus einem Dialog heraus schließt den Dialog
+document.addEventListener('click', (e) => { if (e.target.closest('#layer [data-go]')) setTimeout(() => { $('#layer').innerHTML = ''; }, 0); }, true);
+// Nach Ablauf: Scannen gar nicht erst beginnen
+document.addEventListener('click', (e) => {
+  if (!ktoRO()) return;
+  const g = e.target.closest('[data-go="scan"]');
+  if (g) { e.preventDefault(); e.stopImmediatePropagation(); ktoBlocked('read_only'); }
+}, true);
+
+/* ---------- Einstellungen: Konto, Testzeitraum, Speicher ---------- */
+{
+  const orig = VIEWS.settings.render;
+  VIEWS.settings.render = function () {
+    let h = orig.apply(this, arguments);
+    const H = KH(), A = S.acct; if (!H) return h;
+    const lines = [];
+    if (A) {
+      lines.push(A.state === 'active' ? t('kto.stActive') : ktoRO() ? t('kto.stRo', { date: fmtDate(A.delete_at) }) : t('kto.stTrial', { date: fmtDate(A.trial_end) }));
+      lines.push(t('kto.storage', { used: ktoMb(A.used_bytes), max: ktoMb(A.quota_bytes) }));
+    }
+    const pend = H.pendingEmail && H.pendingEmail();
+    if (pend) lines.push(t('kto.pending', { mail: pend }));
+    const extra = `${lines.map((l) => `<p class="small muted">${esc(l)}</p>`).join('')}
+      ${ktoAnon() ? `<button class="btn" data-a="ktoSecure">${esc(t('kto.secure'))}</button>` : ''}
+      ${A && A.state !== 'active' ? `<button class="btn sec" data-go="abo">${esc(t('kto.aboBtn'))}</button>` : ''}`;
+    h = h.replace(esc(t('web.demoAccount')), esc(t('kto.anonAccount')));
+    return h.replace(/(<div class="sec-h">[^<]*<\/div><div class="card"><p class="small">[^<]*<\/p>)/, `$1${extra}`);
+  };
+}
+
+/* ---------- Start: ?abo=1 aus Nachricht/E-Mail öffnet die Abo-Seite; danach im passenden Moment nach der E-Mail fragen ---------- */
+{
+  const orig = render;
+  let opened = false;
+  render = function () {
+    if (!opened && S.loaded && S.profile) {
+      opened = true;
+      if (/[?&]abo=1\b/.test(location.search)) { try { history.replaceState(null, '', location.pathname); } catch { /* egal */ } return go('abo'); }
+    }
+    const r = orig.apply(this, arguments);
+    if (KH()) ktoMaybeAsk();
+    return r;
+  };
+}
+
+/* ---------- Aktionen ---------- */
+document.addEventListener('click', async (e) => {
+  const a = e.target.closest('[data-a]');
+  if (!a || a.disabled || !/^kto/.test(a.dataset.a)) return;
+  const H = KH(); if (!H) return;
+  switch (a.dataset.a) {
+    case 'ktoSecure': return ktoSecure();
+    case 'ktoSecureQ': return ktoSecure('quota');
+    case 'ktoLater': $('#layer').innerHTML = ''; S.ktoSent = S.ktoSent || null; return render();
+    case 'ktoQuota': return ktoBlocked('quota');
+    case 'ktoSend': {
+      const mail = val('kto_mail').trim(), err = $('#kto_err');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) { err.textContent = t('kto.emailBad'); $('#kto_mail').focus(); return; }
+      a.disabled = true;
+      try { await H.account.linkEmail(mail); S.ktoSent = mail; ktoSecure(); }
+      catch (x) { err.textContent = x.code === 'email_taken' ? t('kto.emailTaken') : t('web.saveFailed', { msg: errText(x) }); a.disabled = false; }
+      return;
+    }
+    case 'ktoOAuth': return guard(() => H.account.linkOAuth(a.dataset.v));
+    case 'ktoAbo': {
+      if (ktoAnon()) return ktoSecure('abo');
+      return guard(async () => { const r = await H.account.aboRequest(); if (r) S.acct = r; S.ktoAboDone = true; render(); });
+    }
+  }
+});
+
+boot();

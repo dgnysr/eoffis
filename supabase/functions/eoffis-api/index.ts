@@ -3,7 +3,11 @@
 // Paket 2: Morgen-Erinnerung (Web Push): Geräte an-/abmelden, Test, täglicher Versand (Aufruf durch pg_cron mit x-cron-secret).
 // Einrichten: Supabase → Edge Functions → Deploy a new function → Via Editor, Name „eoffis-api“, diesen Code einfügen,
 // „Verify JWT“ AUSschalten (die Funktion prüft die Anmeldung selbst, wie „ai“).
-// Secrets: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY (Web Push), VAPID_SUBJECT (mailto:… oder https://…), CRON_SECRET (für den täglichen Aufruf).
+// Secrets: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY (Web Push), VAPID_SUBJECT (mailto:… oder https://…), CRON_SECRET (für den täglichen Aufruf),
+//          EOFFIS_ENC_KEY (langer Zufallswert; verschlüsselt den Lexware-Schlüssel – nach dem Festlegen nicht mehr ändern),
+//          BREVO_API_KEY + MAIL_FROM (E-Mails zur Probezeit, z. B. „eOffis <hallo@deine-domain.de>“), SITE_URL (Link der App).
+// Paket A/B (08.11.2026): Lexware-Schlüssel nur noch verschlüsselt auf dem Server; täglicher Lauf „daily“ verschickt
+// Morgen-Erinnerungen und Probezeit-Nachrichten (Push + E-Mail) und löscht abgelaufene Konten.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import webpush from 'npm:web-push@3.6.7';
 
@@ -24,9 +28,50 @@ function b64ToBytes(b64: string): Uint8Array {
   return out;
 }
 
-async function lexwareUpload(body: { key?: string; filename?: string; mime?: string; data?: string }) {
-  const key = String(body.key || '').trim();
-  if (key.length < 10) return json({ error: 'API-Schlüssel fehlt', code: 'bad_key' }, 400);
+/* ---------- Lexware-Schlüssel: verschlüsselt (AES-GCM) in public.secrets, nur mit dem Service-Schlüssel lesbar ---------- */
+const enc = new TextEncoder(), dec = new TextDecoder();
+const toB64 = (b: Uint8Array) => btoa(String.fromCharCode(...b));
+let aesKey: CryptoKey | null = null;
+async function cryptoKey() {
+  if (aesKey) return aesKey;
+  const secret = Deno.env.get('EOFFIS_ENC_KEY');
+  if (!secret || secret.length < 24) return null;
+  const raw = await crypto.subtle.digest('SHA-256', enc.encode('eoffis-secrets:' + secret));
+  return (aesKey = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']));
+}
+async function sealSecret(plain: string) {
+  const k = await cryptoKey(); if (!k) return null;
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, enc.encode(plain)));
+  const out = new Uint8Array(12 + ct.length); out.set(iv); out.set(ct, 12);
+  return 'v1:' + toB64(out);
+}
+async function openSecret(sealed: string) {
+  const k = await cryptoKey(); if (!k || !sealed.startsWith('v1:')) return null;
+  const all = b64ToBytes(sealed.slice(3));
+  return dec.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: all.slice(0, 12) }, k, all.slice(12)));
+}
+async function lexKeySet(admin: ReturnType<typeof createClient>, owner: string, keyRaw: unknown) {
+  const key = String(keyRaw || '').trim();
+  if (key.length < 10 || key.length > 500) return json({ error: 'API-Schlüssel ungültig', code: 'bad_key' }, 400);
+  const sealed = await sealSecret(key);
+  if (!sealed) return json({ error: 'Verschlüsselung auf dem Server noch nicht eingerichtet (EOFFIS_ENC_KEY fehlt)', code: 'not_configured' }, 503);
+  const hint = '…' + key.slice(-4);
+  const { error } = await admin.from('secrets').upsert({ owner, name: 'lexware', value_enc: sealed, hint, updated_at: new Date().toISOString() }, { onConflict: 'owner,name' });
+  if (error) return json({ error: error.message }, 500);
+  return json({ ok: true, hint });
+}
+async function lexKeyGet(admin: ReturnType<typeof createClient>, owner: string) {
+  const { data } = await admin.from('secrets').select('value_enc').eq('owner', owner).eq('name', 'lexware').maybeSingle();
+  if (!data) return null;
+  try { return await openSecret(String(data.value_enc)); } catch { return null; }
+}
+
+async function lexwareUpload(admin: ReturnType<typeof createClient>, owner: string, body: { key?: string; filename?: string; mime?: string; data?: string }) {
+  let key = await lexKeyGet(admin, owner);
+  // Übergang: ältere App-Stände schicken den Schlüssel noch mit – dann sofort verschlüsselt ablegen
+  if (!key && body.key && String(body.key).trim().length >= 10) { key = String(body.key).trim(); await lexKeySet(admin, owner, key); }
+  if (!key || key.length < 10) return json({ error: 'API-Schlüssel fehlt', code: 'bad_key' }, 400);
   const mime = TYPES.has(String(body.mime)) ? String(body.mime) : 'application/pdf';
   let bytes: Uint8Array;
   try { bytes = b64ToBytes(String(body.data || '')); } catch { return json({ error: 'Datei unlesbar', code: 'bad_file' }, 400); }
@@ -94,14 +139,96 @@ async function sendTo(admin: ReturnType<typeof createClient>, s: Sub, payload: u
   }
 }
 const adminClient = () => createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-async function pushDaily() {
-  if (!vapid()) return json({ error: 'VAPID fehlt', code: 'not_configured' }, 503);
+/** Aufgaben parallel, aber begrenzt abarbeiten (viele Geräte/Konten ohne Zeitüberschreitung) */
+async function pool<T>(items: T[], n: number, fnc: (x: T) => Promise<void>) {
+  let i = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const x = items[i++]; try { await fnc(x); } catch { /* nächster */ } } }));
+}
+async function pushDaily(admin: ReturnType<typeof createClient>) {
+  if (!vapid()) return { sent: 0, failed: 0, skipped: 'VAPID fehlt' };
+  let ok = 0, fail = 0, from = 0;
+  for (;;) {
+    const { data: subs, error } = await admin.from('push_subs').select('endpoint,p256dh,auth,lang,space,owner').order('endpoint').range(from, from + 999);
+    if (error) throw error;
+    await pool((subs || []) as Sub[], 20, async (s) => { (await sendTo(admin, s, await summary(admin, s))) ? ok++ : fail++; });
+    if (!subs || subs.length < 1000) break;
+    from += 1000;
+  }
+  return { sent: ok, failed: fail };
+}
+
+/* ---------- Probezeit: Nachrichten (Push + E-Mail) und Löschung ---------- */
+type Stage = 'warn' | 'end' | 'delete_warn';
+const TRIAL_TEXT: Record<string, Record<Stage, [string, string]> & { cta: string }> = {
+  de: { warn: ['Dein Testzugang endet in 7 Tagen', 'Möchtest du eOffis weiter nutzen? Schließ jetzt ein Abo ab – deine Unterlagen bleiben vollständig erhalten.'],
+    end: ['Dein Testzugang ist abgelaufen', 'Deine Unterlagen kannst du noch 30 Tage ansehen und herunterladen. Mit einem Abo geht es sofort weiter.'],
+    delete_warn: ['Deine Unterlagen werden in 7 Tagen gelöscht', 'Lade wichtige Unterlagen herunter oder schließ ein Abo ab, damit nichts verloren geht.'], cta: 'Jetzt Abo abschließen' },
+  tr: { warn: ['Deneme süreniz 7 gün içinde bitiyor', 'eOffis’i kullanmaya devam etmek ister misiniz? Şimdi abone olun – belgeleriniz eksiksiz korunur.'],
+    end: ['Deneme süreniz sona erdi', 'Belgelerinizi 30 gün daha görüntüleyip indirebilirsiniz. Abonelikle hemen devam edersiniz.'],
+    delete_warn: ['Belgeleriniz 7 gün içinde silinecek', 'Önemli belgeleri indirin veya abone olun, böylece hiçbir şey kaybolmaz.'], cta: 'Şimdi abone ol' },
+  pl: { warn: ['Okres testowy kończy się za 7 dni', 'Chcesz dalej korzystać z eOffis? Wykup teraz abonament – Twoje dokumenty pozostaną w całości.'],
+    end: ['Okres testowy dobiegł końca', 'Dokumenty możesz jeszcze przez 30 dni przeglądać i pobierać. Z abonamentem działasz dalej od razu.'],
+    delete_warn: ['Twoje dokumenty zostaną usunięte za 7 dni', 'Pobierz ważne dokumenty lub wykup abonament, aby nic nie przepadło.'], cta: 'Wykup abonament' },
+  ru: { warn: ['Пробный период закончится через 7 дней', 'Хотите и дальше пользоваться eOffis? Оформите подписку сейчас – все документы сохранятся.'],
+    end: ['Пробный период закончился', 'Ещё 30 дней вы можете просматривать и скачивать документы. С подпиской работа продолжится сразу.'],
+    delete_warn: ['Ваши документы будут удалены через 7 дней', 'Скачайте важные документы или оформите подписку, чтобы ничего не потерять.'], cta: 'Оформить подписку' },
+  ar: { warn: ['تنتهي فترتك التجريبية خلال 7 أيام', 'هل تريد مواصلة استخدام eOffis؟ اشترك الآن – تبقى مستنداتك محفوظة بالكامل.'],
+    end: ['انتهت فترتك التجريبية', 'يمكنك عرض مستنداتك وتنزيلها لمدة 30 يومًا أخرى. مع الاشتراك تتابع فورًا.'],
+    delete_warn: ['سيتم حذف مستنداتك خلال 7 أيام', 'نزّل المستندات المهمة أو اشترك حتى لا يضيع شيء.'], cta: 'اشترك الآن' },
+  ro: { warn: ['Perioada de test se încheie în 7 zile', 'Vrei să folosești în continuare eOffis? Abonează-te acum – documentele tale rămân complet păstrate.'],
+    end: ['Perioada de test a expirat', 'Îți poți vedea și descărca documentele încă 30 de zile. Cu un abonament continui imediat.'],
+    delete_warn: ['Documentele tale vor fi șterse în 7 zile', 'Descarcă documentele importante sau abonează-te, ca să nu se piardă nimic.'], cta: 'Abonează-te acum' },
+};
+const SITE = () => (Deno.env.get('SITE_URL') || 'https://dgnysr.github.io/eoffis/').replace(/\/?$/, '/');
+const escHtml = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
+async function sendMail(to: string, subject: string, text: string, cta: string, url: string) {
+  const key = Deno.env.get('BREVO_API_KEY'), from = Deno.env.get('MAIL_FROM');
+  if (!key || !from) return false;
+  const m = from.match(/^(.*)<(.+)>$/);
+  const sender = m ? { name: m[1].trim(), email: m[2].trim() } : { name: 'eOffis', email: from.trim() };
+  const html = `<div style="font:16px/1.5 system-ui,sans-serif;max-width:520px;margin:auto;padding:24px;color:#1c1c1e"><h2 style="margin:0 0 12px">${escHtml(subject)}</h2><p>${escHtml(text)}</p><p style="margin:24px 0"><a href="${url}" style="background:#0a66d8;color:#fff;padding:14px 22px;border-radius:12px;text-decoration:none;font-weight:600">${escHtml(cta)}</a></p><p style="color:#6e6e73;font-size:13px">eOffis – dein digitaler Büroassistent</p></div>`;
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST', headers: { 'api-key': key, 'content-type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify({ sender, to: [{ email: to }], subject, htmlContent: html, textContent: `${text}\n\n${cta}: ${url}` }),
+  });
+  return res.ok;
+}
+async function userLang(admin: ReturnType<typeof createClient>, owner: string) {
+  const { data } = await admin.from('kv').select('data').eq('path', `data/users/${owner}/main`).maybeSingle();
+  const l = data && (data.data as Record<string, string>).language;
+  return l && TRIAL_TEXT[l] ? l : 'de';
+}
+async function trialDaily(admin: ReturnType<typeof createClient>) {
+  const { data: due, error } = await admin.rpc('eoffis_trial_due');
+  if (error) throw error;
+  const rows = ((due || []) as { owner: string; email: string | null; anon: boolean; stage: string | null }[]).filter((r) => r.stage);
+  const stats = { warn: 0, end: 0, delete_warn: 0, deleted: 0, mails: 0, pushes: 0 };
+  await pool(rows, 10, async (r) => {
+    if (r.stage === 'delete') {
+      // Freigabe-Dateien zuerst, dann das Konto (alle Tabellen hängen per „on delete cascade“ daran)
+      const { data: files } = await admin.storage.from('shares').list(r.owner, { limit: 1000 });
+      if (files && files.length) await admin.storage.from('shares').remove(files.map((f: { name: string }) => `${r.owner}/${f.name}`));
+      const { error: delErr } = await admin.auth.admin.deleteUser(r.owner);
+      if (!delErr) stats.deleted++;
+      return;
+    }
+    const stage = r.stage as Stage, lang = await userLang(admin, r.owner), T = TRIAL_TEXT[lang];
+    const [title, body] = T[stage], url = SITE() + '?abo=1';
+    const { data: subs } = await admin.from('push_subs').select('endpoint,p256dh,auth,lang,space,owner').eq('owner', r.owner);
+    if (vapid()) for (const s of (subs || []) as Sub[]) { if (await sendTo(admin, s, { title, body, lang, tag: 'eoffis-abo', url: './?abo=1' })) stats.pushes++; }
+    if (r.email) { try { if (await sendMail(r.email, title, body, T.cta, url)) stats.mails++; } catch { /* nächster Versuch nicht nötig */ } }
+    const col = stage === 'warn' ? 'notified_warn' : stage === 'end' ? 'notified_end' : 'notified_delwarn';
+    await admin.from('subscriptions').upsert({ owner: r.owner, [col]: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: 'owner' });
+    stats[stage]++;
+  });
+  return stats;
+}
+async function daily() {
   const admin = adminClient();
-  const { data: subs, error } = await admin.from('push_subs').select('endpoint,p256dh,auth,lang,space,owner').limit(10000);
-  if (error) return json({ error: error.message }, 500);
-  let ok = 0, fail = 0;
-  for (const s of (subs || []) as Sub[]) { (await sendTo(admin, s, await summary(admin, s))) ? ok++ : fail++; }
-  return json({ sent: ok, failed: fail });
+  const out: Record<string, unknown> = {};
+  try { out.trial = await trialDaily(admin); } catch (e) { out.trialError = (e as Error).message; }
+  try { out.push = await pushDaily(admin); } catch (e) { out.pushError = (e as Error).message; }
+  return json(out);
 }
 
 Deno.serve(async (req) => {
@@ -109,7 +236,7 @@ Deno.serve(async (req) => {
   // Täglicher Aufruf durch pg_cron (ohne Anmeldung, aber mit geheimem Kennwort)
   const cronSecret = Deno.env.get('CRON_SECRET');
   if (cronSecret && req.headers.get('x-cron-secret') === cronSecret) {
-    try { const b = await req.json(); if (b.action === 'push_daily') return await pushDaily(); } catch { /* weiter */ }
+    try { const b = await req.json(); if (b.action === 'daily' || b.action === 'push_daily') return await daily(); } catch { /* weiter */ }
     return json({ error: 'Unbekannte Aktion' }, 400);
   }
   // Öffentlich: Freigabe-Link öffnen (Steuerberater ohne Konto). Der Server liefert nur verschlüsselte Daten;
@@ -137,7 +264,13 @@ Deno.serve(async (req) => {
   try { body = await req.json(); } catch { return json({ error: 'Ungültige Anfrage' }, 400); }
   try {
     switch (body.action) {
-      case 'lexware_upload': return await lexwareUpload(body as never);
+      case 'lexware_upload': return await lexwareUpload(adminClient(), u.user.id, body as never);
+      case 'lexware_key_set': return await lexKeySet(adminClient(), u.user.id, body.key);
+      case 'lexware_key_delete': { await adminClient().from('secrets').delete().eq('owner', u.user.id).eq('name', 'lexware'); return json({ ok: true }); }
+      case 'lexware_key_status': {
+        const { data } = await adminClient().from('secrets').select('hint').eq('owner', u.user.id).eq('name', 'lexware').maybeSingle();
+        return json({ set: !!data, hint: data ? data.hint : null });
+      }
       case 'push_subscribe': {
         const sub = (body.sub || {}) as { endpoint?: string; keys?: { p256dh?: string; auth?: string } };
         if (!sub.endpoint || !/^https:\/\//.test(sub.endpoint) || !sub.keys?.p256dh || !sub.keys?.auth) return json({ error: 'Ungültiges Gerät' }, 400);

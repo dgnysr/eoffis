@@ -12,12 +12,22 @@ const AI_SRC = H.match(/const AI = \(prompt\) => \{[\s\S]*?\n  \};/)[0];
 
 /** Speicher wie Tabelle public.kv + kv_lease mit RLS (nur eigener Pfad data/users/<uid>/…) */
 class KvStore {
-  constructor() { this.rows = new Map(); this.leases = new Map(); this.calls = 0; }
+  constructor() { this.rows = new Map(); this.leases = new Map(); this.calls = 0; this.account = {}; this.aboRequests = 0; }
+  /** Kontostatus wie public.eoffis_account (Probezeit, Speicher); Tests setzen this.account.state / quota / used */
+  acct(uid, anon) {
+    const used = this.account.used != null ? this.account.used : [...this.rows.values()].filter((r) => r.owner === uid).reduce((n, r) => n + r.path.length + Buffer.byteLength(JSON.stringify(r.data)), 0);
+    const day = 86400000, start = Date.now() - (this.account.day || 1) * day;
+    return { state: this.account.state || 'trial', anon: !!anon, has_email: !anon, trial_start: new Date(start).toISOString(),
+      warn_at: new Date(start + 28 * day).toISOString(), trial_end: new Date(start + 35 * day).toISOString(), delete_at: new Date(start + 65 * day).toISOString(),
+      used_bytes: used, quota_bytes: this.account.quota || (anon ? 20 : 200) * 1048576, abo_requested: !!this.account.abo_requested };
+  }
   mine(uid, p) { const s = p.split('/'); return s[0] === 'data' && s[1] === 'users' && s[2] === uid; }
   val(row, col) { if (col === 'path') return row.path; if (col === 'parent') return row.parent; const m = col.match(/^data->>(.+)$/); if (m) { const v = row.data[m[1]]; return v === undefined || v === null ? null : typeof v === 'object' ? JSON.stringify(v) : String(v); } throw new Error('col ' + col); }
   op(uid, a) {
     this.calls++;
     if (!uid) return { error: { message: 'JWT expired' } };
+    if (a.kind === 'rpc' && a.fn === 'account_info') return { data: this.account.missing ? null : this.acct(uid, a.anon) };
+    if (a.kind === 'rpc' && a.fn === 'abo_request') { this.aboRequests++; this.account.abo_requested = true; return { data: this.acct(uid, a.anon) }; }
     if (a.kind === 'rpc') {
       if (a.fn !== 'kv_acquire') return { error: { message: 'unknown rpc' } };
       if (!this.mine(uid, a.args.p_path)) return { error: { message: 'not allowed' } };
@@ -30,6 +40,9 @@ class KvStore {
     if (a.kind === 'upsert') {
       const r = a.row; if (!this.mine(uid, r.path)) return { error: { message: 'new row violates row-level security policy for table "kv"' } };
       if (Buffer.byteLength(JSON.stringify(r.data)) > 262144) return { error: { message: 'new row for relation "kv" violates check constraint "kv_size"' } };
+      const st = this.account.state; if (st === 'readonly' || st === 'expired') return { error: { message: 'eoffis_read_only', code: 'P0001' } };
+      const A = this.acct(uid, a.anon), old = this.rows.get(r.path), delta = r.path.length + Buffer.byteLength(JSON.stringify(r.data)) - (old ? old.path.length + Buffer.byteLength(JSON.stringify(old.data)) : 0);
+      if (delta > 0 && A.used_bytes + delta > A.quota_bytes) return { error: { message: 'eoffis_quota', code: 'P0001' } };
       if (!this.rows.has(r.path) && this.rows.size >= (this.cap || 1e9)) return { error: { message: 'quota' } };
       this.rows.set(r.path, { path: r.path, owner: uid, parent: r.path.replace(/\/[^/]+$/, ''), data: JSON.parse(JSON.stringify(r.data)) });
       return { data: null };
@@ -60,12 +73,14 @@ const SBMOCK = `(() => {
     onAuthStateChange: (f) => { subs.push(f); return { data: { subscription: { unsubscribe() {} } } }; },
     signInWithPassword: async ({ email, password }) => { if (password !== 'richtig123') return { data: {}, error: { message: 'Invalid login credentials' } }; const s = mk(email); store(s); emit('SIGNED_IN', s); return { data: { session: s }, error: null }; },
     signUp: async ({ email }) => ({ data: { session: null, user: { email } }, error: null }),
-    signInAnonymously: async () => { if (cfg.noAnon) return { data: {}, error: { message: 'Anonymous sign-ins are disabled' } }; const s = mk(null, true); store(s); emit('SIGNED_IN', s); return { data: { session: s }, error: null }; },
+    signInAnonymously: async (o) => { window.__anonOpts = o || null; if (cfg.captcha && !(o && o.options && o.options.captchaToken)) return { data: {}, error: { message: 'captcha verification process failed' } }; if (cfg.noAnon) return { data: {}, error: { message: 'Anonymous sign-ins are disabled' } }; const s = mk(null, true); store(s); emit('SIGNED_IN', s); return { data: { session: s }, error: null }; },
     resetPasswordForEmail: async () => ({ data: {}, error: null }),
-    updateUser: async () => ({ data: {}, error: null }),
+    updateUser: async (attrs) => { window.__updateUser = attrs; if (attrs && attrs.email) { if (attrs.email === 'vergeben@example.com') return { data: {}, error: { message: 'A user with this email address has already been registered' } }; const s = load(); if (s) { s.user.new_email = attrs.email; store(s); emit('USER_UPDATED', s); } } return { data: {}, error: null }; },
+    linkIdentity: async (o) => { window.__linked = o.provider; return { data: {}, error: null }; },
+    signInWithOAuth: async (o) => { window.__oauth = o.provider; return { data: {}, error: null }; },
     signOut: async () => { store(null); emit('SIGNED_OUT', null); return { error: null }; },
   };
-  const call = (a) => { const s = load(); return window.__sb(s ? s.user.id : null, a); };
+  const call = (a) => { const s = load(); return window.__sb(s ? s.user.id : null, Object.assign({ anon: !!(s && s.user.is_anonymous) }, a)); };
   function builder(table) {
     const st = { filters: [], order: [], limit: 0 };
     let kind = 'select', row = null, single = false;
@@ -121,7 +136,20 @@ async function newPage(browser, store, cfg) {
   await page.route(/supabase-js/, (r) => r.fulfill({ body: SBMOCK, contentType: 'text/javascript' }));
   await page.route('https://eoffis.test/**', (r) => {
     const u = new URL(r.request().url()); let f = u.pathname.replace(/^\//, '') || 'index.html';
-    if (f === 'config.js') return r.fulfill({ body: cfg.noConfig ? '' : "window.EOFFIS_CONFIG={supabaseUrl:'https://proj.supabase.test',supabaseAnonKey:'anon'};", contentType: 'text/javascript' });
+    if (f.startsWith('vendor/')) {
+      const n = f.slice(7), js = (b) => r.fulfill({ body: b, contentType: 'text/javascript' });
+      if (n === 'supabase.min.js') return js(SBMOCK);
+      if (n === 'pdf.min.js') return js(PDFJS_STUB);
+      if (n === 'jspdf.umd.min.js') return js(JSPDF_STUB);
+      if (n === 'jszip.min.js') return js(fs.readFileSync('/opt/npm-tools/node_modules/jszip/dist/jszip.min.js'));
+      if (n === 'pdf-lib.min.js') return js(fs.readFileSync('/opt/npm-tools/node_modules/pdf-lib/dist/pdf-lib.min.js'));
+      return js('');
+    }
+    if (f.endsWith('.html') && !cfg.realLibs) {
+      const html = fs.readFileSync(path.join(SITE, f), 'utf8').replace(/ integrity="[^"]+"/g, '').replace(/https:\/\/[a-z0-9-]+\.supabase\.co/g, 'https://proj.supabase.test').replace(/wss:\/\/[a-z0-9-]+\.supabase\.co/g, 'wss://proj.supabase.test');
+      return r.fulfill({ body: html, contentType: 'text/html' });
+    }
+    if (f === 'config.js') return r.fulfill({ body: cfg.noConfig ? '' : "window.EOFFIS_CONFIG={supabaseUrl:'https://proj.supabase.test',supabaseAnonKey:'anon'" + (cfg.oauth ? ",oauth:" + JSON.stringify(cfg.oauth) : '') + (cfg.captcha ? ",turnstileSiteKey:'1x00000000000000000000AA'" : '') + "};", contentType: 'text/javascript' });
     const p = path.join(SITE, f); if (!fs.existsSync(p)) return r.fulfill({ status: 404, body: 'nf' });
     const type = f.endsWith('.js') ? 'text/javascript' : f.endsWith('.css') ? 'text/css' : f.endsWith('.svg') ? 'image/svg+xml' : f.endsWith('.webmanifest') ? 'application/manifest+json' : 'text/html';
     r.fulfill({ body: fs.readFileSync(p), contentType: type });
@@ -133,6 +161,9 @@ async function newPage(browser, store, cfg) {
     if (!/Bearer tok-/.test(auth)) return r.fulfill({ status: 401, body: JSON.stringify({ error: 'Nicht angemeldet', code: 'not_granted' }), contentType: 'application/json' });
     if (cfg.aiFail) return r.fulfill({ status: cfg.aiFail === 'rate_limited' ? 429 : 503, body: JSON.stringify({ error: cfg.aiFail === 'not_configured' ? 'KI ist noch nicht eingerichtet (ANTHROPIC_API_KEY fehlt).' : 'Tageslimit erreicht', code: cfg.aiFail }), contentType: 'application/json' });
     (store.aiLog || (store.aiLog = [])).push({ images: (body.images || []).length, json: body.json, len: body.prompt.length });
+    if (body.prompt.length > 100000 || (body.images || []).length > 20 || (body.images || []).some((i) => (i.data || '').length > 1500000)) { (store.aiTooLarge = (store.aiTooLarge || 0) + 1); return r.fulfill({ status: 413, body: JSON.stringify({ error: 'Anfrage zu groß', code: 'too_large' }), contentType: 'application/json' }); }
+    if (cfg.aiAnonLimit || store.aiAnonLimit) return r.fulfill({ status: 429, body: JSON.stringify({ error: 'Ohne E-Mail sind 5 KI-Auswertungen pro Tag möglich. Mit deiner E-Mail-Adresse nutzt du den vollen Umfang.', code: 'rate_limited', anon: true }), contentType: 'application/json' });
+    if (store.account && (store.account.state === 'readonly' || store.account.state === 'expired')) return r.fulfill({ status: 403, body: JSON.stringify({ error: 'Deine Probezeit ist abgelaufen.', code: 'read_only' }), contentType: 'application/json' });
     const out = body.json ? { value: AI.call({ cfg }, body.prompt) } : { text: 'Übersetzung: Dies ist eine Testübersetzung.' };
     r.fulfill({ body: JSON.stringify(out), contentType: 'application/json' });
   });

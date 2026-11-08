@@ -13,76 +13,118 @@
   const ready = new Promise((r) => { resolveReady = r; });
 
   /* ---------- Anmeldung ---------- */
+  // Start ohne E-Mail („Kostenlos testen“, 4 Wochen voller Umfang); E-Mail wird erst gefragt, wenn sie dem Kunden etwas bringt.
   const T = {
     title: 'Willkommen bei eOffis', sub: 'Dein digitaler Büroassistent', email: 'E-Mail', pw: 'Passwort (mind. 8 Zeichen)',
-    login: 'Anmelden', signup: 'Neues Konto registrieren', demo: 'Ohne Konto testen', demoHint: 'Eigener, leerer Testbereich ohne Anmeldung – nur du siehst deine Unterlagen. Daten werden nach einiger Zeit gelöscht.',
+    trial: 'Kostenlos testen', trialHint: '4 Wochen voller Umfang · ohne Anmeldung · endet automatisch',
+    or: 'Bereits Kunde?', login: 'Anmelden', signup: 'Neues Konto registrieren', demo: 'Kostenlos testen',
+    google: 'Mit Google fortfahren', apple: 'Mit Apple fortfahren',
     forgot: 'Passwort vergessen?', checkMail: 'Fast geschafft: Bitte bestätige deine E-Mail-Adresse über den Link in der Mail, dann hier anmelden.',
     resetSent: 'Wir haben dir eine Mail zum Zurücksetzen geschickt.', newPw: 'Neues Passwort festlegen', savePw: 'Passwort speichern',
+    setPw: 'Passwort festlegen', setPwHint: 'Dein Konto ist gesichert. Mit einem Passwort meldest du dich künftig auch auf anderen Geräten an.', later: 'Später',
     pwSaved: 'Passwort gespeichert.', notConfigured: 'Die App ist noch nicht mit der Datenbank verbunden (config.js fehlt).',
     errLogin: 'Anmeldung fehlgeschlagen. E-Mail oder Passwort prüfen.', errShort: 'Bitte E-Mail und ein Passwort mit mindestens 8 Zeichen eingeben.',
-    errDemo: 'Demo konnte nicht gestartet werden. (Anonyme Anmeldung in Supabase einschalten.)', wait: 'Bitte warten …',
+    errDemo: 'Der Test konnte nicht gestartet werden. Bitte später erneut versuchen.', captcha: 'Bitte kurz bestätigen, dass du kein Roboter bist.',
+    wait: 'Bitte warten …',
   };
+  const OAUTH = (Array.isArray(CFG.oauth) ? CFG.oauth : []).filter((p) => p === 'google' || p === 'apple');
+  const here = () => location.origin + location.pathname;
+  /* Roboter-Prüfung (Cloudflare Turnstile) – nur aktiv, wenn turnstileSiteKey in config.js steht */
+  let capToken = '', capWidget = null, capLoading = null;
+  function captchaMount(box) {
+    if (!CFG.turnstileSiteKey || !box) return;
+    const draw = () => { if (!window.turnstile) return; capToken = ''; capWidget = window.turnstile.render(box, { sitekey: CFG.turnstileSiteKey, language: 'de', callback: (tk) => { capToken = tk; }, 'expired-callback': () => { capToken = ''; }, 'error-callback': () => { capToken = ''; } }); };
+    if (window.turnstile) return draw();
+    if (!capLoading) capLoading = new Promise((res) => { const sc = document.createElement('script'); sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'; sc.async = true; sc.onload = res; sc.onerror = res; document.head.appendChild(sc); });
+    capLoading.then(draw);
+  }
+  const capOpts = () => (CFG.turnstileSiteKey ? { captchaToken: capToken } : {});
+  const capReset = () => { capToken = ''; try { if (window.turnstile && capWidget !== null) window.turnstile.reset(capWidget); } catch { /* egal */ } };
+  const capMissing = () => !!CFG.turnstileSiteKey && !capToken;
+  const oauthBtns = (prefix) => OAUTH.map((p) => `<button class="eoA-btn oa ${p}" id="${prefix}-${p}">${p === 'apple' ? '' : '<b>G</b> '}${p === 'apple' ? T.apple : T.google}</button>`).join('');
+
   function overlay(mode, note, isError) {
     let el = document.getElementById('eoAuth');
     if (!el) { el = document.createElement('div'); el.id = 'eoAuth'; document.body.appendChild(el); }
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const pwMode = mode === 'reset' || mode === 'setpw';
     el.innerHTML = `<div class="eoA-card" role="dialog" aria-labelledby="eoA-t">
       <div class="eoA-logo"><img src="icon.svg" alt="" width="56" height="56"><span>eOffis</span></div>
-      <h1 id="eoA-t">${esc(mode === 'reset' ? T.newPw : T.title)}</h1>
-      ${mode === 'reset' ? '' : `<p class="eoA-sub">${esc(T.sub)}</p>`}
+      <h1 id="eoA-t">${esc(mode === 'reset' ? T.newPw : mode === 'setpw' ? T.setPw : T.title)}</h1>
+      ${pwMode ? (mode === 'setpw' ? `<p class="eoA-sub">${esc(T.setPwHint)}</p>` : '') : `<p class="eoA-sub">${esc(T.sub)}</p>`}
       ${note ? `<p class="eoA-note${isError ? ' err' : ''}" role="status">${esc(note)}</p>` : ''}
-      ${!sb ? '' : mode === 'reset' ? `
+      ${!sb ? '' : pwMode ? `
         <label>${esc(T.pw)}<input id="eoA-pw" type="password" autocomplete="new-password" minlength="8"></label>
-        <button class="eoA-btn" id="eoA-save">${esc(T.savePw)}</button>` : `
+        <button class="eoA-btn" id="eoA-save">${esc(T.savePw)}</button>
+        ${mode === 'setpw' ? `<button class="eoA-link" id="eoA-skip">${esc(T.later)}</button>` : ''}` : `
+        <div class="eoA-demo top"><button class="eoA-btn" id="eoA-demo">${esc(T.trial)}</button><p>${esc(T.trialHint)}</p></div>
+        <div id="eoA-cap" class="eoA-cap"></div>
+        ${oauthBtns('eoA')}
+        <p class="eoA-or">${esc(T.or)}</p>
         <label>${esc(T.email)}<input id="eoA-mail" type="email" autocomplete="username" inputmode="email"></label>
         <label>${esc(T.pw)}<input id="eoA-pw" type="password" autocomplete="current-password"></label>
-        <button class="eoA-btn" id="eoA-login">${esc(T.login)}</button>
-        <button class="eoA-btn sec" id="eoA-signup">${esc(T.signup)}</button>
-        <button class="eoA-link" id="eoA-forgot">${esc(T.forgot)}</button>
-        <div class="eoA-demo"><button class="eoA-btn ghost" id="eoA-demo">${esc(T.demo)}</button><p>${esc(T.demoHint)}</p></div>`}
+        <button class="eoA-btn sec" id="eoA-login">${esc(T.login)}</button>
+        <button class="eoA-btn ghost" id="eoA-signup">${esc(T.signup)}</button>
+        <button class="eoA-link" id="eoA-forgot">${esc(T.forgot)}</button>`}
     </div>`;
     const $ = (id) => document.getElementById(id);
+    captchaMount($('eoA-cap'));
     const val = () => [($('eoA-mail') || {}).value?.trim() || '', ($('eoA-pw') || {}).value || ''];
     const busy = async (fn) => { el.querySelectorAll('button').forEach((b) => (b.disabled = true)); try { await fn(); } finally { el.querySelectorAll('button').forEach((b) => (b.disabled = false)); } };
+    const needCap = (m) => { if (!capMissing()) return false; overlay(m || 'login', T.captcha, true); return true; };
     if ($('eoA-login')) $('eoA-login').onclick = () => busy(async () => {
       const [email, password] = val(); if (!email || password.length < 8) return overlay('login', T.errShort, true);
-      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (needCap()) return;
+      const { error } = await sb.auth.signInWithPassword({ email, password, options: capOpts() }); capReset();
       if (error) overlay('login', /confirm/i.test(error.message) ? T.checkMail : T.errLogin, true);
     });
     if ($('eoA-signup')) $('eoA-signup').onclick = () => busy(async () => {
       const [email, password] = val(); if (!email || password.length < 8) return overlay('login', T.errShort, true);
-      const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname } });
+      if (needCap()) return;
+      const { data, error } = await sb.auth.signUp({ email, password, options: Object.assign({ emailRedirectTo: here() }, capOpts()) }); capReset();
       if (error) return overlay('login', error.message, true);
       if (!data.session) overlay('login', T.checkMail);
     });
     if ($('eoA-forgot')) $('eoA-forgot').onclick = () => busy(async () => {
       const [email] = val(); if (!email) return overlay('login', T.email + '?', true);
-      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+      if (needCap()) return;
+      const { error } = await sb.auth.resetPasswordForEmail(email, Object.assign({ redirectTo: here() }, capOpts())); capReset();
       overlay('login', error ? error.message : T.resetSent, !!error);
     });
     if ($('eoA-demo')) $('eoA-demo').onclick = () => busy(async () => {
-      try { localStorage.setItem('eoffis.space', 'demo'); } catch { /* egal */ }
-      const { error } = await sb.auth.signInAnonymously();
-      if (error) overlay('login', T.errDemo, true);
+      if (needCap()) return;
+      try { localStorage.removeItem('eoffis.space'); } catch { /* egal */ }
+      const { error } = await sb.auth.signInAnonymously({ options: capOpts() }); capReset();
+      if (error) overlay('login', /captcha/i.test(error.message) ? T.captcha : T.errDemo, true);
+    });
+    for (const p of OAUTH) if ($('eoA-' + p)) $('eoA-' + p).onclick = () => busy(async () => {
+      const { error } = await sb.auth.signInWithOAuth({ provider: p, options: { redirectTo: here() } });
+      if (error) overlay('login', error.message, true);
     });
     if ($('eoA-save')) $('eoA-save').onclick = () => busy(async () => {
-      const [, password] = val(); if (password.length < 8) return overlay('reset', T.errShort, true);
+      const [, password] = val(); if (password.length < 8) return overlay(mode, T.errShort, true);
       const { error } = await sb.auth.updateUser({ password });
-      if (error) overlay('reset', error.message, true); else { hideOverlay(); }
+      if (error) overlay(mode, error.message, true); else { try { localStorage.removeItem('eoffis.setpw'); } catch { /* egal */ } hideOverlay(); }
     });
+    if ($('eoA-skip')) $('eoA-skip').onclick = () => { try { localStorage.removeItem('eoffis.setpw'); } catch { /* egal */ } hideOverlay(); };
   }
   function hideOverlay() { const el = document.getElementById('eoAuth'); if (el) el.remove(); }
+  // Nach dem Bestätigungslink (Konto gesichert): einmal anbieten, ein Passwort festzulegen
+  function maybeAskPassword(s) {
+    let want = false; try { want = localStorage.getItem('eoffis.setpw') === '1'; } catch { /* egal */ }
+    if (want && s && s.user && s.user.email && !s.user.is_anonymous) setTimeout(() => overlay('setpw'), 300);
+  }
 
   if (!sb) { document.addEventListener('DOMContentLoaded', () => overlay('login', T.notConfigured, true)); }
   else {
     sb.auth.onAuthStateChange((event, s) => {
       if (event === 'PASSWORD_RECOVERY') { overlay('reset'); return; }
-      if (s && !session) { session = s; hideOverlay(); resolveReady(); }
-      else if (s) session = s;
+      if (s && !session) { session = s; hideOverlay(); resolveReady(); maybeAskPassword(s); }
+      else if (s) { session = s; if (event === 'USER_UPDATED' || event === 'SIGNED_IN') { maybeAskPassword(s); window.dispatchEvent(new Event('eoffis-account')); } }
       if (event === 'SIGNED_OUT') location.reload();
     });
     sb.auth.getSession().then(({ data }) => {
-      if (data.session) { session = data.session; resolveReady(); }
+      if (data.session) { session = data.session; resolveReady(); maybeAskPassword(data.session); }
       else if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => !session && overlay('login'));
       else overlay('login');
     });
@@ -92,7 +134,8 @@
   const fail = (error) => {
     const msg = String((error && error.message) || error);
     const e = new Error(msg);
-    e.code = /kv_size|too large/i.test(msg) ? 'invalid_argument' : /row-level security|not allowed|permission/i.test(msg) ? 'permission_denied'
+    e.code = /eoffis_read_only/.test(msg) ? 'read_only' : /eoffis_quota/.test(msg) ? 'quota'
+      : /kv_size|too large/i.test(msg) ? 'invalid_argument' : /row-level security|not allowed|permission/i.test(msg) ? 'permission_denied'
       : /Failed to fetch|NetworkError|network/i.test(msg) ? 'unavailable' : 'internal';
     if (e.code === 'invalid_argument') e.message = 'document too large';
     throw e;
@@ -162,7 +205,7 @@
     let body = null; try { body = await res.json(); } catch { /* leer */ }
     if (res.status === 404) { const e = new Error('KI ist noch nicht eingerichtet (Supabase-Funktion „ai“ fehlt).'); e.code = 'not_configured'; throw e; }
     if (body && /credit balance is too low/i.test(body.error || '')) { const e = new Error('Das KI-Guthaben bei Anthropic ist leer. Bitte unter console.anthropic.com → Billing Guthaben aufladen.'); e.code = 'not_configured'; throw e; }
-    if (!res.ok || !body) { const e = new Error((body && body.error) || ('KI-Fehler ' + res.status)); e.code = (body && body.code) || (res.status === 429 ? 'rate_limited' : 'unavailable'); throw e; }
+    if (!res.ok || !body) { const e = new Error((body && body.error) || ('KI-Fehler ' + res.status)); e.code = (body && body.code) || (res.status === 429 ? 'rate_limited' : 'unavailable'); e.anon = !!(body && body.anon); throw e; }
     return body;
   }
   const sample = async (input, opts) => {
@@ -171,7 +214,7 @@
     return { text, truncated: false };
   };
   sample.json = async (input, opts) => (await ai(input, opts, true)).value;
-  sample.limits = async () => ({ maxPromptBytes: 200000, images: { maxCount: 20, maxInputBytes: 20e6, mediaTypes: ['image/jpeg', 'image/png'] } });
+  sample.limits = async () => ({ maxPromptBytes: 100000, images: { maxCount: 20, maxInputBytes: 20e6, mediaTypes: ['image/jpeg', 'image/png'] } });
 
   /* ---------- Dateien speichern (normaler Browser-Download) ---------- */
   const downloads = {
@@ -260,12 +303,30 @@
     },
   } : null;
 
+  /* ---------- Konto: Probezeit, Speicher, Konto sichern, Abo ---------- */
+  const account = {
+    providers: OAUTH,
+    async info() { if (!sb) return null; const { data, error } = await sb.rpc('account_info'); if (error) return null; return data || null; },
+    async aboRequest() { const { data, error } = await sb.rpc('abo_request'); if (error) throw error; return data; },
+    /** E-Mail an den Testzugang hängen: Daten bleiben erhalten, nach dem Bestätigungslink voller Umfang */
+    async linkEmail(email) {
+      const { error } = await sb.auth.updateUser({ email }, { emailRedirectTo: here() });
+      if (error) throw Object.assign(new Error(error.message), { code: /already|registered|exists/i.test(error.message) ? 'email_taken' : 'link_failed' });
+      try { localStorage.setItem('eoffis.setpw', '1'); } catch { /* egal */ }
+    },
+    async linkOAuth(provider) {
+      const { error } = await sb.auth.linkIdentity({ provider, options: { redirectTo: here() } });
+      if (error) throw Object.assign(new Error(error.message), { code: 'link_failed' });
+    },
+  };
+
   window.EOFFIS_HOST = {
-    fn, push, share,
+    fn, push, share, account,
     siteUrl: location.origin + location.pathname,
     logout: async () => { try { localStorage.removeItem('eoffis.space'); } catch { /* egal */ } await sb.auth.signOut(); },
     email: () => (session && session.user && session.user.email) || null,
     isDemo: () => !!(session && session.user && session.user.is_anonymous),
+    pendingEmail: () => (session && session.user && session.user.new_email) || null,
   };
   window.claude = {
     use: async (name) => {

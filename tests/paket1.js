@@ -225,8 +225,11 @@ const LETTER = {
     assert(/nicht angenommen/.test(await modal()), 'Fehler „Schlüssel“ fehlt');
     api.mode = 'missing'; await p.click('[data-a=accApi]'); await p.waitForFunction(() => S.accM && /nicht eingerichtet/.test(S.accM.err || ''));
     api.mode = 'ok'; await p.click('[data-a=accApi]'); await p.waitForFunction((i) => (getDoc(i).transfers || []).some((x) => x.via === 'api' && x.to === 'lexware'), id);
-    const last = api.calls[api.calls.length - 1]; assert(last.action === 'lexware_upload' && last.key === 'lexkey-1234567890abcdef' && /X-1/.test(last.filename) && last.size > 100, 'API-Aufruf: ' + JSON.stringify(last));
-    assert(await ev(() => !JSON.stringify(S.profile).includes('lexkey-')), 'API-Schlüssel steht im Profil');
+    const last = api.calls[api.calls.length - 1]; assert(last.action === 'lexware_upload' && !last.key && /X-1/.test(last.filename) && last.size > 100, 'API-Aufruf: ' + JSON.stringify(last));
+    // Schlüssel geht genau einmal verschlüsselt an den Server und steht nirgends in der App-Datenbank
+    assert(api.calls.filter((c) => c.action === 'lexware_key_set' && c.key === 'lexkey-1234567890abcdef').length === 1, 'Schlüssel nicht an den Server übergeben: ' + JSON.stringify(api.calls.map((c) => c.action)));
+    assert(await ev(() => !JSON.stringify(S.profile).includes('lexkey-') && !JSON.stringify(ACC_SECRET).includes('lexkey-') && ACC_SECRET.lexKeySet === true), 'API-Schlüssel steht in der App-Datenbank');
+    assert(![...db.rows.values()].some((r) => JSON.stringify(r.data).includes('lexkey-')), 'API-Schlüssel liegt in der Datenbank');
     const id2 = await scan('ai', Object.assign({}, INVOICE, { invoice_number: 'X-2', document_number: 'X-2', reference_numbers: [] }));
     await p.click('[data-a=accTransfer]'); await p.waitForFunction(() => S.accM.files); await p.click('[data-a=accForceShare]');
     assert(/Lexware-App|Teilen/.test(await modal()) && !(await p.$('[data-a=accApi]')), '„Stattdessen teilen“'); await p.click('[data-a=accClose]'); void id2;
@@ -234,7 +237,8 @@ const LETTER = {
   await check('P1-16', 'Einstellungen: Programm, Adresse, Schlüssel löschen', async () => {
     await p.click('.tab[data-go=more]'); await p.click('[data-go=settings]');
     let tx = await text(); assert(/Buchhaltungsprogramm/.test(tx) && /Lexware Office · XL/.test(tx) && /API-Schlüssel gespeichert/.test(tx), 'Einstellungen: ' + tx.slice(0, 120));
-    await p.click('[data-a=accKeyDel]'); await p.waitForFunction(() => !ACC_SECRET.lexKey);
+    await p.click('[data-a=accKeyDel]'); await p.waitForFunction(() => !ACC_SECRET.lexKey && !ACC_SECRET.lexKeySet);
+    assert(api.calls.some((c) => c.action === 'lexware_key_delete'), 'Schlüssel auf dem Server nicht gelöscht');
     await p.click('[data-a=accSetProg][data-v=other]'); await p.fill('#acc_s_name', 'Buchhaltungsbutler'); await p.fill('#acc_s_addr', 'belege@bb.example'); await p.click('[data-a=accSettingsSave]');
     await p.waitForFunction(() => S.profile.acc.program === 'other' && S.profile.acc.name === 'Buchhaltungsbutler' && S.profile.acc.email === 'belege@bb.example');
     tx = await text(); assert(/Buchhaltungsbutler · belege@bb.example/.test(tx), 'Anzeige anderes Programm');

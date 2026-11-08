@@ -13,7 +13,11 @@ self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const url = new URL((e.notification.data && e.notification.data.url) || './', self.registration.scope).href;
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
-    for (const c of list) if (c.url.startsWith(self.registration.scope) && 'focus' in c) return c.focus();
+    for (const c of list) if (c.url.startsWith(self.registration.scope) && 'focus' in c) {
+      // Nachricht mit Ziel (z. B. Abo-Seite): geöffnete App dorthin führen
+      if (/[?&]abo=1/.test(url) && 'navigate' in c) return c.navigate(url).then((w) => (w || c).focus());
+      return c.focus();
+    }
     return self.clients.openWindow(url);
   }));
 });

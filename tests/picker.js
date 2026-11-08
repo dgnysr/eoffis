@@ -1,6 +1,6 @@
 let S_OK;
 const fs = require('fs'), path = require('path');
-const { FakeDB, newPage, loadApp, chromium } = require('./harness');
+const { FakeDB, newPage, loadApp, chromium } = require(process.env.ARTIFACT ? './harness' : './siteharness');
 const HTML = fs.existsSync(path.join(__dirname, '..', 'eoffis.html')) ? fs.readFileSync(path.join(__dirname, '..', 'eoffis.html'), 'utf8') : '';
 const ok = (c, m) => console.log((c ? 'PASS ' : 'FAIL ') + m);
 (async () => {

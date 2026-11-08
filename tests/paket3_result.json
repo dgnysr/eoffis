@@ -3,84 +3,84 @@
   "id": "P3-01",
   "name": "Einrichtung",
   "ok": true,
-  "ms": 138,
+  "ms": 143,
   "note": ""
  },
  {
   "id": "P3-02",
   "name": "Versicherungspolice scannen: KI liest Partner, Kosten, Kündigungsfrist; Vertragskarte mit Bearbeiten/Kündigen",
   "ok": true,
-  "ms": 468,
+  "ms": 419,
   "note": ""
  },
  {
   "id": "P3-03",
   "name": "Übersicht Verträge & Versicherungen: Liste, Jahreskosten, aus Mehr und Ablage erreichbar",
   "ok": true,
-  "ms": 403,
+  "ms": 399,
   "note": ""
  },
  {
   "id": "P3-04",
   "name": "Vertrag bearbeiten: ungültiges Datum abgelehnt; neue Kündigungsfrist verschiebt die Frist",
   "ok": true,
-  "ms": 675,
+  "ms": 671,
   "note": ""
  },
  {
   "id": "P3-05",
   "name": "Ein Klick „Kündigung schreiben“ öffnet das Kündigungsschreiben",
   "ok": true,
-  "ms": 2600,
+  "ms": 2601,
   "note": ""
  },
  {
   "id": "P3-06",
   "name": "Verfahrensdokumentation: im Firma-Ordner „fehlt“; einfache Fassung (12 Fragen) erstellen; PDF, Ablage, jährliche Erinnerung",
   "ok": true,
-  "ms": 3160,
+  "ms": 3068,
   "note": ""
  },
  {
   "id": "P3-07",
   "name": "Vollständige Fassung: 16 Fragen, frühere Antworten vorbelegt, nur eine offene Jahresaufgabe",
   "ok": true,
-  "ms": 2268,
+  "ms": 2343,
   "note": ""
  },
  {
   "id": "P3-08",
   "name": "Firmenunterlagen als ein PDF: Auswahl, Aufdruck „Nur zur Vorlage bei …“ schräg auf jeder Seite",
   "ok": true,
-  "ms": 13029,
+  "ms": 13048,
   "note": ""
  },
  {
   "id": "P3-09",
   "name": "Freigabe-Link ohne Server: verständlicher Hinweis statt Fehler",
   "ok": true,
-  "ms": 1616,
+  "ms": 1584,
   "note": ""
  },
  {
   "id": "P3-10",
   "name": "Freigabe-Link (Server simuliert): nur verschlüsselt hochgeladen, Link + 6-stelliger Code, 7 Tage, Liste, Sperren",
   "ok": true,
-  "ms": 1902,
+  "ms": 1885,
   "note": ""
  },
  {
   "id": "P3-11",
   "name": "Empfängerseite freigabe.html: falscher Code abgelehnt, richtiger Code → Datei, gesperrt/abgelaufen verständlich",
   "ok": true,
-  "ms": 952,
+  "ms": 984,
   "note": ""
  },
  {
   "id": "P3-12",
   "name": "Alle neuen Ansichten in 6 Sprachen ohne fehlende Texte",
   "ok": true,
-  "ms": 2151,
+  "ms": 2166,
   "note": ""
  },
  {
