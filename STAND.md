@@ -12,6 +12,10 @@
 
 Backend: Supabase-Projekt `lqohxlxemawzrtdqjnci` (`supabase/schema.sql`), KI-Funktion `smooth-processor` (Code: `supabase/functions/ai/index.ts`, „Verify JWT“ aus), Server-Funktion `eoffis-api` (Code: `supabase/functions/eoffis-api/index.ts`, „Verify JWT“ aus). Schlüssel: nur der öffentliche Publishable Key steht in `config.js`. Einrichtungsschritte siehe `README.md` → „Einrichtung Sicherheit & Probezeit“.
 
+## Nächste Sitzung (ab 09.11.2026, am PC)
+Ergebnisse vom 08.11.2026 (Plattformen, Kosten, Personal, offene Schritte): `material/Auswertung_2026-11-08.md`.
+Als Erstes: Einrichtung in Supabase/Cloudflare/Brevo laut `README.md` → „Einrichtung Sicherheit & Probezeit“ (schema.sql und KI-Funktion direkt nacheinander).
+
 ## Änderungsverlauf
 ### 08.11.2026 – Paket A (Sicherheit) und Paket B (Probezeit)
 - **KI-Zähler** nur noch über den Service-Schlüssel (`ai_take(p_owner, …)`, `ai_give_back(p_owner)`); Nutzer können ihn nicht mehr zurücksetzen.
