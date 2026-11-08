@@ -12,6 +12,18 @@
 Backend: Supabase-Projekt `lqohxlxemawzrtdqjnci` (Tabelle `kv`, `supabase/schema.sql`), KI-Funktion `smooth-processor` (Code: `supabase/functions/ai/index.ts`, „Verify JWT“ aus), Server-Funktion `eoffis-api` (Code: `supabase/functions/eoffis-api/index.ts`, „Verify JWT“ aus; noch einzurichten – bis dahin fällt die Lexware-Direktübertragung auf „Teilen“ zurück). Schlüssel: nur der öffentliche Publishable Key steht in `config.js`.
 
 ## Änderungsverlauf
+### 08.11.2026 – Design 2026 (neue Oberfläche)
+- Neues Modul `src/design.js`, neue CSS-Ebene am Ende von `src/shell.html`. Ziel: Gestaltung nach dem Vorbild der Apple- und Microsoft-Apps.
+  - Systemschrift (SF Pro/Segoe UI) statt Webfont; keine Google-Fonts-Ladezeit mehr.
+  - Markenfarbe Petrolgrün `#0a6b5b`; Navigations- und Tab-Leiste aus durchscheinendem Material.
+  - Große Titel auf Ablage, Fristen und Mehr; gruppierte Listen ohne Rahmen; jeder Ordner hat eine eigene Farbe.
+  - Dialoge als Blatt von unten; Kurzmeldung als Kapsel.
+- Startseite: Datum und Begrüßung, drei Kennzahlen (Fristen in 7 Tagen, zu prüfen, nicht übertragen), Scan-Karte mit Beleg-Illustration.
+- Dokument: Kopfbereich mit Titel, Absender, Datum und Betrag. Fristen: Fälligkeit farbig in der Unterzeile, „!“-Markierung für hohe Priorität.
+- Neues App-Symbol (`icon.svg`, PNG 180/192/512 für iPhone und Android). Anmeldeseite und Willkommensseite neu gestaltet.
+- Branche bei der Einrichtung nicht mehr auf „Gastronomie“ vorbelegt (Standard „Sonstiges“).
+- `tests/shots.js` erstellt Bildschirmfotos aller Hauptansichten (hell und dunkel).
+
 ### 08.11.2026 – Paket 3: Verfahrensdokumentation, Verträge, Firmenunterlagen-PDF, Freigabe-Link
 - Neues Modul `src/unterlagen.js` (6 Sprachen, Test `tests/paket3.js`, 13 Prüfungen).
 - **Verfahrensdokumentation (GoBD):** Assistent im Firma-Ordner, einfach (12 Fragen) oder vollständig (16 Fragen). Die eOffis-Teile (Scannen, Prüfsumme, Ordner, Aufbewahrung, Server in der EU) werden automatisch ergänzt. Ergebnis: deutsches PDF, Ablage unter „Firma & Stammdaten“, jährliche Erinnerung (`template_key: 'vdoc'`). Antworten bleiben gespeichert und werden beim Neu-Erstellen vorbelegt.
