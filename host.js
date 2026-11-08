@@ -239,8 +239,29 @@
     },
   };
 
+  /* ---------- Freigabe-Links (nur verschlüsselte Daten gehen an den Server; Bucket „shares“, Tabelle „shares“) ---------- */
+  const share = sb && CFG.shares ? {
+    async create({ blob, filename, size, count, expires, days }) {
+      const { data: s } = await sb.auth.getSession(); const uidv = s.session && s.session.user.id;
+      if (!uidv) throw err('auth', 'Bitte anmelden');
+      const id = crypto.randomUUID().replace(/-/g, '');
+      const path = uidv + '/' + id + '.bin';
+      const up = await sb.storage.from('shares').upload(path, blob, { contentType: 'application/octet-stream', upsert: false });
+      if (up.error) throw up.error;
+      const { error } = await sb.from('shares').insert({ id, owner: uidv, path, filename, size, count, days, expires_at: expires + 'T23:59:59+01:00' });
+      if (error) { await sb.storage.from('shares').remove([path]); throw error; }
+      return { id };
+    },
+    async list() { const { data, error } = await sb.from('shares').select('id,filename,count,expires_at,revoked_at,created_at').order('created_at', { ascending: false }).limit(50); if (error) throw error; return data || []; },
+    async revoke(id) {
+      const { data } = await sb.from('shares').select('path').eq('id', id).maybeSingle();
+      const { error } = await sb.from('shares').update({ revoked_at: new Date().toISOString() }).eq('id', id); if (error) throw error;
+      if (data && data.path) await sb.storage.from('shares').remove([data.path]);
+    },
+  } : null;
+
   window.EOFFIS_HOST = {
-    fn, push,
+    fn, push, share,
     siteUrl: location.origin + location.pathname,
     logout: async () => { try { localStorage.removeItem('eoffis.space'); } catch { /* egal */ } await sb.auth.signOut(); },
     email: () => (session && session.user && session.user.email) || null,

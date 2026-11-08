@@ -112,6 +112,22 @@ Deno.serve(async (req) => {
     try { const b = await req.json(); if (b.action === 'push_daily') return await pushDaily(); } catch { /* weiter */ }
     return json({ error: 'Unbekannte Aktion' }, 400);
   }
+  // Öffentlich: Freigabe-Link öffnen (Steuerberater ohne Konto). Der Server liefert nur verschlüsselte Daten;
+  // entschlüsselt wird im Browser mit dem Schlüssel aus dem Link (#…) und dem getrennt mitgeteilten Code.
+  let pre: Record<string, unknown> | null = null;
+  try { pre = await req.clone().json(); } catch { /* kein JSON */ }
+  if (pre && pre.action === 'share_get') {
+    const id = String(pre.id || '');
+    if (!/^[0-9a-f]{32}$/.test(id)) return json({ error: 'Link ungültig', code: 'invalid' }, 400);
+    const admin = adminClient();
+    const { data: sh } = await admin.from('shares').select('path,filename,count,expires_at,revoked_at').eq('id', id).maybeSingle();
+    if (!sh || sh.revoked_at) return json({ error: 'Dieser Link wurde gesperrt oder existiert nicht.', code: 'revoked' }, 404);
+    if (new Date(sh.expires_at) < new Date()) return json({ error: 'Dieser Link ist abgelaufen.', code: 'expired', expires_at: sh.expires_at }, 410);
+    const { data: signed, error } = await admin.storage.from('shares').createSignedUrl(sh.path, 300);
+    if (error || !signed) return json({ error: 'Datei nicht gefunden', code: 'missing' }, 404);
+    await admin.from('shares').update({ last_opened_at: new Date().toISOString() }).eq('id', id);
+    return json({ url: signed.signedUrl, filename: sh.filename, count: sh.count, expires_at: sh.expires_at });
+  }
   const auth = req.headers.get('Authorization');
   if (!auth) return json({ error: 'Nicht angemeldet', code: 'not_granted' }, 401);
   const supa = createClient(Deno.env.get('SUPABASE_URL')!, (Deno.env.get('SUPABASE_ANON_KEY') ?? Deno.env.get('SUPABASE_PUBLISHABLE_KEY'))!, { global: { headers: { Authorization: auth } } });

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>eOffis – Belege abrufen</title>
+<link rel="icon" href="icon.svg">
+<style>
+  :root { --bg: #f4f2ee; --card: #fff; --ink: #1d2422; --muted: #66706c; --accent: #1f6f5c; --warn: #b4442c; --line: #e2ddd4; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #151a19; --card: #1f2624; --ink: #ecefed; --muted: #9aa5a1; --accent: #5cc0a3; --warn: #f08a70; --line: #2f3835; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 480px; margin: 0 auto; padding: 32px 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+  h1 { font-size: 1.3rem; margin: 0 0 6px; }
+  p { margin: 8px 0; }
+  .muted { color: var(--muted); font-size: .9rem; }
+  input { width: 100%; font-size: 1.6rem; letter-spacing: .3em; text-align: center; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--ink); margin: 12px 0; }
+  button, a.btn { display: block; width: 100%; text-align: center; padding: 14px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font-size: 1rem; font-weight: 700; cursor: pointer; text-decoration: none; }
+  button:disabled { opacity: .6; }
+  .err { color: var(--warn); font-weight: 600; }
+  .brand { font-weight: 800; color: var(--accent); margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">eOffis</div>
+  <div class="card" id="box">
+    <h1>Belege abrufen</h1>
+    <p class="muted">Diese Belege wurden Ihnen verschlüsselt freigegeben. Bitte geben Sie den 6-stelligen Code ein, den Sie getrennt erhalten haben.</p>
+    <form id="f"><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="••••••" aria-label="Code" required>
+    <button id="go" type="submit">Öffnen</button></form>
+    <p id="msg" class="muted" role="status"></p>
+  </div>
+  <p class="muted" style="margin-top:16px">Die Dateien werden erst in Ihrem Browser entschlüsselt. Weder eOffis noch der Server können sie lesen.</p>
+</main>
+<script src="config.js"></script>
+<script>
+(function () {
+  const CFG = window.EOFFIS_CONFIG || {};
+  const msg = document.getElementById('msg'), go = document.getElementById('go');
+  const [id, secret] = (location.hash.slice(1) || '').split('.');
+  const show = (t, err) => { msg.textContent = t; msg.className = err ? 'err' : 'muted'; };
+  if (!id || !secret) { show('Der Link ist unvollständig. Bitte den ganzen Link öffnen.', true); go.disabled = true; return; }
+  const b64u = (s) => s; // Schlüsselmaterial wird als Text verwendet (wie in der App)
+  async function key(code, salt) {
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(b64u(secret) + ':' + code), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+  }
+  let meta = null, data = null;
+  document.getElementById('f').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = document.getElementById('code').value.trim();
+    if (!/^\d{6}$/.test(code)) return show('Bitte den 6-stelligen Code eingeben.', true);
+    go.disabled = true; show('Wird geladen …');
+    try {
+      if (!data) {
+        const r = await fetch(CFG.supabaseUrl + '/functions/v1/eoffis-api', { method: 'POST', headers: { 'content-type': 'application/json', apikey: CFG.supabaseAnonKey }, body: JSON.stringify({ action: 'share_get', id }) });
+        meta = await r.json().catch(() => ({}));
+        if (!r.ok) { show(meta.error || 'Der Link ist nicht mehr gültig.', true); return; }
+        const f = await fetch(meta.url); if (!f.ok) throw new Error('Download fehlgeschlagen');
+        data = new Uint8Array(await f.arrayBuffer());
+      }
+      if (data[0] !== 1) throw new Error('Unbekanntes Format');
+      const salt = data.slice(1, 17), iv = data.slice(17, 29), enc = data.slice(29);
+      let plain;
+      try { plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, await key(code, salt), enc); }
+      catch { show('Der Code ist falsch. Bitte erneut versuchen.', true); return; }
+      const name = meta.filename || 'Belege.zip';
+      const url = URL.createObjectURL(new Blob([plain], { type: /\.pdf$/i.test(name) ? 'application/pdf' : /\.zip$/i.test(name) ? 'application/zip' : 'application/octet-stream' }));
+      const until = meta.expires_at ? new Date(meta.expires_at).toLocaleDateString('de-DE') : '';
+      document.getElementById('box').innerHTML = '<h1>Belege bereit</h1><p class="muted">' + (meta.count || 1) + ' Beleg(e)' + (until ? ' · Link gültig bis ' + until : '') + '</p>';
+      const a = document.createElement('a'); a.className = 'btn'; a.href = url; a.download = name; a.textContent = 'Herunterladen: ' + name;
+      document.getElementById('box').appendChild(a); a.click();
+    } catch (err) { show('Fehler: ' + (err && err.message || err), true); }
+    finally { go.disabled = false; }
+  });
+})();
+</script>
+</body>
+</html>

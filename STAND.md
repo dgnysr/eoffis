@@ -12,6 +12,13 @@
 Backend: Supabase-Projekt `lqohxlxemawzrtdqjnci` (Tabelle `kv`, `supabase/schema.sql`), KI-Funktion `smooth-processor` (Code: `supabase/functions/ai/index.ts`, „Verify JWT“ aus), Server-Funktion `eoffis-api` (Code: `supabase/functions/eoffis-api/index.ts`, „Verify JWT“ aus; noch einzurichten – bis dahin fällt die Lexware-Direktübertragung auf „Teilen“ zurück). Schlüssel: nur der öffentliche Publishable Key steht in `config.js`.
 
 ## Änderungsverlauf
+### 08.11.2026 – Paket 3: Verfahrensdokumentation, Verträge, Firmenunterlagen-PDF, Freigabe-Link
+- Neues Modul `src/unterlagen.js` (6 Sprachen, Test `tests/paket3.js`, 13 Prüfungen).
+- **Verfahrensdokumentation (GoBD):** Assistent im Firma-Ordner, einfach (12 Fragen) oder vollständig (16 Fragen). Die eOffis-Teile (Scannen, Prüfsumme, Ordner, Aufbewahrung, Server in der EU) werden automatisch ergänzt. Ergebnis: deutsches PDF, Ablage unter „Firma & Stammdaten“, jährliche Erinnerung (`template_key: 'vdoc'`). Antworten bleiben gespeichert und werden beim Neu-Erstellen vorbelegt.
+- **Verträge & Versicherungen:** Neue Übersicht (`contracts`), sortiert nach Kündigungsfrist, mit Jahreskosten. Bearbeiten (`contract`): Partner, Nummer, Beginn/Ende, Kündigungsfrist, automatische Verlängerung, Kosten und Zahlweise, Leistung. Die KI liest diese Felder neu mit. Erinnerung jetzt 30 und 7 Tage vorher. Ein Klick öffnet das Kündigungsschreiben.
+- **Firmenunterlagen als ein PDF:** Aus dem Firma-Ordner werden Unterlagen gewählt und zu einem PDF zusammengefasst. Optional wird „Nur zur Vorlage bei … – Datum“ schräg auf jede Seite gedruckt. Danach speichern oder teilen.
+- **Freigabe-Link für den Steuerberater:** Die Belege werden im Browser mit AES-GCM verschlüsselt (Schlüssel aus dem Link-Teil nach # und einem 6-stelligen Code). Gültig 7 oder 30 Tage, jederzeit sperrbar. Die Empfängerseite ist `freigabe.html`, die Server-Aktion `share_get` liegt in `eoffis-api`. Tabelle und Bucket `shares` stehen in `supabase/schema.sql`. **Inaktiv bis zur Server-Einrichtung:** `shares: true` in `config.js` setzen. Bis dahin zeigt die App einen Hinweis.
+
 ### 08.11.2026 – Paket 2: Heute-Liste, Termine per Sprache, Morgen-Erinnerung, Sprachwahl, Vorauszahlungen
 - Startseite: unter „Dokument scannen“ der Knopf „Termin per Sprache eintragen“ und die Liste „Heute & demnächst“ (Fristen/Termine, offene Antworten, fehlende Firmenunterlagen; Überfälliges zuerst, 5 sichtbar, „Weitere anzeigen“)
 - Termin per Sprache (Start und Fristen): Spracherkennung des Browsers in 6 Sprachen, KI erkennt Titel/Datum/Uhrzeit/Art (ohne KI: einfache Erkennung inkl. Wochentage), prüfen → speichern → Handy-Kalender (.ics, Erinnerung 24 h + 1 h) oder Google Kalender; ohne Spracherkennung Texteingabe (Tastatur-Mikrofon)

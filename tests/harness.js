@@ -110,7 +110,7 @@ const INIT = (cfg) => {
 
 // Bibliotheken: pdf-lib & JSZip echt (lokal), jsPDF & pdf.js als funktionale Stubs (CDN im Testnetz gesperrt)
 const BLANK = fs.readFileSync(path.join(__dirname, 'blank.b64'), 'utf8');
-const JSPDF_STUB = `window.jspdf={jsPDF:function(){var pages=1,ops=0;var api={setFont(){ops++},setFontSize(){ops++},setTextColor(){ops++},text(t){if(t===undefined)throw new Error('text undefined');ops++},line(){ops++},addPage(){pages++},
+const JSPDF_STUB = `window.jspdf={jsPDF:function(){var pages=1,ops=0;var api={setFont(){ops++},setFontSize(){ops++},setTextColor(){ops++},text(t,x,y,o){if(t===undefined)throw new Error('text undefined');ops++;(window.__pdfText=window.__pdfText||[]).push([String(t),(o&&o.angle)||0])},line(){ops++},addPage(){pages++},
  splitTextToSize(t,w){var s=String(t),out=[],n=Math.max(10,Math.floor(w/2));while(s.length>n){out.push(s.slice(0,n));s=s.slice(n)}out.push(s);return out},
  addImage(d){if(!/^data:image/.test(d))throw new Error('bad image');ops++},
  output(k){var b=Uint8Array.from(atob('${BLANK}'),function(c){return c.charCodeAt(0)});window.__pdfPages=pages;return k==='arraybuffer'?b.buffer:new Blob([b],{type:'application/pdf'})}};return api}};`;

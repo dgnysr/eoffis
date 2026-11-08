@@ -640,7 +640,8 @@ VIEWS.acc = {
       ${pcSupported() ? `<div class="row between"><span class="small muted">${esc(S.pcName ? t('acc.pcFolder', { name: S.pcName }) : t('acc.pcPickH'))}</span><button class="btn sm ghost" data-a="accPcPick">${esc(t('acc.pcPick'))}</button></div>` : ''}`;
     const bar = sel.size ? `<div class="card acc-bar"><p class="small"><b>${esc(t('acc.selected', { count: sel.size }))}</b></p>
       <div class="grid2"><button class="btn sm" data-a="accSelTransfer">${esc(t('acc.selTransfer'))}</button><button class="btn sm sec" data-a="accSelAdv">${esc(t('acc.selAdvisor'))}</button></div>
-      <div class="grid2">${pcSupported() ? `<button class="btn sm ghost" data-a="accSelPc">${esc(t('acc.selPc'))}</button>` : '<span></span>'}<button class="btn sm ghost" data-a="accSelClear">${esc(t('acc.selClear'))}</button></div></div>` : '';
+      <div class="grid2">${pcSupported() ? `<button class="btn sm ghost" data-a="accSelPc">${esc(t('acc.selPc'))}</button>` : '<span></span>'}<button class="btn sm ghost" data-a="accSelClear">${esc(t('acc.selClear'))}</button></div>
+      <button class="btn sm ghost" data-a="shOpen">🔒 ${esc(t('unt.shTitle'))}</button></div>` : '';
     if (!docs.length) return `<div class="empty">${ico('invoice')}<p class="muted">${esc(t('acc.empty'))}</p><button class="btn" data-go="scan">${ico('camera')}${esc(t('web.uiScanHero'))}</button></div>`;
     const tree = {};
     for (const d of docs) { const iso = accDateOf(d), y = iso.slice(0, 4), m = iso.slice(0, 7); ((tree[y] = tree[y] || {})[m] = tree[y][m] || []).push(d); }

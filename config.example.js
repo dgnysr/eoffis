@@ -5,4 +5,5 @@ window.EOFFIS_CONFIG = {
   supabaseAnonKey: 'DEIN-ANON-KEY',
   aiFunction: 'ai',
   vapidPublicKey: '', // öffentlicher VAPID-Schlüssel für die Morgen-Erinnerung (siehe supabase/functions/eoffis-api)
+  shares: false, // Freigabe-Links: true, sobald Bucket und Tabelle „shares“ angelegt sind (supabase/schema.sql)
 };

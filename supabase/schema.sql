@@ -131,3 +131,35 @@ grant select, insert, update, delete on public.push_subs to authenticated;
 --   select net.http_post(url := 'https://PROJEKT.supabase.co/functions/v1/eoffis-api',
 --     headers := jsonb_build_object('content-type', 'application/json', 'x-cron-secret', 'GEHEIM'),
 --     body := '{"action":"push_daily"}'::jsonb) $$);
+
+-- ===== Freigabe-Links für den Steuerberater (Paket 3) =====
+-- Im Speicher liegen nur im Browser verschlüsselte Dateien (AES-GCM); der Schlüssel steht nur im Link (#…) und im Code.
+create table if not exists public.shares (
+  id text primary key,
+  owner uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  path text not null,
+  filename text,
+  size bigint,
+  count int not null default 1,
+  days int,
+  expires_at timestamptz not null,
+  revoked_at timestamptz,
+  last_opened_at timestamptz,
+  created_at timestamptz not null default now()
+);
+alter table public.shares enable row level security;
+drop policy if exists "eigene Freigaben" on public.shares;
+create policy "eigene Freigaben" on public.shares for all to authenticated
+  using (owner = (select auth.uid())) with check (owner = (select auth.uid()));
+grant select, insert, update, delete on public.shares to authenticated;
+
+insert into storage.buckets (id, name, public, file_size_limit) values ('shares', 'shares', false, 52428800)
+  on conflict (id) do nothing;
+drop policy if exists "eigene Freigabe-Dateien" on storage.objects;
+create policy "eigene Freigabe-Dateien" on storage.objects for all to authenticated
+  using (bucket_id = 'shares' and (storage.foldername(name))[1] = (select auth.uid())::text)
+  with check (bucket_id = 'shares' and (storage.foldername(name))[1] = (select auth.uid())::text);
+-- Abgelaufene Freigaben täglich löschen (optional, mit pg_cron):
+-- select cron.schedule('eoffis-freigaben', '30 3 * * *', $$ delete from storage.objects o using public.shares s
+--   where o.bucket_id = 'shares' and o.name = s.path and (s.expires_at < now() - interval '1 day' or s.revoked_at is not null);
+--   delete from public.shares where expires_at < now() - interval '30 days' $$);

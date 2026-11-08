@@ -591,7 +591,7 @@ const FEATURES = () => [
   ['archive', t('more.archive'), 'docs', { archived: 1 }],
   ['gear', t('settings.title'), 'settings', {}],
 ];
-const REM_DEFAULT = { inApp: true, contract: [30, 14, 7], skonto: [3, 1], other: [3, 1] };
+const REM_DEFAULT = { inApp: true, contract: [30, 7], skonto: [3, 1], other: [3, 1] };
 const remCfg = () => Object.assign({}, REM_DEFAULT, (S.profile && S.profile.reminders) || {});
 function offsetsFor(kind) {
   const c = remCfg();
@@ -666,7 +666,7 @@ VIEWS.docs = {
       ${group(FOLDERS.map((f) => { const accOpenN = f === 'buchhaltung' ? live.filter((d) => d.folder === f && !isTransferred(d)).length : 0;
         return cell({ icon: FICON[f] || 'folder', ic: accOpenN ? 'o' : '', title: t('docs.folder_' + f), sub: f === 'firma' ? (firmaMiss ? t('web.uiFirmaMiss', { count: firmaMiss }) : t('web.uiFirmaOk')) : accOpenN ? `● ${accOpenN} ${t('acc.notTransferred')}` : '', right: String(cnt(f)), attrs: f === 'buchhaltung' ? 'data-a="openAcc"' : `data-a="openList" data-v="f:${f}"` }); }), t('web.uiFolders'))}
       ${group([
-        cell({ icon: 'pen', ic: 'g', title: t('web.contracts'), right: String(contracts), attrs: 'data-a="openList" data-v="contracts"' }),
+        cell({ icon: 'pen', ic: 'g', title: t('web.contracts'), right: String(contracts), attrs: 'data-go="contracts"' }),
         cell({ icon: 'check', ic: 'g', title: t('web.done'), right: String(live.filter((d) => d.status === 'done').length), attrs: 'data-a="openList" data-v="done"' }),
         cell({ icon: 'archive', ic: 'g', title: t('docs.archived'), right: String(S.docs.filter((d) => d.archived).length), attrs: 'data-a="openList" data-v="archived"' }),
         cell({ icon: 'folder', ic: 'g', title: t('web.uiAllDocs'), right: String(live.length), attrs: 'data-a="openList" data-v="all"' }),
@@ -690,7 +690,7 @@ VIEWS.doclist = {
     const firma = F.folder === 'firma' ? `<div class="card"><h2>${esc(t('web.uiChecklist'))}</h2><p class="muted small">${esc(t('web.uiChecklistH'))}</p>
       <div class="group">${CHECK_FIRMA.map(([k, re]) => { const hit = S.docs.find((d) => re.test(docText(d)));
         return hit ? cell({ icon: 'check', ic: 'g', title: t('web.uiCk_' + k), sub: hit.title, attrs: `data-go="doc" data-id="${hit.id}"` })
-          : cell({ icon: 'camera', ic: 'o', title: t('web.uiCk_' + k), sub: t('web.uiMissing'), attrs: 'data-go="scan"' }); }).join('')}</div></div>` : '';
+          : cell({ icon: 'camera', ic: 'o', title: t('web.uiCk_' + k), sub: t('web.uiMissing'), attrs: 'data-go="scan"' }); }).join('')}</div></div>${typeof firmaExtraHtml === 'function' ? firmaExtraHtml() : ''}` : '';
     return `${firma}<input class="in" id="dq" type="search" value="${esc(F.q)}" placeholder="${esc(t('common.search') + ': ' + t('docs.searchPh'))}" autocomplete="off" aria-label="${esc(t('common.search'))}">
       <div id="dlist">${firma && !list.length ? '' : docRows(list)}</div>`;
   },
@@ -1011,11 +1011,14 @@ function docStep1(d, st) {
     ${d.explanation ? `<div class="card"><h2>${esc(t('doc.explanation'))}</h2><p class="prose">${esc(d.explanation)}</p>
       ${d.page_count && S.sample && d.file_kind !== 'xml' ? `<button class="btn sm ghost" data-a="analyze">${esc(t('doc.reanalyze'))}</button>` : ''}</div>` : ''}
     ${(d.invoice_checks || []).length ? `<div class="sec-h">${esc(t('web.checksTitle'))}</div><div class="group">${d.invoice_checks.map((c) => `<div class="cell noicon" style="cursor:default"><span class="pill c-${c.status === 'present' ? 'green' : c.status === 'missing' ? 'red' : 'orange'}">${esc(t('web.st_' + c.status))}</span><span class="cx"><span class="ct">${esc(c.label)}</span>${c.detail ? `<span class="cs" style="display:block">${esc(c.detail)}</span>` : ''}</span></div>`).join('')}</div><p class="muted small">${esc(t('web.checksNote'))}</p>` : ''}
-    ${d.contract_end || d.cancellation_date || d.contract_number || d.contract_terms ? `<div class="card"><h2>${esc(t('web.contract'))}</h2><dl class="kv">
+    ${d.is_contract || d.contract_end || d.cancellation_date || d.contract_number || d.contract_terms ? `<div class="card"><h2>${esc(t('web.contract'))}</h2><dl class="kv">
       ${d.contract_number ? `<dt>${esc(t('web.contractNo'))}</dt><dd class="mono">${esc(d.contract_number)}</dd>` : ''}
       ${d.contract_end ? `<dt>${esc(t('web.contractEnd'))}</dt><dd class="num">${esc(fmtDate(d.contract_end))}</dd>` : ''}
       ${d.cancellation_date ? `<dt>${esc(t('web.cancelBy'))}</dt><dd class="num"><b>${esc(fmtDate(d.cancellation_date))}</b> · ${esc(dueLabel(daysUntil(d.cancellation_date)))}</dd>` : ''}
-      ${d.contract_terms ? `<dt>${esc(t('web.contractTerms'))}</dt><dd>${esc(d.contract_terms)}</dd>` : ''}</dl></div>` : ''}
+      ${d.contract_terms ? `<dt>${esc(t('web.contractTerms'))}</dt><dd>${esc(d.contract_terms)}</dd>` : ''}
+      ${d.cost_amount != null ? `<dt>${esc(t('unt.ctrCost'))}</dt><dd class="num">${esc(money(d.cost_amount))} ${esc(t('unt.iv_' + (d.cost_interval || 'monthly')))}</dd>` : ''}
+      ${d.coverage ? `<dt>${esc(t('unt.ctrCoverage'))}</dt><dd>${esc(d.coverage)}</dd>` : ''}</dl>
+      <div class="grid2"><button class="btn sm sec" data-go="contract" data-id="${d.id}">${esc(t('unt.ctrEdit'))}</button><button class="btn sm ghost" data-a="ctrCancel" data-v="${d.id}">${esc(t('unt.ctrCancel'))}</button></div></div>` : ''}
     ${d.discount_date ? `<div class="banner">${esc(t('web.discount'))}: ${d.discount_percent ? esc(numStr(d.discount_percent)) + ' % ' : ''}${esc(t('web.discountUntil'))} ${esc(fmtDate(d.discount_date))}${d.discount_percent && d.amount_gross ? ' → ' + esc(money(Math.round(d.amount_gross * (100 - d.discount_percent)) / 100, d.currency)) : ''}${d.discount_terms ? ' · ' + esc(d.discount_terms) : ''}</div>` : ''}
     ${d.einvoice ? `<div class="card"><h2>${esc(t('web.positions'))}</h2><p class="muted small">${esc(t('web.format'))}: ${esc(d.einvoice.format)}</p>${einvoiceTable(d.einvoice)}</div>` : ''}
     ${d.page_count && S.sample ? `<div class="card"><h2>${esc(t('doc.translate'))}</h2>
@@ -1113,7 +1116,7 @@ Schreibe "explanation" (2–5 Sätze, ohne Fachjargon) und "next_steps" (1–5 k
 "document_date" ist das Datum des Schreibens (YYYY-MM-DD) oder null.
 "action_needed": true nur bei konkreter Aufgabe für den Betrieb; "suggested_task" ist dann eine kurze konkrete Aufgabe auf ${LANG_NAMES[lang]}, sonst "". Bereits bezahlte Rechnungen nicht erneut zur Zahlung auffordern.
 "response_recipient" und "response_address": zuständige Stelle und vollständige Postanschrift für eine ANTWORT (meist der Absender), "response_reference": Aktenzeichen/Kunden-/Vertrags-/Rechnungsnummer, "response_subject": passender Betreff, "recipient_email": nur eine ausdrücklich genannte E-Mail-Adresse für Antworten. Nichts erfinden.
-Verträge: "contract_end" (Vertragsende), "cancellation_date" (letzter Tag, an dem eine Kündigung zugehen muss – NICHT Vertragsende), "contract_number", "contract_terms" (Laufzeit, Verlängerung, Kündigungsform, Frist) – nur wenn belegt, sonst null.
+Verträge: "contract_end" (Vertragsende), "cancellation_date" (letzter Tag, an dem eine Kündigung zugehen muss – NICHT Vertragsende), "contract_number", "contract_terms" (Laufzeit, Verlängerung, Kündigungsform, Frist), "contract_party" (Vertragspartner/Versicherer), "contract_start", "notice_period" (z. B. "3 Monate zum Laufzeitende"), "auto_renew" (true/false), "cost_amount" (Beitrag/Kosten je Zahlung, Zahl), "cost_interval" ("monthly"|"quarterly"|"yearly"|"once"), "coverage" (Leistung/Versicherungsschutz in einem kurzen Satz) – nur wenn belegt, sonst null.
 Skonto: "discount_date", "discount_percent" (Zahl), "discount_terms" – nur wenn genannt.
 Rechnungen: "invoice_checks" prüft die Pflichtangaben nach § 14 Abs. 4 UStG (Name/Anschrift beider Parteien, Steuernummer oder USt-IdNr., Ausstellungsdatum, Rechnungsnummer, Menge/Art der Leistung, Leistungsdatum, Entgelt nach Steuersätzen, Steuersatz und Steuerbetrag oder Befreiungshinweis) und rechnet die Summen nach. Kleinbetragsrechnung bis 250 € nach § 33 UStDV vereinfacht. Jeder Eintrag {"label","status":"present"|"missing"|"unclear","detail"} auf ${LANG_NAMES[lang]}. Bei Nicht-Rechnungen leere Liste. Das ist keine rechtsverbindliche Freigabe.
 "ocr_text": der vollständig lesbare Originaltext (höchstens 15000 Zeichen) für die Volltextsuche.
@@ -1121,7 +1124,7 @@ Rechnungen: "invoice_checks" prüft die Pflichtangaben nach § 14 Abs. 4 UStG (N
 Vorauszahlungsbescheid des Finanzamts oder der Gemeinde (Einkommensteuer, Gewerbesteuer, Körperschaftsteuer, Kirchensteuer, Solidaritätszuschlag): "prepayments" listet jede künftige Vorauszahlung {"tax": Steuerart auf Deutsch, "due_date": "YYYY-MM-DD", "amount": Zahl}; diese Termine NICHT zusätzlich in "dates". Sonst leere Liste.
 Buchhaltung: "acc_type" ist "rechnung" (Eingangsrechnung an den Betrieb), "quittung" (Quittung, Kassenbon, Tank-/Bewirtungsbeleg), "lieferschein", "kontoauszug", "gutschrift" oder "none" (kein Buchhaltungsbeleg, z. B. Behördenschreiben, Vertrag, Mahnung ohne neue Rechnung). "document_number": Nummer dieses Belegs (Rechnungs-, Lieferschein-, Quittungsnummer) oder null. "reference_numbers": im Beleg genannte andere Nummern, mit denen er zu anderen Belegen gehört (Lieferschein-, Auftrags-, Bestell-, Rechnungsnummern), sonst leere Liste.
 Antworte nur mit einem JSON-Objekt dieser Form:
-{"title":string,"prepayments":[{"tax":string,"due_date":string,"amount":number}],"acc_type":string,"document_number":string|null,"reference_numbers":[string],"doc_type":string,"sender":string|null,"sender_address":string|null,"recipient":string|null,"recipient_address":string|null,"invoice_number":string|null,"amount_gross":number|null,"amount_net":number|null,"vat_amount":number|null,"currency":string|null,"payment_required":boolean,"payment_due_date":string|null,"iban":string|null,"bic":string|null,"payment_reference":string|null,"is_contract":boolean,"is_incoming_invoice":boolean,"folder":string,"explanation":string,"next_steps":[string],"dates":[{"kind":string,"date":string|null,"description":string}],"document_date":string|null,"suggested_action":{"type":string,"question":string},"action_needed":boolean,"suggested_task":string,"response_recipient":string|null,"response_address":string|null,"response_reference":string|null,"response_subject":string|null,"recipient_email":string|null,"contract_end":string|null,"cancellation_date":string|null,"contract_number":string|null,"contract_terms":string|null,"discount_date":string|null,"discount_percent":number|null,"discount_terms":string|null,"invoice_checks":[{"label":string,"status":string,"detail":string}],"ocr_text":string}`;
+{"title":string,"prepayments":[{"tax":string,"due_date":string,"amount":number}],"acc_type":string,"document_number":string|null,"reference_numbers":[string],"doc_type":string,"sender":string|null,"sender_address":string|null,"recipient":string|null,"recipient_address":string|null,"invoice_number":string|null,"amount_gross":number|null,"amount_net":number|null,"vat_amount":number|null,"currency":string|null,"payment_required":boolean,"payment_due_date":string|null,"iban":string|null,"bic":string|null,"payment_reference":string|null,"is_contract":boolean,"is_incoming_invoice":boolean,"folder":string,"explanation":string,"next_steps":[string],"dates":[{"kind":string,"date":string|null,"description":string}],"document_date":string|null,"suggested_action":{"type":string,"question":string},"action_needed":boolean,"suggested_task":string,"response_recipient":string|null,"response_address":string|null,"response_reference":string|null,"response_subject":string|null,"recipient_email":string|null,"contract_end":string|null,"cancellation_date":string|null,"contract_number":string|null,"contract_terms":string|null,"contract_party":string|null,"contract_start":string|null,"notice_period":string|null,"auto_renew":boolean|null,"cost_amount":number|null,"cost_interval":string|null,"coverage":string|null,"discount_date":string|null,"discount_percent":number|null,"discount_terms":string|null,"invoice_checks":[{"label":string,"status":string,"detail":string}],"ocr_text":string}`;
     const r = await aiJson(prompt, inp.images);
     if (!r || typeof r !== 'object') throw { code: 'invalid_json' };
     const docDate = (r.document_date && parseDate(r.document_date)) || todayISO();
@@ -1155,6 +1158,8 @@ Antworte nur mit einem JSON-Objekt dieser Form:
       response_recipient: r.response_recipient || null, response_address: r.response_address || null, response_reference: r.response_reference || null,
       response_subject: r.response_subject || null, recipient_email: r.recipient_email || null,
       contract_end: iso(r.contract_end), cancellation_date: iso(r.cancellation_date), contract_number: r.contract_number || null, contract_terms: r.contract_terms || null,
+      contract_party: r.contract_party || null, contract_start: iso(r.contract_start), notice_period: r.notice_period || null, auto_renew: typeof r.auto_renew === 'boolean' ? r.auto_renew : null,
+      cost_amount: typeof r.cost_amount === 'number' ? r.cost_amount : null, cost_interval: ['monthly', 'quarterly', 'yearly', 'once'].includes(r.cost_interval) ? r.cost_interval : null, coverage: r.coverage || null,
       discount_date: iso(r.discount_date), discount_percent: num(r.discount_percent), discount_terms: r.discount_terms || null,
       invoice_checks: Array.isArray(r.invoice_checks) ? r.invoice_checks.slice(0, 15).map((c) => ({ label: String(c.label || ''), status: ['present', 'missing', 'unclear'].includes(c.status) ? c.status : 'unclear', detail: String(c.detail || '') })) : [],
       ocr_text: String(r.ocr_text || '').slice(0, 15000),
@@ -1931,7 +1936,7 @@ const HUB = () => [
   ['web.hubRecords', [
     ['folder', 'web.hubReview', 'web.hubReviewH', 'data-a="hubDocs" data-v="open"'],
     ['archive', 'web.hubArchive', 'web.hubArchiveH', 'data-a="hubDocs" data-v="archived"'],
-    ['pen', 'web.hubContracts', 'web.hubContractsH', 'data-a="hubDocs" data-v="contracts"'],
+    ['pen', 'web.hubContracts', 'web.hubContractsH', 'data-go="contracts"'],
     ['xml', 'web.hubErech', 'web.hubErechH', 'data-go="erech"'],
   ]],
   ['web.hubPlanning', [

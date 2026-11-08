@@ -136,7 +136,7 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     await p.fill('#dq', 'gibtesnicht'); await p.waitForTimeout(400); assert(/Noch keine Belege/.test(await text()), 'Leerzustand fehlt');
     await p.fill('#dq', ''); await p.waitForTimeout(400);
     await p.click('[data-a=openList][data-v=archived]'); assert(await ev(() => S.view) === 'doclist' && /SW-2026-77/.test(await text()), 'Archiv-Liste');
-    await p.click('[data-a=back]'); await p.click('[data-a=openList][data-v=contracts]'); assert(await ev(() => S.filters.contracts), 'Verträge-Ansicht');
+    await p.click('[data-a=back]'); await p.click('[data-go=contracts]'); assert(await ev(() => S.view === 'contracts'), 'Verträge-Ansicht');
     await p.click('[data-a=back]'); await p.click('[data-a=openList][data-v="f:firma"]');
     const fx = await text(); assert(/Checkliste Firmenunterlagen/.test(fx) && /Gewerbeanmeldung/.test(fx) && /fehlt/.test(fx), 'Firmen-Checkliste');
     await p.click('[data-a=back]');
