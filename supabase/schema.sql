@@ -104,3 +104,30 @@ grant usage on schema public to authenticated;
 grant execute on function public.kv_mine(text) to authenticated;
 grant select, insert, update, delete on public.kv, public.kv_lease to authenticated;
 grant select on public.ai_usage to authenticated;
+
+-- ===== Paket 2 (08.11.2026): Morgen-Erinnerung (Web Push) =====
+-- Ein Eintrag je Gerät; jeder sieht und ändert nur seine eigenen Geräte.
+create table if not exists public.push_subs (
+  endpoint text primary key,
+  owner uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  p256dh text not null,
+  auth text not null,
+  lang text not null default 'de',
+  space text not null default 'main',
+  created_at timestamptz not null default now(),
+  last_sent timestamptz
+);
+alter table public.push_subs enable row level security;
+drop policy if exists "eigene Geräte" on public.push_subs;
+create policy "eigene Geräte" on public.push_subs for all to authenticated
+  using (owner = (select auth.uid())) with check (owner = (select auth.uid()));
+grant select, insert, update, delete on public.push_subs to authenticated;
+
+-- Täglicher Aufruf um 06:00 UTC (= 07:00 Winterzeit / 08:00 Sommerzeit in Deutschland).
+-- GEHEIM durch denselben Wert wie das Secret CRON_SECRET der Funktion eoffis-api ersetzen; PROJEKT durch die Projekt-ID.
+-- create extension if not exists pg_cron; create extension if not exists pg_net;
+-- select cron.unschedule('eoffis-morgen') where exists (select 1 from cron.job where jobname = 'eoffis-morgen');
+-- select cron.schedule('eoffis-morgen', '0 6 * * *', $$
+--   select net.http_post(url := 'https://PROJEKT.supabase.co/functions/v1/eoffis-api',
+--     headers := jsonb_build_object('content-type', 'application/json', 'x-cron-secret', 'GEHEIM'),
+--     body := '{"action":"push_daily"}'::jsonb) $$);

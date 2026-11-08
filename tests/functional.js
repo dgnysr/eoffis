@@ -205,7 +205,7 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
   });
   await check('F29', 'Start: Scannen, nächste Fristen, zuletzt gescannt; Suche über Lupe', async () => {
     await p.click('.tab[data-go=home]'); const tx = await text();
-    assert(/Dokument scannen/.test(tx) && /Nächste Fristen/.test(tx) && /Zuletzt gescannt/.test(tx), 'Startseite unvollständig');
+    assert(/Dokument scannen/.test(tx) && /Heute & demnächst/.test(tx) && /Termin per Sprache/.test(tx) && /Zuletzt gescannt/.test(tx), 'Startseite unvollständig');
     assert(!/Mindestlohn/.test(tx) && !(await p.$('.stat')) && !(await p.$('.qa')), 'Startseite nicht reduziert');
     await p.click('.scanhero'); assert(await ev(() => S.view) === 'scan', 'Scan-Knopf');
     await p.click('.tab[data-go=home]'); await p.click('[data-a=openSearch]'); assert(await ev(() => S.view) === 'more', 'Lupe → Suche');

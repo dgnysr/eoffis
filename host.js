@@ -200,8 +200,47 @@
     return body;
   }
 
+  /* ---------- Morgen-Erinnerung (Web Push, Service Worker sw.js) ---------- */
+  const b64u = (str) => { const pad = '='.repeat((4 - (str.length % 4)) % 4); const bin = atob((str + pad).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(bin, (c) => c.charCodeAt(0)); };
+  const err = (code, msg) => Object.assign(new Error(msg || code), { code });
+  let swReg = null;
+  if (sb && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').then((r) => { swReg = r; }).catch(() => { /* ohne Service Worker keine Erinnerung */ });
+  const push = {
+    supported: () => !!(sb && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window),
+    permission: () => ('Notification' in window ? Notification.permission : 'denied'),
+    enabledHere: () => { try { return localStorage.getItem('eoffis.push') === '1' && Notification.permission === 'granted'; } catch { return false; } },
+    async enable(lang, space) {
+      if (!push.supported()) throw err('unsupported');
+      if (!CFG.vapidPublicKey) throw err('not_configured', 'Erinnerung auf dem Server noch nicht eingerichtet');
+      // Erst die Erlaubnis (muss direkt nach dem Tippen kommen, sonst blockt Safari), dann anmelden
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') throw err('denied');
+      const reg = swReg || (await navigator.serviceWorker.register('sw.js'));
+      await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(CFG.vapidPublicKey) });
+      await fn('eoffis-api', { action: 'push_subscribe', sub: sub.toJSON(), lang, space });
+      try { localStorage.setItem('eoffis.push', '1'); } catch { /* egal */ }
+    },
+    async updateLang(lang, space) {
+      if (!push.enabledHere()) return;
+      const reg = await navigator.serviceWorker.getRegistration(); const sub = reg && (await reg.pushManager.getSubscription());
+      if (sub) await fn('eoffis-api', { action: 'push_subscribe', sub: sub.toJSON(), lang, space });
+    },
+    async disable() {
+      const reg = await navigator.serviceWorker.getRegistration(); const sub = reg && (await reg.pushManager.getSubscription());
+      if (sub) { try { await fn('eoffis-api', { action: 'push_unsubscribe', endpoint: sub.endpoint }); } catch { /* egal */ } await sub.unsubscribe(); }
+      try { localStorage.removeItem('eoffis.push'); } catch { /* egal */ }
+    },
+    async test(lang) {
+      const reg = await navigator.serviceWorker.getRegistration(); const sub = reg && (await reg.pushManager.getSubscription());
+      if (!sub) throw err('not_subscribed', 'Erinnerung ist auf diesem Gerät nicht eingeschaltet');
+      await fn('eoffis-api', { action: 'push_test', endpoint: sub.endpoint, lang });
+    },
+  };
+
   window.EOFFIS_HOST = {
-    fn,
+    fn, push,
     siteUrl: location.origin + location.pathname,
     logout: async () => { try { localStorage.removeItem('eoffis.space'); } catch { /* egal */ } await sb.auth.signOut(); },
     email: () => (session && session.user && session.user.email) || null,

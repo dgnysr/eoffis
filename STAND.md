@@ -1,17 +1,25 @@
 # Entwicklungsstand eOffis Web-App
 
-**Aktueller Stand:** Stand 08.11.2026 – Paket 1 (Branch `main`) – live unter https://dgnysr.github.io/eoffis/
+**Aktueller Stand:** Stand 08.11.2026 – Paket 1 + 2 (Branch `main`) – live unter https://dgnysr.github.io/eoffis/
 
 ## Weiterentwickeln (Ausgangspunkt für jede neue Sitzung)
 1. Repository `dgnysr/eoffis` klonen – **immer auf dem neuesten Stand von `main` aufbauen**.
-2. Quellcode ändern in `src/app.js`, `src/buchhaltung.js` (Paket 1), `src/shell.html` (CSS), `src/i18n.json` (Texte, 6 Sprachen). Zusatzmodule fügt `build_site.py` vor `boot();` ein.
+2. Quellcode ändern in `src/app.js`, `src/buchhaltung.js` (Paket 1), `src/heute.js` (Paket 2), `src/shell.html` (CSS), `src/i18n.json` (Texte, 6 Sprachen). Zusatzmodule fügt `build_site.py` vor `boot();` ein.
 3. `cd src && python3 build_site.py` erzeugt `index.html`.
-4. Tests (`tests/`): Funktionstest `SITE=1 node functional.js`, Paket 1 `node paket1.js`, Anmeldung `node site_auth.js`, Dateiauswahl `node picker.js`.
+4. Tests (`tests/`): Funktionstest `SITE=1 node functional.js`, Paket 1 `node paket1.js`, Paket 2 `node paket2.js`, Anmeldung `node site_auth.js`, Dateiauswahl `node picker.js`.
 5. Commit + Push auf `main` → GitHub Pages veröffentlicht automatisch (1–2 Min.).
 
 Backend: Supabase-Projekt `lqohxlxemawzrtdqjnci` (Tabelle `kv`, `supabase/schema.sql`), KI-Funktion `smooth-processor` (Code: `supabase/functions/ai/index.ts`, „Verify JWT“ aus), Server-Funktion `eoffis-api` (Code: `supabase/functions/eoffis-api/index.ts`, „Verify JWT“ aus; noch einzurichten – bis dahin fällt die Lexware-Direktübertragung auf „Teilen“ zurück). Schlüssel: nur der öffentliche Publishable Key steht in `config.js`.
 
 ## Änderungsverlauf
+### 08.11.2026 – Paket 2: Heute-Liste, Termine per Sprache, Morgen-Erinnerung, Sprachwahl, Vorauszahlungen
+- Startseite: unter „Dokument scannen“ der Knopf „Termin per Sprache eintragen“ und die Liste „Heute & demnächst“ (Fristen/Termine, offene Antworten, fehlende Firmenunterlagen; Überfälliges zuerst, 5 sichtbar, „Weitere anzeigen“)
+- Termin per Sprache (Start und Fristen): Spracherkennung des Browsers in 6 Sprachen, KI erkennt Titel/Datum/Uhrzeit/Art (ohne KI: einfache Erkennung inkl. Wochentage), prüfen → speichern → Handy-Kalender (.ics, Erinnerung 24 h + 1 h) oder Google Kalender; ohne Spracherkennung Texteingabe (Tastatur-Mikrofon)
+- Fristen mit Uhrzeit (`due_time`), auch im Frist-Editor und in Kalenderdateien
+- Sprachwahl oben rechts auf jeder Seite: Flagge + Name, Liste mit 6 Sprachen; Standard Deutsch
+- Morgen-Erinnerung (Web Push): Karte auf Start/Einstellungen (einschalten, Test, aus, später; iPhone-Hinweis „Zum Home-Bildschirm“), `sw.js`, Server-Teil in `eoffis-api` (push_subscribe/unsubscribe/test, push_daily per pg_cron 06:00 UTC), Tabelle `push_subs` in `schema.sql`. Aktiv erst nach Server-Einrichtung (VAPID-Schlüssel, `vapidPublicKey` in `config.js`)
+- Vorauszahlungsbescheid: KI liest `prepayments`, Karte „Vorauszahlungen erkannt“ → Fristen (letzte vierteljährlich wiederkehrend), neuer Bescheid ersetzt offene; keine doppelten Zahlungsfristen
+- Tests: paket2.js (11/11), functional.js und paket1.js weiter grün
 ### 08.11.2026 – Paket 1: eOffis ist kein Buchhaltungsprogramm mehr, sondern legt Belege ab und überträgt sie
 - Entfernt: Rechnungen schreiben, Mahnungen, Zahlungen/Kontoabgleich, DATEV-Buchungsstapel; Einstellungen ohne IBAN/Rechnungspräfix. Frühere finalisierte Ausgangsrechnungen bleiben unter Mehr → „Frühere Ausgangsrechnungen“ einsehbar (PDF/XRechnung/ZUGFeRD)
 - KI erkennt Buchhaltungsbelege (`acc_type`: Rechnung, Quittung/Kassenbon, Lieferschein, Kontoauszug, Gutschrift), Belegnummer und Bezugsnummern

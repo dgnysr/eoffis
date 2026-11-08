@@ -3,4 +3,6 @@
 window.EOFFIS_CONFIG = {
   supabaseUrl: 'https://DEIN-PROJEKT.supabase.co',
   supabaseAnonKey: 'DEIN-ANON-KEY',
+  aiFunction: 'ai',
+  vapidPublicKey: '', // öffentlicher VAPID-Schlüssel für die Morgen-Erinnerung (siehe supabase/functions/eoffis-api)
 };

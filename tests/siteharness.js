@@ -111,7 +111,8 @@ async function newPage(browser, store, cfg) {
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push('PAGEERR ' + e.message));
-  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|net::/.test(m.text())) errors.push(m.text()); });
+  // Service Worker (sw.js) lässt sich im Testnetz nicht laden – diese Meldung ist erwartet
+  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|net::|fetching the script|ServiceWorker/.test(m.text())) errors.push(m.text()); });
   await page.route(/fonts\.(googleapis|gstatic)/, (r) => r.abort());
   await page.route(/pdf-lib/, (r) => r.fulfill({ body: fs.readFileSync('/opt/npm-tools/node_modules/pdf-lib/dist/pdf-lib.min.js'), contentType: 'text/javascript' }));
   await page.route(/jszip/, (r) => r.fulfill({ body: fs.readFileSync('/opt/npm-tools/node_modules/jszip/dist/jszip.min.js'), contentType: 'text/javascript' }));

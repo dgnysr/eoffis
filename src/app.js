@@ -533,8 +533,9 @@ function renderTop() {
   const showBack = !ROOTS.has(S.view) && S.view !== 'setup' || (S.view === 'more' && S.stack.length);
   const plus = S.loaded && v.topPlus ? `<button class="gear plus" ${v.topPlus} aria-label="${esc(t('web.uiNew'))}">${ico('plus')}</button>` : '';
   const gear = S.loaded && S.view !== 'setup' && S.view !== 'more' && ROOTS.has(S.view) ? `<button class="gear" data-a="openSearch" aria-label="${esc(t('common.search'))}">${ico('search')}</button>` : '';
+  const lg = S.loaded ? langButton() : '';
   $('#top').innerHTML = (showBack ? `<button class="back" data-a="back" aria-label="${esc(t('common.back'))}">←</button>` : '') +
-    (S.view === 'home' || S.view === 'setup' ? `<span class="brand">eOffis</span><h1 class="muted" style="font-size:1rem;font-weight:600">${esc(title)}</h1>` : `<h1>${esc(title)}</h1>`) + plus + gear;
+    (S.view === 'home' || S.view === 'setup' ? `<span class="brand">eOffis</span><h1 class="muted" style="font-size:1rem;font-weight:600">${esc(title)}</h1>` : `<h1>${esc(title)}</h1>`) + plus + gear + lg;
 }
 function renderTabs() {
   const tabs = $('#tabs');
@@ -608,15 +609,14 @@ VIEWS.home = {
     const p = S.profile;
     if (!p && store.space !== 'demo') return VIEWS.setup.render();
     const docs = S.docs.filter((d) => !d.archived);
-    const open = S.tasks.filter((x) => x.status !== 'done' && x.due_date).sort((a, b) => a.due_date.localeCompare(b.due_date));
     const review = docs.filter((d) => d.status === 'saved').length;
     const head = (label, to, n) => `<div class="sec-h row between"><span>${esc(label)}</span>${n ? `<button class="sec-link" data-go="${to}">${esc(t('web.uiAll'))} (${n}) ›</button>` : ''}</div>`;
-    const dl = open.slice(0, 3).map((x) => { const d = daysUntil(x.due_date); return cell({ icon: 'clock', ic: d < 0 ? 'r' : d <= 7 ? 'o' : 'g', title: x.title, sub: fmtDate(x.due_date) + ' · ' + t('tasks.kind_' + x.kind), right: dueLabel(d), attrs: `data-go="task" data-id="${x.id}"` }); });
     const rc = docs.slice(0, 3).map((d) => cell({ icon: d.file_kind === 'xml' ? 'xml' : 'doc', ic: d.status === 'saved' ? 'o' : d.status === 'done' ? '' : 'g', title: d.title, sub: [fmtDate(d.created_at), d.status === 'saved' ? t('web.uiToReview') : t('docs.status_' + d.status)].join(' · '), right: d.amount_gross != null ? money(d.amount_gross, d.currency) : '', attrs: `data-go="doc" data-id="${d.id}"` }));
     return `${p ? `<p class="muted company">${esc(p.company_name)}</p>` : ''}
       <button class="scanhero" data-go="scan"><span class="si">${ico('camera')}</span><span class="st"><b>${esc(t('web.uiScanHero'))}</b><small>${esc(t('web.uiScanHeroSub'))}</small></span><span class="chev" aria-hidden="true">›</span></button>
-      ${head(t('web.uiNextDeadlines'), 'tasks', open.length)}
-      ${dl.length ? `<div class="group">${dl.join('')}</div>` : `<div class="group">${cell({ icon: 'check', ic: 'g', title: t('web.uiNoDeadlines'), attrs: 'data-go="tasks"' })}</div>`}
+      ${voiceButton()}
+      ${todayHtml()}
+      ${pushCard(false)}
       ${head(t('web.uiRecent') + (review ? ' · ' + t('web.uiReviewN', { count: review }) : ''), 'docs', docs.length)}
       ${rc.length ? `<div class="group">${rc.join('')}</div>` : `<div class="group">${cell({ icon: 'doc', title: t('docs.empty'), attrs: 'data-go="scan"' })}</div>`}
 `;
@@ -1002,7 +1002,7 @@ function einvoiceTable(e) {
     ${e.lines.map((l) => `<tr><td>${esc(l.name)}</td><td class="r">${esc(numStr(l.qty))}</td><td class="r">${l.rate != null ? esc(numStr(l.rate)) + ' %' : ''}</td><td class="r">${esc(money(l.net, e.currency))}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function docStep1(d, st) {
-  return `${accCards(d, st)}<div class="card"><div class="row between"><h2>${esc(t('doc.original'))}</h2>
+  return `${accCards(d, st)}${prepayCard(d)}<div class="card"><div class="row between"><h2>${esc(t('doc.original'))}</h2>
       ${d.page_count ? `<button class="btn sm sec" data-a="docDownload">${esc(d.file_kind === 'xml' ? t('web.downloadXml') : t('web.downloadPdf'))}</button>` : ''}</div>
       <div class="thumbs" id="thumbs">${d.page_count ? '<div class="spin"></div>' : `<p class="muted">${esc(t('doc.noFile'))}</p>`}</div></div>
     ${st.analyzing ? busyCard(t('doc.analyzing')) : !d.analyzed_at && d.page_count ? (S.sample ? `<button class="btn" data-a="analyze">${ico('spark')}${esc(t('doc.analyze'))}</button>` : `<div class="banner">${esc(t('web.noAi'))}</div>`) : ''}
@@ -1118,9 +1118,10 @@ Skonto: "discount_date", "discount_percent" (Zahl), "discount_terms" – nur wen
 Rechnungen: "invoice_checks" prüft die Pflichtangaben nach § 14 Abs. 4 UStG (Name/Anschrift beider Parteien, Steuernummer oder USt-IdNr., Ausstellungsdatum, Rechnungsnummer, Menge/Art der Leistung, Leistungsdatum, Entgelt nach Steuersätzen, Steuersatz und Steuerbetrag oder Befreiungshinweis) und rechnet die Summen nach. Kleinbetragsrechnung bis 250 € nach § 33 UStDV vereinfacht. Jeder Eintrag {"label","status":"present"|"missing"|"unclear","detail"} auf ${LANG_NAMES[lang]}. Bei Nicht-Rechnungen leere Liste. Das ist keine rechtsverbindliche Freigabe.
 "ocr_text": der vollständig lesbare Originaltext (höchstens 15000 Zeichen) für die Volltextsuche.
 "folder" ist einer von: ${FOLDERS.join(', ')} – firma = Firmen-Stammdaten (Gewerbeanmeldung, Handelsregisterauszug, Ausweis des Inhabers, Zuteilung Steuernummer/USt-IdNr., Gesellschaftsvertrag), finanzamt = Steuerbescheide und Schreiben des Finanzamts, buchhaltung = Buchhaltungsbelege (Eingangsrechnungen, Quittungen/Kassenbons, Lieferscheine, Kontoauszüge, Gutschriften), bank = Bank- und Kreditverträge, Schreiben der Bank (außer Kontoauszügen), versicherungen = Versicherungspolicen und -schreiben, personal = Arbeitsverträge/Lohn/Sozialversicherung, behoerden = sonstige Behörden/Kammern, mietvertraege = Miete/Pacht. "dates[].kind" ist einer von: payment, reply, contract, cancellation, skonto, other; "date" ist null, wenn kein eindeutiges Datum genannt ist.
+Vorauszahlungsbescheid des Finanzamts oder der Gemeinde (Einkommensteuer, Gewerbesteuer, Körperschaftsteuer, Kirchensteuer, Solidaritätszuschlag): "prepayments" listet jede künftige Vorauszahlung {"tax": Steuerart auf Deutsch, "due_date": "YYYY-MM-DD", "amount": Zahl}; diese Termine NICHT zusätzlich in "dates". Sonst leere Liste.
 Buchhaltung: "acc_type" ist "rechnung" (Eingangsrechnung an den Betrieb), "quittung" (Quittung, Kassenbon, Tank-/Bewirtungsbeleg), "lieferschein", "kontoauszug", "gutschrift" oder "none" (kein Buchhaltungsbeleg, z. B. Behördenschreiben, Vertrag, Mahnung ohne neue Rechnung). "document_number": Nummer dieses Belegs (Rechnungs-, Lieferschein-, Quittungsnummer) oder null. "reference_numbers": im Beleg genannte andere Nummern, mit denen er zu anderen Belegen gehört (Lieferschein-, Auftrags-, Bestell-, Rechnungsnummern), sonst leere Liste.
 Antworte nur mit einem JSON-Objekt dieser Form:
-{"title":string,"acc_type":string,"document_number":string|null,"reference_numbers":[string],"doc_type":string,"sender":string|null,"sender_address":string|null,"recipient":string|null,"recipient_address":string|null,"invoice_number":string|null,"amount_gross":number|null,"amount_net":number|null,"vat_amount":number|null,"currency":string|null,"payment_required":boolean,"payment_due_date":string|null,"iban":string|null,"bic":string|null,"payment_reference":string|null,"is_contract":boolean,"is_incoming_invoice":boolean,"folder":string,"explanation":string,"next_steps":[string],"dates":[{"kind":string,"date":string|null,"description":string}],"document_date":string|null,"suggested_action":{"type":string,"question":string},"action_needed":boolean,"suggested_task":string,"response_recipient":string|null,"response_address":string|null,"response_reference":string|null,"response_subject":string|null,"recipient_email":string|null,"contract_end":string|null,"cancellation_date":string|null,"contract_number":string|null,"contract_terms":string|null,"discount_date":string|null,"discount_percent":number|null,"discount_terms":string|null,"invoice_checks":[{"label":string,"status":string,"detail":string}],"ocr_text":string}`;
+{"title":string,"prepayments":[{"tax":string,"due_date":string,"amount":number}],"acc_type":string,"document_number":string|null,"reference_numbers":[string],"doc_type":string,"sender":string|null,"sender_address":string|null,"recipient":string|null,"recipient_address":string|null,"invoice_number":string|null,"amount_gross":number|null,"amount_net":number|null,"vat_amount":number|null,"currency":string|null,"payment_required":boolean,"payment_due_date":string|null,"iban":string|null,"bic":string|null,"payment_reference":string|null,"is_contract":boolean,"is_incoming_invoice":boolean,"folder":string,"explanation":string,"next_steps":[string],"dates":[{"kind":string,"date":string|null,"description":string}],"document_date":string|null,"suggested_action":{"type":string,"question":string},"action_needed":boolean,"suggested_task":string,"response_recipient":string|null,"response_address":string|null,"response_reference":string|null,"response_subject":string|null,"recipient_email":string|null,"contract_end":string|null,"cancellation_date":string|null,"contract_number":string|null,"contract_terms":string|null,"discount_date":string|null,"discount_percent":number|null,"discount_terms":string|null,"invoice_checks":[{"label":string,"status":string,"detail":string}],"ocr_text":string}`;
     const r = await aiJson(prompt, inp.images);
     if (!r || typeof r !== 'object') throw { code: 'invalid_json' };
     const docDate = (r.document_date && parseDate(r.document_date)) || todayISO();
@@ -1139,6 +1140,7 @@ Antworte nur mit einem JSON-Objekt dieser Form:
       folder: ACC_TYPES.includes(r.acc_type) ? 'buchhaltung' : FOLDERS.includes(r.folder) ? r.folder : r.folder === 'rechnungen' ? 'buchhaltung' : 'sonstiges', explanation: r.explanation || '',
       acc_type: ACC_TYPES.includes(r.acc_type) ? r.acc_type : 'none', document_number: r.document_number ? String(r.document_number) : null,
       reference_numbers: Array.isArray(r.reference_numbers) ? r.reference_numbers.map(String).filter(Boolean).slice(0, 10) : [],
+      prepayments: Array.isArray(r.prepayments) ? r.prepayments.map((x) => ({ tax: String(x.tax || 'Steuer').slice(0, 40), due_date: iso(x.due_date), amount: num(x.amount) })).filter((x) => x.due_date && x.amount != null).slice(0, 16) : [],
       next_steps: Array.isArray(r.next_steps) ? r.next_steps.map(String).slice(0, 6) : [],
       dates: (() => {
         const list = Array.isArray(r.dates) ? r.dates.map((x) => ({ kind: KINDS.includes(x.kind) ? x.kind : 'other', date: iso(x.date), description: String(x.description || '') })).slice(0, 10) : [];
@@ -1210,8 +1212,9 @@ function pagesToPdf(pages) {
 /** Nach der KI-Analyse: erkannte (heutige/künftige) Fristen automatisch unter „Fristen“ eintragen – ohne Doppelte */
 async function autoTakeDates(d) {
   if (!d) return [];
-  const list = (d.dates || []).filter((x) => x.date);
-  if (d.due_date && !list.some((x) => x.kind === 'payment' && x.date === d.due_date)) list.push({ kind: 'payment', date: d.due_date, description: t('tasks.kind_payment') });
+  const pre = new Set((d.prepayments || []).map((x) => x.due_date));
+  const list = (d.dates || []).filter((x) => x.date && !(pre.has(x.date) && (x.kind === 'payment' || x.kind === 'tax')));
+  if (d.due_date && !pre.has(d.due_date) && !list.some((x) => x.kind === 'payment' && x.date === d.due_date)) list.push({ kind: 'payment', date: d.due_date, description: t('tasks.kind_payment') });
   const ids = [];
   for (const x of list) {
     if (x.date < todayISO()) continue;
@@ -1229,6 +1232,8 @@ function taskFromDate(d, x) {
   };
 }
 function gcalLink(x) {
+  if (x.due_time) { const d = x.due_date.replace(/-/g, ''), [hh, mm] = x.due_time.split(':'), eh = String(Math.min(23, +hh + 1)).padStart(2, '0');
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('eOffis: ' + x.title)}&dates=${d}T${hh}${mm}00/${d}T${eh}${mm}00&ctz=Europe/Berlin&details=${encodeURIComponent(t('tasks.kind_' + x.kind))}`; }
   const a = x.due_date.replace(/-/g, ''), b = addDays(x.due_date, 1).replace(/-/g, '');
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('eOffis: ' + x.title)}&dates=${a}/${b}&details=${encodeURIComponent(t('tasks.kind_' + x.kind))}`;
 }
@@ -1538,11 +1543,11 @@ VIEWS.tasks = {
   topPlus: 'data-go="task" data-id="new"',
   render() {
     const list = S.tasks.filter((x) => (S.showDone ? x.status === 'done' : x.status !== 'done')).sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999'));
-    return `${seg([['open', t('web.open')], ['done', t('web.done')]], S.showDone ? 'done' : 'open', 'taskSeg')}
+    return `${voiceButton('compact')}${seg([['open', t('web.open')], ['done', t('web.done')]], S.showDone ? 'done' : 'open', 'taskSeg')}
       ${list.length ? `<div class="group">${list.slice(0, lim('tasks')).map((x) => { const dn = x.status === 'done'; const d = dn ? null : daysUntil(x.due_date); const sv = sev(d);
         const circ = dn ? '✓' : x.status === 'in_progress' ? '◐' : '○';
         return `<div class="cell" style="padding:0;gap:0"><button class="ib" style="border:0;margin-inline-start:6px;font-size:1.3rem;color:var(--${dn ? 'ok' : sv === 'red' ? 'stamp' : sv === 'orange' || sv === 'yellow' ? 'warn' : 'muted'})" data-a="taskCycle" data-v="${x.id}" aria-label="${esc(t('tasks.tapStatus'))}: ${esc(t('tasks.status_' + x.status))}">${circ}</button>
-          <button class="cell" style="flex:1" data-go="task" data-id="${x.id}"><span class="cx"><span class="ct" ${dn ? 'style="text-decoration:line-through;color:var(--muted)"' : ''}>${esc((x.priority === 'high' && !dn ? '● ' : '') + x.title)}</span><span class="cs" style="display:block">${esc([fmtDate(x.due_date), t('tasks.kind_' + x.kind), t('tasks.status_' + x.status), x.recur ? '↻ ' + t('tasks.recur_' + x.recur) : ''].filter(Boolean).join(' · '))}</span></span><span class="cr">${esc(dn ? '' : dueLabel(d))}</span><span class="chev">›</span></button></div>`; }).join('')}</div>`
+          <button class="cell" style="flex:1" data-go="task" data-id="${x.id}"><span class="cx"><span class="ct" ${dn ? 'style="text-decoration:line-through;color:var(--muted)"' : ''}>${esc((x.priority === 'high' && !dn ? '● ' : '') + x.title)}</span><span class="cs" style="display:block">${esc([fmtDate(x.due_date) + (x.due_time ? ' ' + x.due_time : ''), t('tasks.kind_' + x.kind), t('tasks.status_' + x.status), x.recur ? '↻ ' + t('tasks.recur_' + x.recur) : ''].filter(Boolean).join(' · '))}</span></span><span class="cr">${esc(dn ? '' : dueLabel(d))}</span><span class="chev">›</span></button></div>`; }).join('')}</div>`
         : `<div class="empty">${ico('clock')}<p class="muted">${esc(t('tasks.empty'))}</p></div>`}${moreBtn('tasks', list.length)}
       ${group([cell({ icon: 'cal', ic: 'g', title: t('tasks.taxCalendar'), attrs: 'data-go="tax"' })].concat(S.tasks.some((x) => x.status !== 'done' && x.due_date) ? [cell({ icon: 'bell', ic: 'g', title: t('web.icsExport'), sub: t('web.icsHint'), attrs: 'data-a="icsExport"' })] : []))}
       <p class="muted small">${esc(t('tax.stateNote'))}</p>`;
@@ -1557,7 +1562,7 @@ VIEWS.task = {
     if (!isNew) S.taskDraft = S.taskDraft && S.taskDraft.id === x.id ? S.taskDraft : clone(x);
     const T = S.taskDraft;
     return `<div class="card">${field('t_title', t('tasks.name'), T.title || '')}
-      ${field('t_due', t('tasks.due'), T.due_date ? fmtDate(T.due_date) : '', `placeholder="${esc(t('common.dateHint'))}" inputmode="numeric"`)}
+      <div class="grid2">${field('t_due', t('tasks.due'), T.due_date ? fmtDate(T.due_date) : '', `placeholder="${esc(t('common.dateHint'))}" inputmode="numeric"`)}${field('t_time', t('heu.fTime'), T._time !== undefined ? T._time : T.due_time || '', 'placeholder="10:00" inputmode="numeric"')}</div>
       <h2>${esc(t('tasks.kind'))}</h2><div class="chips">${KINDS.map((k) => chip(t('tasks.kind_' + k), T.kind === k, `data-a="tset" data-k="kind" data-v="${k}"`)).join('')}</div>
       <h2>${esc(t('tasks.status'))}</h2><div class="chips">${['open', 'in_progress', 'done'].map((k) => chip(t('tasks.status_' + k), T.status === k, `data-a="tset" data-k="status" data-v="${k}"`)).join('')}</div>
       <h2>${esc(t('tasks.priority'))}</h2><div class="chips">${['low', 'normal', 'high'].map((k) => chip(t('tasks.prio_' + k), T.priority === k, `data-a="tset" data-k="priority" data-v="${k}"`)).join('')}</div>
@@ -1568,7 +1573,7 @@ VIEWS.task = {
       ${isNew ? '' : `<button class="btn ghost" data-a="taskDel">${esc(t('common.delete'))}</button>`}`;
   },
 };
-function keepTaskInputs() { if (!S.taskDraft) return; S.taskDraft.title = val('t_title'); S.taskDraft._due = val('t_due'); S.taskDraft.notes = val('t_notes'); }
+function keepTaskInputs() { if (!S.taskDraft) return; S.taskDraft.title = val('t_title'); S.taskDraft._due = val('t_due'); S.taskDraft._time = val('t_time'); S.taskDraft.notes = val('t_notes'); }
 function nextDue(iso, recur) {
   const d = fromISO(iso), day = d.getDate(), add = recur === 'monthly' ? 1 : recur === 'quarterly' ? 3 : 12;
   const n = new Date(d.getFullYear(), d.getMonth() + add, 1); n.setDate(Math.min(day, new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate()));
@@ -1586,9 +1591,10 @@ async function taskSave() {
   const T = S.taskDraft; keepTaskInputs();
   if (!T.title.trim()) return toast(t('tasks.name'));
   let due = null; if (T._due.trim()) { due = parseDate(T._due); if (!due) return toast(t('common.invalidDate')); }
+  const tm = String(T._time || '').trim().replace('.', ':'); if (tm && !/^([01]?\d|2[0-3]):[0-5]\d$/.test(tm)) return toast(t('heu.fTime'));
   await guard(async () => {
-    const rec = Object.assign({}, T, { title: T.title.trim(), due_date: due, notes: T.notes.trim() });
-    delete rec._due;
+    const rec = Object.assign({}, T, { title: T.title.trim(), due_date: due, due_time: tm && due ? tm.padStart(5, '0') : null, notes: T.notes.trim() });
+    delete rec._due; delete rec._time;
     if (!rec.id) { rec.id = uid(); rec.created_at = nowIso(); rec.version = 0; }
     const saved = await saveVersioned('tasks', rec);
     const i = S.tasks.findIndex((k) => k.id === saved.id); if (i >= 0) S.tasks[i] = saved; else S.tasks.push(saved);
@@ -1603,6 +1609,15 @@ function buildIcs(ids, fixedDays) {
   const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//eOffis//Fristen//DE', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:eOffis Fristen'];
   for (const x of S.tasks.filter((k) => k.status !== 'done' && k.due_date && (!ids || ids.includes(k.id)))) {
     const d = x.due_date.replace(/-/g, ''), e = addDays(x.due_date, 1).replace(/-/g, '');
+    if (x.due_time) {
+      // Termin mit Uhrzeit (z. B. per Sprache): 1 Stunde, Erinnerung 24 Stunden und 1 Stunde vorher (Ortszeit des Handys)
+      const [hh, mm] = x.due_time.split(':').map(Number), endH = Math.min(23, hh + 1);
+      lines.push('BEGIN:VEVENT', `UID:${x.id}@eoffis`, `DTSTAMP:${stamp}`, `DTSTART:${d}T${String(hh).padStart(2, '0')}${String(mm).padStart(2, '0')}00`, `DTEND:${d}T${String(endH).padStart(2, '0')}${String(endH === hh ? 59 : mm).padStart(2, '0')}00`,
+        icsFold(`SUMMARY:${icsEscape('eOffis: ' + x.title)}`), icsFold(`DESCRIPTION:${icsEscape(t('tasks.kind_' + x.kind) + (x.notes ? ' – ' + x.notes : ''))}`));
+      for (const trig of ['-P1D', '-PT1H']) lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', `TRIGGER:${trig}`, icsFold(`DESCRIPTION:${icsEscape(x.title)}`), 'END:VALARM');
+      lines.push('END:VEVENT');
+      continue;
+    }
     lines.push('BEGIN:VEVENT', `UID:${x.id}@eoffis`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${d}`, `DTEND;VALUE=DATE:${e}`,
       icsFold(`SUMMARY:${icsEscape('eOffis: ' + x.title)}`), icsFold(`DESCRIPTION:${icsEscape(t('tasks.kind_' + x.kind) + (x.notes ? ' – ' + x.notes : ''))}`), 'TRANSP:TRANSPARENT');
     for (const n of [...new Set(fixedDays || offsetsFor(x.kind))].sort((a, b) => b - a)) {
@@ -1973,6 +1988,7 @@ VIEWS.settings = {
         <div class="grid2 stack">${field('st_tax', t('settings.taxNo'), p.tax_number || '')}${field('st_vat', t('settings.vatId'), p.vat_id || '', 'autocapitalize="characters"')}</div>
         ${field('st_mail', t('settings.advisorEmail'), p.tax_advisor_email || '', 'type="email"')}
         <button class="btn" data-a="settingsSave">${esc(t('common.save'))}</button></div>
+      <div class="sec-h">${esc(t('heu.pushTitle'))}</div>${pushCard(true)}
       ${accSettingsHtml()}
       <div class="sec-h">${esc(t('web.privacyTitle'))}</div><div class="card"><p class="small muted">${esc(t('web.privacyText'))}</p></div>
       <div class="sec-h">${esc(t('web.gobdTitle'))}</div><div class="card"><p class="small muted">${esc(t('web.gobdText'))}</p></div>`;
@@ -2088,7 +2104,7 @@ document.addEventListener('click', async (e) => {
     case 'letterPdf': { const r = S.replies.find((x) => x.docId === S.params.id); return saveFile(`${safeName(r.data.subject || 'Antwort')}.pdf`, letterPdf(r.data)); }
     case 'letterCopy': { const r = S.replies.find((x) => x.docId === S.params.id); return copy(letterText(r.data)); }
     case 'showDone': S.showDone = a.checked; return render();
-    case 'tset': keepTaskInputs(); S.taskDraft[a.dataset.k] = v; render(); { const T = S.taskDraft; $('#t_title').value = T.title || ''; $('#t_due').value = T._due || ''; $('#t_notes').value = T.notes || ''; } return;
+    case 'tset': keepTaskInputs(); S.taskDraft[a.dataset.k] = v; render(); { const T = S.taskDraft; $('#t_title').value = T.title || ''; $('#t_due').value = T._due || ''; $('#t_time').value = T._time || ''; $('#t_notes').value = T.notes || ''; } return;
     case 'taskSave': return taskSave();
     case 'taskDel': { const x = S.tasks.find((k) => k.id === S.params.id); if (!x || !(await ask(t('tasks.deleteConfirm'), t('common.delete'), true))) return; return guard(async () => { await store.del('tasks', x.id); S.tasks = S.tasks.filter((k) => k.id !== x.id); back(); }); }
     case 'dfv': return guard(async () => { S.profile = Object.assign({}, S.profile, { dauerfrist: a.checked }); await store.setProfile(S.profile); render(); });
