@@ -1,0 +1,34 @@
+# Holt die verwendeten Bibliotheken in genau festgelegten Versionen von npm und legt sie unter vendor/ ab.
+# So lädt eOffis keine Programmteile mehr von fremden Servern. Läuft, wenn vendor/VERSIONS geändert wird.
+name: Bibliotheken bereitstellen
+on:
+  push:
+    branches: [main]
+    paths: ['vendor/VERSIONS']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Pakete laden und Dateien kopieren
+        run: |
+          set -e
+          T=$(mktemp -d)
+          while read -r pkg file target; do
+            [ -z "$pkg" ] && continue; case "$pkg" in \#*) continue;; esac
+            (cd "$T" && npm pack --silent "$pkg" >/dev/null)
+            tgz=$(ls -t "$T"/*.tgz | head -1); mkdir -p "$T/x"; rm -rf "$T/x/package"; tar -xzf "$tgz" -C "$T/x"
+            cp "$T/x/package/$file" "vendor/$target"
+            rm -f "$tgz"
+          done < vendor/VERSIONS
+          (cd vendor && sha384sum $(awk '!/^#/ && NF {print $3}' VERSIONS) > SHA384SUMS)
+      - name: Speichern
+        run: |
+          git config user.name "eoffis-bot"; git config user.email "eoffis-bot@users.noreply.github.com"
+          git add vendor
+          git diff --cached --quiet || (git commit -m "Bibliotheken unter vendor/ aktualisiert" && git push)
