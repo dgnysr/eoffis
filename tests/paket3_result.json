@@ -3,91 +3,91 @@
   "id": "P3-01",
   "name": "Einrichtung",
   "ok": true,
-  "ms": 186,
+  "ms": 138,
   "note": ""
  },
  {
   "id": "P3-02",
   "name": "Versicherungspolice scannen: KI liest Partner, Kosten, Kündigungsfrist; Vertragskarte mit Bearbeiten/Kündigen",
   "ok": true,
-  "ms": 628,
+  "ms": 468,
   "note": ""
  },
  {
   "id": "P3-03",
   "name": "Übersicht Verträge & Versicherungen: Liste, Jahreskosten, aus Mehr und Ablage erreichbar",
   "ok": true,
-  "ms": 546,
+  "ms": 403,
   "note": ""
  },
  {
   "id": "P3-04",
   "name": "Vertrag bearbeiten: ungültiges Datum abgelehnt; neue Kündigungsfrist verschiebt die Frist",
   "ok": true,
-  "ms": 751,
+  "ms": 675,
   "note": ""
  },
  {
   "id": "P3-05",
   "name": "Ein Klick „Kündigung schreiben“ öffnet das Kündigungsschreiben",
   "ok": true,
-  "ms": 2634,
+  "ms": 2600,
   "note": ""
  },
  {
   "id": "P3-06",
   "name": "Verfahrensdokumentation: im Firma-Ordner „fehlt“; einfache Fassung (12 Fragen) erstellen; PDF, Ablage, jährliche Erinnerung",
   "ok": true,
-  "ms": 3491,
+  "ms": 3160,
   "note": ""
  },
  {
   "id": "P3-07",
   "name": "Vollständige Fassung: 16 Fragen, frühere Antworten vorbelegt, nur eine offene Jahresaufgabe",
   "ok": true,
-  "ms": 2720,
+  "ms": 2268,
   "note": ""
  },
  {
   "id": "P3-08",
   "name": "Firmenunterlagen als ein PDF: Auswahl, Aufdruck „Nur zur Vorlage bei …“ schräg auf jeder Seite",
   "ok": true,
-  "ms": 13254,
+  "ms": 13029,
   "note": ""
  },
  {
   "id": "P3-09",
   "name": "Freigabe-Link ohne Server: verständlicher Hinweis statt Fehler",
   "ok": true,
-  "ms": 1576,
+  "ms": 1616,
   "note": ""
  },
  {
   "id": "P3-10",
   "name": "Freigabe-Link (Server simuliert): nur verschlüsselt hochgeladen, Link + 6-stelliger Code, 7 Tage, Liste, Sperren",
   "ok": true,
-  "ms": 1838,
+  "ms": 1902,
   "note": ""
  },
  {
   "id": "P3-11",
   "name": "Empfängerseite freigabe.html: falscher Code abgelehnt, richtiger Code → Datei, gesperrt/abgelaufen verständlich",
   "ok": true,
-  "ms": 1184,
+  "ms": 952,
   "note": ""
  },
  {
   "id": "P3-12",
   "name": "Alle neuen Ansichten in 6 Sprachen ohne fehlende Texte",
   "ok": true,
-  "ms": 2410,
+  "ms": 2151,
   "note": ""
  },
  {
   "id": "ERR",
   "name": "Konsolenfehler",
   "ok": true,
-  "ms": 1,
+  "ms": 0,
   "note": ""
  }
 ]

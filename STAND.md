@@ -12,6 +12,11 @@
 Backend: Supabase-Projekt `lqohxlxemawzrtdqjnci` (Tabelle `kv`, `supabase/schema.sql`), KI-Funktion `smooth-processor` (Code: `supabase/functions/ai/index.ts`, „Verify JWT“ aus), Server-Funktion `eoffis-api` (Code: `supabase/functions/eoffis-api/index.ts`, „Verify JWT“ aus; noch einzurichten – bis dahin fällt die Lexware-Direktübertragung auf „Teilen“ zurück). Schlüssel: nur der öffentliche Publishable Key steht in `config.js`.
 
 ## Änderungsverlauf
+### 08.11.2026 – Gesamttest und Sicherheitsprüfung (kein App-Code geändert)
+- Alle Tests grün: functional.js 25/25, site_auth.js 15/15, picker.js 7/7 (mit siteharness), paket1.js 23/23, paket2.js 12/12, paket3.js 13/13
+- Angriffstest der Datenbank-Regeln (schema.sql auf lokalem PostgreSQL, Konto A gegen B und ohne Anmeldung): Daten sauber getrennt
+- Offene Lecks (Umsetzung nach Freigabe): 1) `ai_give_back` ist für Nutzer aufrufbar → KI-Tageslimit umgehbar; 2) KI-Funktion nimmt beliebige Texte/Bilder auch von anonymen Konten an → Missbrauch auf eigene Kosten; 3) kein Speicherlimit je Konto; dazu Lexware-Schlüssel unverschlüsselt in `kv`, keine CSP/Prüfsummen für CDN-Skripte, anonyme Konten werden nie gelöscht
+- Skalierung: Scanseiten liegen in der Datenbank (Gratis-Tarif 500 MB ≈ 2.500 Seiten); Morgen-Erinnerung versendet nacheinander in einem Aufruf (Zeitlimit ab einigen hundert Geräten)
 ### 08.11.2026 – Design 2026 (neue Oberfläche)
 - Neues Modul `src/design.js`, neue CSS-Ebene am Ende von `src/shell.html`. Ziel: Gestaltung nach dem Vorbild der Apple- und Microsoft-Apps.
   - Systemschrift (SF Pro/Segoe UI) statt Webfont; keine Google-Fonts-Ladezeit mehr.
