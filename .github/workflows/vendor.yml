@@ -21,9 +21,13 @@ jobs:
           T=$(mktemp -d)
           while read -r pkg file target; do
             [ -z "$pkg" ] && continue; case "$pkg" in \#*) continue;; esac
-            (cd "$T" && npm pack --silent "$pkg" >/dev/null)
+            (cd "$T" && npm pack --silent "$pkg" >/dev/null </dev/null)
             tgz=$(ls -t "$T"/*.tgz | head -1); mkdir -p "$T/x"; rm -rf "$T/x/package"; tar -xzf "$tgz" -C "$T/x"
-            cp "$T/x/package/$file" "vendor/$target"
+            src="$T/x/package/$file"
+            # jsDelivr erzeugt .min.js selbst – im npm-Paket liegt dann nur die .js-Datei
+            [ -f "$src" ] || src="${src%.min.js}.js"
+            [ -f "$src" ] || { echo "Datei fehlt in $pkg:"; (cd "$T/x/package" && find . -name '*.js' | head -40); exit 1; }
+            cp "$src" "vendor/$target"
             rm -f "$tgz"
           done < vendor/VERSIONS
           (cd vendor && sha384sum $(awk '!/^#/ && NF {print $3}' VERSIONS) > SHA384SUMS)
