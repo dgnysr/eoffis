@@ -23,7 +23,7 @@ Backend: Supabase-Projekt `lqohxlxemawzrtdqjnci` (`supabase/schema.sql`), KI-Fun
 - **E-Mail im passenden Moment:** nach der ersten erkannten Frist (höchstens alle 3 Tage), beim KI-Limit, bei vollem Speicher, in Einstellungen/Abo; Daten bleiben erhalten (`updateUser({ email })` bzw. `linkIdentity`); nach dem Bestätigungslink optional Passwort festlegen.
 - **Probezeit:** 28 Tage voller Umfang → Nachricht „endet in 7 Tagen“ → nach 35 Tagen letzte Nachricht mit Abo-Knopf → 30 Tage nur lesen (Trigger `kv_guard_write`) → Löschung (Warnung 7 Tage vorher). Nachrichten per Push und E-Mail (Brevo), in der Sprache des Kunden; täglicher Lauf `daily` in `eoffis-api`. Abo-Seite (`?abo=1`) mit „Abo anfragen“ bis zum Bezahlsystem.
 - Morgen-Erinnerung: seitenweise und parallel (getestet mit 2.500 Geräten).
-- Tests neu: `tests/db_test.sh` (52 Prüfungen auf echtem PostgreSQL), `tests/functions_test.js` (34), `tests/paket4.js` (15), `tests/csp_libs.js` (8), `tests/run_all.sh`; bestehende Tests angepasst.
+- Tests neu: `tests/db_test.sh` (51 Prüfungen auf echtem PostgreSQL), `tests/functions_test.js` (34), `tests/paket4.js` (15), `tests/csp_libs.js` (8), `tests/run_all.sh`; bestehende Tests angepasst. Gesamtlauf: 214 Prüfungen, 0 Fehler.
 
 ### 08.11.2026 – Gesamttest und Sicherheitsprüfung (kein App-Code geändert)
 - Alle Tests grün: functional.js 25/25, site_auth.js 15/15, picker.js 7/7 (mit siteharness), paket1.js 23/23, paket2.js 12/12, paket3.js 13/13
