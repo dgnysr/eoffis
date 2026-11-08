@@ -1,7 +1,7 @@
 let S_OK;
 const fs = require('fs'), path = require('path');
 const { FakeDB, newPage, loadApp, chromium } = require('./harness');
-const HTML = fs.readFileSync(path.join(__dirname, '..', 'eoffis.html'), 'utf8');
+const HTML = fs.existsSync(path.join(__dirname, '..', 'eoffis.html')) ? fs.readFileSync(path.join(__dirname, '..', 'eoffis.html'), 'utf8') : '';
 const ok = (c, m) => console.log((c ? 'PASS ' : 'FAIL ') + m);
 (async () => {
   const b = await chromium.launch(); const db = new FakeDB(0);

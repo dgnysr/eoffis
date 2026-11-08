@@ -4,7 +4,10 @@
 // - Fake-KI (sample/sample.json), Download-Erfassung, Bibliotheken lokal bzw. als Stub
 const fs = require('fs');
 const path = require('path');
-const { chromium } = require('/home/claude/.npm-global/lib/node_modules/playwright');
+const PW = require(process.env.PW_MODULE || (fs.existsSync('/home/claude/.npm-global/lib/node_modules/playwright') ? '/home/claude/.npm-global/lib/node_modules/playwright' : '/opt/npm-tools/node_modules/playwright'));
+// Ohne heruntergeladenen Playwright-Browser das installierte Chrome nutzen
+const CHROME = process.env.CHROME || (fs.existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : null);
+const chromium = { launch: (o = {}) => PW.chromium.launch(Object.assign(CHROME ? { executablePath: CHROME } : {}, o)) };
 
 const DOC_CAP = 25000, DOC_MAX = 256 * 1024, QUERY_MAX = 1000;
 class FakeDB {

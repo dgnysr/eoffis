@@ -184,7 +184,24 @@
     },
   };
 
+  /* ---------- Eigene Server-Funktionen (z. B. Lexware-Übertragung) ---------- */
+  async function fn(name, payload) {
+    const { data: s } = await sb.auth.getSession();
+    let res;
+    try {
+      res = await fetch(CFG.supabaseUrl + '/functions/v1/' + name, {
+        method: 'POST', headers: { 'content-type': 'application/json', apikey: CFG.supabaseAnonKey, Authorization: 'Bearer ' + (s.session ? s.session.access_token : '') },
+        body: JSON.stringify(payload || {}),
+      });
+    } catch (err) { const e = new Error('Keine Verbindung'); e.code = 'unavailable'; throw e; }
+    let body = null; try { body = await res.json(); } catch { /* leer */ }
+    if (res.status === 404 && (!body || !body.code)) { const e = new Error('Funktion „' + name + '“ ist nicht eingerichtet'); e.code = 'not_configured'; throw e; }
+    if (!res.ok || !body) { const e = new Error((body && body.error) || ('Fehler ' + res.status)); e.code = (body && body.code) || 'unavailable'; throw e; }
+    return body;
+  }
+
   window.EOFFIS_HOST = {
+    fn,
     siteUrl: location.origin + location.pathname,
     logout: async () => { try { localStorage.removeItem('eoffis.space'); } catch { /* egal */ } await sb.auth.signOut(); },
     email: () => (session && session.user && session.user.email) || null,

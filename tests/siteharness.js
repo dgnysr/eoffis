@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { FakeDB, chromium, DOC_CAP } = require('./harness');
-const SITE = path.join(__dirname, '..', '..', 'site');
+const SITE = process.env.EOFFIS_SITE || (fs.existsSync(path.join(__dirname, '..', '..', 'site', 'index.html')) ? path.join(__dirname, '..', '..', 'site') : path.join(__dirname, '..'));
 const BLANK = fs.readFileSync(path.join(__dirname, 'blank.b64'), 'utf8');
 const H = fs.readFileSync(path.join(__dirname, 'harness.js'), 'utf8');
 const JSPDF_STUB = eval(H.match(/const JSPDF_STUB = (`[\s\S]*?`);/)[1]);

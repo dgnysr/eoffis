@@ -304,7 +304,7 @@ const S = {
   loaded: false, loadError: false, sample: null, sampleLimits: null, downloads: null, busy: null,
   scan: null, crop: null, filters: { q: '', f: 'open', folder: null, contracts: false }, invFilter: 'all', showDone: false,
 };
-const FOLDERS = ['firma', 'finanzamt', 'rechnungen', 'bank', 'versicherungen', 'personal', 'behoerden', 'mietvertraege', 'hygiene', 'sonstiges'];
+const FOLDERS = ['buchhaltung', 'firma', 'finanzamt', 'bank', 'versicherungen', 'personal', 'behoerden', 'mietvertraege', 'hygiene', 'sonstiges'];
 const KINDS = ['payment', 'reply', 'contract', 'cancellation', 'skonto', 'tax', 'hygiene', 'personnel', 'permit', 'other'];
 const INDUSTRIES = ['gastro', 'handwerk', 'friseur', 'reinigung', 'einzelhandel', 'sonstiges'];
 
@@ -485,6 +485,7 @@ async function boot() {
   // Früher automatisch angelegte Beispielunterlagen entfernen – jeder sieht nur seine eigenen Unterlagen
   if (!S.loadError) { try { if (await purgeExamples()) await reloadAll(); } catch (e) { console.error(e); } }
   clearTimeout(timer);
+  if (!S.loadError) { try { await accSecret(); await ensureAdvisorTask(); } catch (e) { console.warn(e); } }
   S.loaded = true;
   if (!S.profile) S.view = 'setup';
   render();
@@ -494,10 +495,17 @@ async function reloadAll() {
   if (isSeedProfile(S.profile)) S.profile = null; // Beispiel-Betrieb „Demo Bistro“ → eigene Betriebsdaten anlegen
   if (S.profile && S.profile.language) setLang(S.profile.language);
   const [docs, tasks, invoices, replies] = await Promise.all(['docs', 'tasks', 'invoices', 'replies'].map((c) => store.all(c)));
-  S.datevBatches = null;
-  S.docs = docs.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+  S.docs = docs.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')).map(normalizeDoc);
   S.tasks = tasks; S.invoices = invoices.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')); S.replies = replies;
   S.loadError = false;
+}
+
+/** Ältere Belege an die neue Ablage anpassen (nur im Speicher; gespeichert wird beim nächsten Ändern) */
+function normalizeDoc(d) {
+  if (d.folder === 'rechnungen') d.folder = 'buchhaltung';
+  if (d.folder === 'bank' && /kontoauszug/i.test(d.doc_type || '')) d.folder = 'buchhaltung';
+  if (!d.filed_at && d.status && d.status !== 'saved') d.filed_at = d.reviewed_at || d.done_at || d.created_at;
+  return d;
 }
 
 /* =================== Render =================== */
@@ -574,13 +582,10 @@ VIEWS.setup = {
 const FEATURES = () => [
   ['camera', t('home.scan'), 'scan', {}],
   ['xml', t('web.erech'), 'erech', {}],
-  ['invoice', t('home.newInvoice'), 'invoice', { id: 'new' }],
   ['clock', t('home.newTask'), 'task', { id: 'new' }],
   ['clip', t('home.import'), 'scan', { pick: 1 }],
   ['cal', t('tax.title'), 'tax', {}],
   ['box', t('more.export'), 'export', {}],
-  ['doc', t('web.hubDatev'), 'datev', {}],
-  ['bank', t('more.bank'), 'bank', {}],
   ['folder', t('docs.title'), 'docs', {}],
   ['archive', t('more.archive'), 'docs', { archived: 1 }],
   ['gear', t('settings.title'), 'settings', {}],
@@ -620,7 +625,7 @@ VIEWS.home = {
 
 /* ---------- Belege ---------- */
 /* Ablage: Ordnerübersicht (wie „Dateien“ am iPhone) → Ordner → Dokumente */
-const FICON = { firma: 'gear', finanzamt: 'cal', rechnungen: 'invoice', bank: 'bank', versicherungen: 'check', personal: 'pen', behoerden: 'info', mietvertraege: 'home', hygiene: 'flask', sonstiges: 'folder' };
+const FICON = { buchhaltung: 'invoice', firma: 'gear', finanzamt: 'cal', rechnungen: 'invoice', bank: 'bank', versicherungen: 'check', personal: 'pen', behoerden: 'info', mietvertraege: 'home', hygiene: 'flask', sonstiges: 'folder' };
 const CHECK_FIRMA = [
   ['gewerbe', /gewerbe(an|um|ab)?meldung|gewerbeschein|gewerbeerlaubnis/],
   ['hr', /handelsregister/],
@@ -658,7 +663,8 @@ VIEWS.docs = {
     const firmaMiss = CHECK_FIRMA.filter(([, re]) => !S.docs.some((d) => re.test(docText(d)))).length;
     return `${search}
       ${review ? `<div class="group">${cell({ icon: 'doc', ic: 'o', title: t('web.uiInbox'), sub: t('web.uiInboxH'), right: String(review), attrs: 'data-a="openList" data-v="review"' })}</div>` : ''}
-      ${group(FOLDERS.map((f) => cell({ icon: FICON[f] || 'folder', title: t('docs.folder_' + f), sub: f === 'firma' ? (firmaMiss ? t('web.uiFirmaMiss', { count: firmaMiss }) : t('web.uiFirmaOk')) : '', right: String(cnt(f)), attrs: `data-a="openList" data-v="f:${f}"` })), t('web.uiFolders'))}
+      ${group(FOLDERS.map((f) => { const accOpenN = f === 'buchhaltung' ? live.filter((d) => d.folder === f && !isTransferred(d)).length : 0;
+        return cell({ icon: FICON[f] || 'folder', ic: accOpenN ? 'o' : '', title: t('docs.folder_' + f), sub: f === 'firma' ? (firmaMiss ? t('web.uiFirmaMiss', { count: firmaMiss }) : t('web.uiFirmaOk')) : accOpenN ? `● ${accOpenN} ${t('acc.notTransferred')}` : '', right: String(cnt(f)), attrs: f === 'buchhaltung' ? 'data-a="openAcc"' : `data-a="openList" data-v="f:${f}"` }); }), t('web.uiFolders'))}
       ${group([
         cell({ icon: 'pen', ic: 'g', title: t('web.contracts'), right: String(contracts), attrs: 'data-a="openList" data-v="contracts"' }),
         cell({ icon: 'check', ic: 'g', title: t('web.done'), right: String(live.filter((d) => d.status === 'done').length), attrs: 'data-a="openList" data-v="done"' }),
@@ -996,7 +1002,7 @@ function einvoiceTable(e) {
     ${e.lines.map((l) => `<tr><td>${esc(l.name)}</td><td class="r">${esc(numStr(l.qty))}</td><td class="r">${l.rate != null ? esc(numStr(l.rate)) + ' %' : ''}</td><td class="r">${esc(money(l.net, e.currency))}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function docStep1(d, st) {
-  return `<div class="card"><div class="row between"><h2>${esc(t('doc.original'))}</h2>
+  return `${accCards(d, st)}<div class="card"><div class="row between"><h2>${esc(t('doc.original'))}</h2>
       ${d.page_count ? `<button class="btn sm sec" data-a="docDownload">${esc(d.file_kind === 'xml' ? t('web.downloadXml') : t('web.downloadPdf'))}</button>` : ''}</div>
       <div class="thumbs" id="thumbs">${d.page_count ? '<div class="spin"></div>' : `<p class="muted">${esc(t('doc.noFile'))}</p>`}</div></div>
     ${st.analyzing ? busyCard(t('doc.analyzing')) : !d.analyzed_at && d.page_count ? (S.sample ? `<button class="btn" data-a="analyze">${ico('spark')}${esc(t('doc.analyze'))}</button>` : `<div class="banner">${esc(t('web.noAi'))}</div>`) : ''}
@@ -1111,9 +1117,10 @@ Verträge: "contract_end" (Vertragsende), "cancellation_date" (letzter Tag, an d
 Skonto: "discount_date", "discount_percent" (Zahl), "discount_terms" – nur wenn genannt.
 Rechnungen: "invoice_checks" prüft die Pflichtangaben nach § 14 Abs. 4 UStG (Name/Anschrift beider Parteien, Steuernummer oder USt-IdNr., Ausstellungsdatum, Rechnungsnummer, Menge/Art der Leistung, Leistungsdatum, Entgelt nach Steuersätzen, Steuersatz und Steuerbetrag oder Befreiungshinweis) und rechnet die Summen nach. Kleinbetragsrechnung bis 250 € nach § 33 UStDV vereinfacht. Jeder Eintrag {"label","status":"present"|"missing"|"unclear","detail"} auf ${LANG_NAMES[lang]}. Bei Nicht-Rechnungen leere Liste. Das ist keine rechtsverbindliche Freigabe.
 "ocr_text": der vollständig lesbare Originaltext (höchstens 15000 Zeichen) für die Volltextsuche.
-"folder" ist einer von: ${FOLDERS.join(', ')} – firma = Firmen-Stammdaten (Gewerbeanmeldung, Handelsregisterauszug, Ausweis des Inhabers, Zuteilung Steuernummer/USt-IdNr., Gesellschaftsvertrag), finanzamt = Steuerbescheide und Schreiben des Finanzamts, rechnungen = Eingangsrechnungen/Lieferscheine, bank = Bank, Kredite, Kontoauszüge, versicherungen = Versicherungspolicen und -schreiben, personal = Arbeitsverträge/Lohn/Sozialversicherung, behoerden = sonstige Behörden/Kammern, mietvertraege = Miete/Pacht. "dates[].kind" ist einer von: payment, reply, contract, cancellation, skonto, other; "date" ist null, wenn kein eindeutiges Datum genannt ist.
+"folder" ist einer von: ${FOLDERS.join(', ')} – firma = Firmen-Stammdaten (Gewerbeanmeldung, Handelsregisterauszug, Ausweis des Inhabers, Zuteilung Steuernummer/USt-IdNr., Gesellschaftsvertrag), finanzamt = Steuerbescheide und Schreiben des Finanzamts, buchhaltung = Buchhaltungsbelege (Eingangsrechnungen, Quittungen/Kassenbons, Lieferscheine, Kontoauszüge, Gutschriften), bank = Bank- und Kreditverträge, Schreiben der Bank (außer Kontoauszügen), versicherungen = Versicherungspolicen und -schreiben, personal = Arbeitsverträge/Lohn/Sozialversicherung, behoerden = sonstige Behörden/Kammern, mietvertraege = Miete/Pacht. "dates[].kind" ist einer von: payment, reply, contract, cancellation, skonto, other; "date" ist null, wenn kein eindeutiges Datum genannt ist.
+Buchhaltung: "acc_type" ist "rechnung" (Eingangsrechnung an den Betrieb), "quittung" (Quittung, Kassenbon, Tank-/Bewirtungsbeleg), "lieferschein", "kontoauszug", "gutschrift" oder "none" (kein Buchhaltungsbeleg, z. B. Behördenschreiben, Vertrag, Mahnung ohne neue Rechnung). "document_number": Nummer dieses Belegs (Rechnungs-, Lieferschein-, Quittungsnummer) oder null. "reference_numbers": im Beleg genannte andere Nummern, mit denen er zu anderen Belegen gehört (Lieferschein-, Auftrags-, Bestell-, Rechnungsnummern), sonst leere Liste.
 Antworte nur mit einem JSON-Objekt dieser Form:
-{"title":string,"doc_type":string,"sender":string|null,"sender_address":string|null,"recipient":string|null,"recipient_address":string|null,"invoice_number":string|null,"amount_gross":number|null,"amount_net":number|null,"vat_amount":number|null,"currency":string|null,"payment_required":boolean,"payment_due_date":string|null,"iban":string|null,"bic":string|null,"payment_reference":string|null,"is_contract":boolean,"is_incoming_invoice":boolean,"folder":string,"explanation":string,"next_steps":[string],"dates":[{"kind":string,"date":string|null,"description":string}],"document_date":string|null,"suggested_action":{"type":string,"question":string},"action_needed":boolean,"suggested_task":string,"response_recipient":string|null,"response_address":string|null,"response_reference":string|null,"response_subject":string|null,"recipient_email":string|null,"contract_end":string|null,"cancellation_date":string|null,"contract_number":string|null,"contract_terms":string|null,"discount_date":string|null,"discount_percent":number|null,"discount_terms":string|null,"invoice_checks":[{"label":string,"status":string,"detail":string}],"ocr_text":string}`;
+{"title":string,"acc_type":string,"document_number":string|null,"reference_numbers":[string],"doc_type":string,"sender":string|null,"sender_address":string|null,"recipient":string|null,"recipient_address":string|null,"invoice_number":string|null,"amount_gross":number|null,"amount_net":number|null,"vat_amount":number|null,"currency":string|null,"payment_required":boolean,"payment_due_date":string|null,"iban":string|null,"bic":string|null,"payment_reference":string|null,"is_contract":boolean,"is_incoming_invoice":boolean,"folder":string,"explanation":string,"next_steps":[string],"dates":[{"kind":string,"date":string|null,"description":string}],"document_date":string|null,"suggested_action":{"type":string,"question":string},"action_needed":boolean,"suggested_task":string,"response_recipient":string|null,"response_address":string|null,"response_reference":string|null,"response_subject":string|null,"recipient_email":string|null,"contract_end":string|null,"cancellation_date":string|null,"contract_number":string|null,"contract_terms":string|null,"discount_date":string|null,"discount_percent":number|null,"discount_terms":string|null,"invoice_checks":[{"label":string,"status":string,"detail":string}],"ocr_text":string}`;
     const r = await aiJson(prompt, inp.images);
     if (!r || typeof r !== 'object') throw { code: 'invalid_json' };
     const docDate = (r.document_date && parseDate(r.document_date)) || todayISO();
@@ -1129,7 +1136,9 @@ Antworte nur mit einem JSON-Objekt dieser Form:
       amount_gross: num(r.amount_gross), amount_net: num(r.amount_net), vat_amount: num(r.vat_amount), currency: r.currency || 'EUR',
       payment_required: !!r.payment_required, due_date: iso(r.payment_due_date), iban: r.iban ? String(r.iban).replace(/\s+/g, '') : null,
       bic: r.bic || null, payment_reference: r.payment_reference || null, is_contract: !!r.is_contract, is_incoming_invoice: !!r.is_incoming_invoice,
-      folder: FOLDERS.includes(r.folder) ? r.folder : 'sonstiges', explanation: r.explanation || '',
+      folder: ACC_TYPES.includes(r.acc_type) ? 'buchhaltung' : FOLDERS.includes(r.folder) ? r.folder : r.folder === 'rechnungen' ? 'buchhaltung' : 'sonstiges', explanation: r.explanation || '',
+      acc_type: ACC_TYPES.includes(r.acc_type) ? r.acc_type : 'none', document_number: r.document_number ? String(r.document_number) : null,
+      reference_numbers: Array.isArray(r.reference_numbers) ? r.reference_numbers.map(String).filter(Boolean).slice(0, 10) : [],
       next_steps: Array.isArray(r.next_steps) ? r.next_steps.map(String).slice(0, 6) : [],
       dates: (() => {
         const list = Array.isArray(r.dates) ? r.dates.map((x) => ({ kind: KINDS.includes(x.kind) ? x.kind : 'other', date: iso(x.date), description: String(x.description || '') })).slice(0, 10) : [];
@@ -1314,7 +1323,7 @@ function einvoicePatch(e) {
     sender: e.seller.name || null, sender_address: e.seller.address || null, recipient: e.buyer.name || null, recipient_address: e.buyer.address || null,
     invoice_number: e.number || null, amount_net: e.net, vat_amount: e.vat, amount_gross: e.gross ?? e.payable, currency: e.currency,
     payment_required: (e.payable ?? e.gross ?? 0) > 0, due_date: e.due_date || null, iban: e.iban ? e.iban.replace(/\s+/g, '') : null, bic: e.bic || null,
-    payment_reference: e.reference || e.number || null, is_incoming_invoice: true, folder: 'rechnungen', document_date: e.issue_date || null,
+    payment_reference: e.reference || e.number || null, is_incoming_invoice: true, folder: 'buchhaltung', acc_type: 'rechnung', document_number: e.number || null, document_date: e.issue_date || null,
     explanation: `${e.format}: Rechnung ${e.number || ''} von ${e.seller.name || '–'} vom ${fmtDate(e.issue_date)} über ${money(e.gross ?? e.payable, e.currency)}${e.due_date ? `, fällig am ${fmtDate(e.due_date)}` : ''}.`,
     next_steps: ['Rechnung sachlich prüfen (Leistung erhalten, Preise korrekt)', e.due_date ? `Bis ${fmtDate(e.due_date)} bezahlen` : 'Zahlung veranlassen', 'Für den Steuerberater als Vorbuchhaltung markieren'],
     dates: e.due_date ? [{ kind: 'payment', date: e.due_date, description: 'Zahlungsziel' }] : [],
@@ -1570,7 +1579,7 @@ async function spawnNext(task) {
   if (!task.recur || !task.due_date || task.status !== 'done') return;
   const due = nextDue(task.due_date, task.recur);
   if (S.tasks.some((x) => x.series === (task.series || task.id) && x.due_date === due)) return;
-  const rec = { id: uid(), title: task.title, kind: task.kind, due_date: due, status: 'open', priority: task.priority, notes: task.notes || '', recur: task.recur, series: task.series || task.id, document_id: task.document_id || null, created_at: nowIso(), version: 0 };
+  const rec = { id: uid(), title: task.title, kind: task.kind, due_date: due, status: 'open', priority: task.priority, notes: task.notes || '', recur: task.recur, series: task.series || task.id, document_id: task.document_id || null, template_key: task.template_key || null, created_at: nowIso(), version: 0 };
   const saved = await saveVersioned('tasks', rec); S.tasks.push(saved); toast(t('tasks.nextCreated', { date: fmtDate(due) }));
 }
 async function taskSave() {
@@ -1671,41 +1680,16 @@ async function taxCreate() {
 }
 
 /* ---------- Rechnungen ---------- */
-function invTotals(items) {
-  const by = new Map(); let net = 0;
-  for (const it of items) { const l = Math.round(it.qty * it.unit_price * 100) / 100; net += l; by.set(it.vat_rate, (by.get(it.vat_rate) || 0) + l); }
-  const vat_lines = [...by.entries()].sort((a, b) => a[0] - b[0]).map(([rate, n]) => ({ rate, net: Math.round(n * 100) / 100, vat: Math.round(n * rate) / 100 }));
-  net = Math.round(net * 100) / 100; const vat = Math.round(vat_lines.reduce((s, v) => s + v.vat, 0) * 100) / 100;
-  return { net, vat, gross: Math.round((net + vat) * 100) / 100, vat_lines };
-}
-function invState(inv) {
-  if (inv.is_template) return { label: 'template', color: 'grey', open: 0, overdue: false };
-  if (inv.status !== 'final') return { label: 'draft', color: 'grey', open: 0, overdue: false };
-  const paid = (inv.payments || []).reduce((s, p) => s + p.amount, 0);
-  const open = Math.round((inv.snapshot.gross - paid) * 100) / 100;
-  if (open <= 0.005) return { label: 'paid', color: 'green', open: 0, overdue: false };
-  const overdue = daysUntil(inv.snapshot.due_date) < 0;
-  return { label: overdue ? 'overdue' : 'open', color: overdue ? 'red' : 'orange', open, overdue };
-}
-const INV_LABEL = () => ({ draft: t('inv.draft'), template: t('inv.template'), paid: t('inv.paidFull'), open: t('inv.open'), overdue: t('inv.overdue') });
 VIEWS.invoices = {
-  title: () => t('inv.title'),
+  title: () => t('acc.oldInvoices'),
   render() {
-    const f = S.invFilter;
-    const list = S.invoices.filter((i) => f === 'templates' ? i.is_template : !i.is_template && (f === 'all' || (f === 'draft' && i.status === 'draft') || (f === 'open' && ['open', 'overdue'].includes(invState(i).label)) || (f === 'overdue' && invState(i).label === 'overdue')));
-    const L = INV_LABEL();
-    return `<button class="btn" data-go="invoice" data-id="new">＋ ${esc(t('inv.new'))}</button>
-      <div class="chips">${[['all', t('common.all')], ['draft', t('inv.draft')], ['open', t('inv.open')], ['overdue', t('inv.overdue')], ['templates', t('inv.templates')]].map(([k, l]) => chip(l, f === k, `data-a="invFilter" data-v="${k}"`)).join('')}</div>
-      <div class="list">${list.length ? list.slice(0, lim('inv')).map((i) => { const st = invState(i); const gross = i.status === 'final' ? i.snapshot.gross : invTotals(i.items || []).gross; return item({
-        title: `${i.number || L[st.label]} · ${i.customer_name || '–'}`,
-        sub: `${fmtDate(i.issue_date)} · ${L[st.label]}${st.open > 0 ? ' · ' + t('inv.open') + ' ' + money(st.open) : ''}${i.example ? ' · ' + t('web.example') : ''}`,
-        right: money(gross), sevc: st.color, attrs: `data-go="invoice" data-id="${i.id}"` }); }).join('') + moreBtn('inv', list.length) : `<div class="empty">${ico('invoice')}<p class="muted">${esc(t('inv.empty'))}</p></div>`}</div>
-      <p class="muted small">${esc(t('inv.limits'))}</p>`;
+    const list = S.invoices.filter((i) => i.status === 'final' && !i.is_template);
+    return `<div class="banner">${esc(t('acc.movedNote'))}</div>
+      <div class="list">${list.length ? list.slice(0, lim('inv')).map((i) => item({ title: `${i.number} · ${i.snapshot.customer_name || '–'}`, sub: fmtDate(i.snapshot.issue_date), right: money(i.snapshot.gross), attrs: `data-go="invoice" data-id="${i.id}"` })).join('') + moreBtn('inv', list.length) : `<div class="empty">${ico('invoice')}<p class="muted">${esc(t('inv.empty'))}</p></div>`}</div>`;
   },
 };
 const UNITS = [['C62', 'Stück'], ['HUR', 'Std.'], ['DAY', 'Tag'], ['KGM', 'kg'], ['MTR', 'm']];
 const unitLabel = (u) => (UNITS.find((x) => x[0] === u) || UNITS[0])[1];
-const emptyItem = () => ({ description: '', qty: '1', price: '', vat_rate: 19, unit: 'C62' });
 /** IBAN-Prüfziffer (Modulo 97) */
 function ibanValid(iban) {
   const s = String(iban || '').replace(/\s+/g, '').toUpperCase();
@@ -1726,174 +1710,24 @@ function companyData(p) {
     tax_number: p.tax_number || '', vat_id: (p.vat_id || '').replace(/\s+/g, ''), iban: (p.iban || '').replace(/\s+/g, ''),
     address: [p.company_name, sp.street, [sp.zip, sp.city].filter(Boolean).join(' ')].filter(Boolean).join('\n') };
 }
-function invDraftFrom(src, asCopy) {
-  const sp = src.customer_street !== undefined ? { street: src.customer_street, zip: src.customer_zip, city: src.customer_city } : splitAddress(src.customer_address || '');
-  return {
-    id: asCopy ? null : src.id, version: asCopy ? 0 : src.version, is_template: asCopy ? false : !!src.is_template,
-    customer_name: src.customer_name || '', customer_street: sp.street || '', customer_zip: sp.zip || '', customer_city: sp.city || '', customer_email: src.customer_email || '',
-    buyer_reference: src.buyer_reference || '', note: src.note || '',
-    issue: fmtDate(asCopy ? todayISO() : src.issue_date || todayISO()), service: !asCopy && src.service_date ? fmtDate(src.service_date) : '',
-    due_days: String(src.due_days ?? 14), confirmed: false,
-    items: (src.items && src.items.length ? src.items : [{ description: '', qty: 1, unit_price: '', vat_rate: 19, unit: 'C62' }]).map((i) => ({ description: i.description, qty: numStr(i.qty), price: numStr(i.unit_price), vat_rate: i.vat_rate, unit: i.unit || 'C62' })),
-    created_at: asCopy ? null : src.created_at, history: asCopy ? [] : src.history,
-  };
-}
-function readInvForm() {
-  const D = S.invDraft; if (!$('#i_cust')) return;
-  D.customer_name = val('i_cust'); D.customer_street = val('i_street'); D.customer_zip = val('i_zip'); D.customer_city = val('i_city'); D.customer_email = val('i_mail');
-  D.buyer_reference = val('i_ref'); D.note = val('i_note'); D.issue = val('i_issue'); D.service = val('i_service'); D.due_days = val('i_due');
-  D.confirmed = !!($('#i_confirm') && $('#i_confirm').checked);
-  D.items.forEach((it, n) => { it.description = val('it_d_' + n); it.qty = val('it_q_' + n); it.price = val('it_p_' + n); });
-}
-const itemsOf = (D) => D.items.filter((r) => r.description.trim()).map((r) => ({ description: r.description.trim(), qty: parseMoney(r.qty) || 0, unit_price: parseMoney(r.price) || 0, vat_rate: Number(r.vat_rate) === 7 ? 7 : 19, unit: r.unit || 'C62' }));
-/** Fehlende Angaben: Basis (Rechnung nach § 14 UStG) und zusätzlich für die E-Rechnung (XRechnung/ZUGFeRD) */
-function invoiceGaps(D, p) {
-  const c = companyData(p), base = [], e = [];
-  if (!c.name) base.push(t('auth.companyName'));
-  if (!c.street || !c.zip || !c.city) base.push(t('settings.address'));
-  if (!c.tax_number && !c.vat_id) base.push(t('settings.taxNo') + ' / ' + t('settings.vatId'));
-  if (!D.customer_name.trim()) base.push(t('inv.customer'));
-  if (!D.customer_street.trim() || !D.customer_zip.trim() || !D.customer_city.trim()) base.push(t('inv.customerAddress'));
-  if (!itemsOf(D).length) base.push(t('inv.items'));
-  if (!c.iban || !ibanValid(c.iban)) e.push(t('settings.iban') + (c.iban ? ' ✗' : ''));
-  if (c.vat_id && !vatIdValid(c.vat_id)) e.push(t('settings.vatId') + ' ✗');
-  if (!c.email) e.push(t('web.sellerMail'));
-  if (!c.contact || !c.phone) e.push(t('web.contactPhone'));
-  if (!D.customer_email.trim()) e.push(t('web.buyerMail'));
-  if (!D.buyer_reference.trim()) e.push(t('web.buyerRef'));
-  return { base, e };
-}
+/* Rechnungen schreibt jetzt das Buchhaltungsprogramm. Frühere finalisierte Ausgangsrechnungen bleiben einsehbar (PDF, XRechnung, ZUGFeRD). */
 VIEWS.invoice = {
-  title: () => { const i = S.invoices.find((x) => x.id === S.params.id); return i ? i.number || (i.is_template ? t('inv.template') : t('inv.draft')) : t('inv.new'); },
+  title: () => { const i = S.invoices.find((x) => x.id === S.params.id); return i ? i.number || t('inv.draft') : t('acc.oldInvoices'); },
   render() {
     const inv = S.invoices.find((x) => x.id === S.params.id);
-    if (inv && inv.status === 'final') return renderFinalInvoice(inv);
-    if (!S.invDraft || S.invDraft._for !== S.params.id + (S.params.from || '')) {
-      const src = S.params.from ? S.invoices.find((x) => x.id === S.params.from) : inv;
-      S.invDraft = src ? invDraftFrom(src, !!S.params.from) : invDraftFrom({}, true);
-      S.invDraft._for = S.params.id + (S.params.from || '');
-    }
-    const D = S.invDraft; const tot = invTotals(itemsOf(D)); const iss = parseDate(D.issue); const gaps = invoiceGaps(D, S.profile);
-    return `${D.is_template ? `<div class="banner">${esc(t('inv.template'))}</div>` : ''}
-      <div class="sec-h">${esc(t('inv.customer'))}</div>
-      <div class="card">${field('i_cust', t('inv.customer'), D.customer_name, 'autocomplete="off"')}
-        ${field('i_street', t('web.street'), D.customer_street)}
-        <div class="grid2">${field('i_zip', t('web.zip'), D.customer_zip, 'inputmode="numeric"')}${field('i_city', t('web.city'), D.customer_city)}</div>
-        ${field('i_mail', t('web.buyerMail'), D.customer_email, 'type="email"')}
-        ${field('i_ref', t('web.buyerRef'), D.buyer_reference, `placeholder="${esc(t('web.buyerRefPh'))}"`)}</div>
-      <div class="sec-h">${esc(t('web.dates'))}</div>
-      <div class="card"><div class="grid2">${field('i_issue', t('inv.issueDate'), D.issue, `placeholder="${esc(t('common.dateHint'))}"`)}${field('i_service', t('inv.serviceDate'), D.service, `placeholder="${esc(D.issue)}"`)}</div>
-        ${field('i_due', t('inv.dueDays'), D.due_days, 'inputmode="numeric"')}
-        ${iss ? `<p class="muted small">${esc(t('doc.dueDate'))}: <span class="num">${fmtDate(addDays(iss, parseInt(D.due_days, 10) || 0))}</span></p>` : ''}</div>
-      <div class="sec-h">${esc(t('inv.items'))}</div>
-      ${D.items.map((it, n) => `<div class="card"><div class="row between"><span class="muted">Pos. ${n + 1}</span>${D.items.length > 1 ? `<button class="ib" data-a="itemDel" data-i="${n}" aria-label="${esc(t('common.delete'))}">✕</button>` : ''}</div>
-        ${field('it_d_' + n, t('inv.description'), it.description)}
-        <div class="grid2">${field('it_q_' + n, t('inv.qty'), it.qty, 'inputmode="decimal"')}${field('it_p_' + n, t('inv.price'), it.price, 'inputmode="decimal"')}</div>
-        <div class="chips">${UNITS.map(([u, l]) => `<button class="chip quiet" aria-pressed="${it.unit === u}" data-a="itemUnit" data-i="${n}" data-v="${u}">${esc(l)}</button>`).join('')}</div>
-        <div class="chips">${[7, 19].map((r) => chip(`${t('inv.vatRate')} ${r} %`, Number(it.vat_rate) === r, `data-a="itemVat" data-i="${n}" data-v="${r}"`)).join('')}</div></div>`).join('')}
-      <button class="btn ghost" data-a="itemAdd">＋ ${esc(t('inv.addItem'))}</button>
-      ${area('i_note', t('web.note'), D.note, 'style="min-height:60px"')}
-      <div class="card"><div class="tot"><span class="muted">${esc(t('inv.net'))}</span><span>${money(tot.net)}</span>
-        ${tot.vat_lines.map((v) => `<span class="muted">${esc(t('inv.vat'))} ${v.rate} %</span><span>${money(v.vat)}</span>`).join('')}
-        <span class="g">${esc(t('inv.gross'))}</span><span class="g">${money(tot.gross)}</span></div>
-        <button class="btn sm ghost" data-a="invRecalc">↻ ${esc(t('web.recalc'))}</button></div>
-      ${D.is_template ? `<button class="btn" data-a="invUseTpl">${esc(t('inv.useTemplate'))}</button><button class="btn sec" data-a="invSave" data-v="tpl">${esc(t('common.save'))}</button>`
-        : `${gaps.base.length ? `<div class="banner warn">${esc(t('web.missingBase'))}: ${esc(gaps.base.join(', '))}</div>` : ''}
-           ${gaps.e.length ? `<div class="banner">${esc(t('web.missingE'))}: ${esc(gaps.e.join(', '))}</div>` : `<div class="banner">✓ ${esc(t('web.eReady'))}</div>`}
-           <label class="check"><input type="checkbox" id="i_confirm" ${D.confirmed ? 'checked' : ''} data-a="invConfirm">${esc(t('web.confirmFinal'))}</label>
-           <button class="btn" data-a="invFinalize" ${D.confirmed && !gaps.base.length ? '' : 'disabled'}>🔒 ${esc(t('inv.finalize'))}</button>
-           <div class="grid2"><button class="btn sec" data-a="invSave">${esc(t('inv.saveDraft'))}</button><button class="btn ghost" data-a="invSave" data-v="tpl">${esc(t('inv.saveTemplate'))}</button></div>
-           ${gaps.e.length || gaps.base.length ? `<button class="btn sm ghost" data-go="settings">${esc(t('settings.title'))} ›</button>` : ''}`}
-      <p class="muted small">${esc(t('inv.limits'))}</p>`;
+    if (!inv || inv.status !== 'final') return `<div class="banner">${esc(t('acc.movedNote'))}</div>`;
+    return renderFinalInvoice(inv);
   },
 };
-async function invSave(asTemplate, silent) {
-  readInvForm(); const D = S.invDraft;
-  const issue = parseDate(D.issue), service = D.service.trim() ? parseDate(D.service) : null;
-  if (!issue || (D.service.trim() && !service)) { toast(t('common.invalidDate')); return null; }
-  const keepId = D.id && !!D.is_template === !!asTemplate;
-  const items = itemsOf(D), tot = invTotals(items);
-  const rec = {
-    id: keepId ? D.id : uid(), version: keepId ? D.version || 0 : 0, status: 'draft', is_template: !!asTemplate,
-    customer_name: D.customer_name.trim(), customer_street: D.customer_street.trim(), customer_zip: D.customer_zip.trim(), customer_city: D.customer_city.trim(),
-    customer_email: D.customer_email.trim(), buyer_reference: D.buyer_reference.trim(), note: D.note.trim(),
-    customer_address: [D.customer_street.trim(), [D.customer_zip.trim(), D.customer_city.trim()].filter(Boolean).join(' ')].filter(Boolean).join('\n'),
-    issue_date: issue, service_date: service,
-    due_days: Math.max(0, Math.min(365, parseInt(D.due_days, 10) || 0)), items, net: tot.net, vat: tot.vat, gross: tot.gross,
-    created_at: keepId ? D.created_at || nowIso() : nowIso(), history: keepId ? D.history || [] : [], payments: [],
-  };
-  try {
-    const saved = await saveVersioned('invoices', rec);
-    upsertLocal('invoices', saved);
-    const keepConfirm = D.confirmed;
-    S.invDraft = null;
-    if (!silent) toast(t('web.toastSaved'));
-    S.params = { id: saved.id }; render();
-    if (S.invDraft) S.invDraft.confirmed = keepConfirm;
-    return saved;
-  } catch (e) { if (e.conflict) { toast(t('doc.conflict')); await reloadAll(); S.invDraft = null; render(); } else toast(t('web.saveFailed', { msg: errText(e) })); return null; }
-}
-async function invFinalize() {
-  readInvForm(); const D = S.invDraft;
-  const gaps = invoiceGaps(D, S.profile);
-  if (gaps.base.length) return toast(t('web.missingBase') + ': ' + gaps.base.join(', '));
-  if (!D.confirmed) return;
-  if (!(await ask(t('inv.finalizeConfirm'), t('inv.finalize')))) return;
-  const saved = await invSave(false, true); if (!saved) return;
-  await guard(async () => {
-    // Fortlaufende Nummer: Profil frisch lesen; im Konto-Speicher zusätzlich kurz sperren (zweites Gerät/Tab)
-    if (store.mode === 'db') {
-      let lease = null;
-      for (let i = 0; i < 70; i++) { lease = await store.base().acquire({ holder: HOLDER, ttlMs: 2500 }); if (lease.acquired) break; if (i === 3) toast(t('web.numberWait')); await new Promise((r) => setTimeout(r, 200 + Math.random() * 250)); }
-      if (!lease || !lease.acquired) throw new Error(t('web.numberBusy'));
-    }
-    const prof = Object.assign({}, (await store.getProfile()) || S.profile);
-    const n = prof.next_invoice_no || 1;
-    const number = `${prof.invoice_prefix || 'RE-'}${saved.issue_date.slice(0, 4)}-${String(n).padStart(4, '0')}`;
-    const known = await store.where('invoices', 'number', number); if (known.some((i) => i.number === number)) throw new Error(t('web.numberTaken', { number }));
-    prof.next_invoice_no = n + 1; await store.setProfile(prof); S.profile = prof;
-    const tot = invTotals(saved.items);
-    const snapshot = {
-      number, issue_date: saved.issue_date, service_date: saved.service_date || saved.issue_date, due_date: addDays(saved.issue_date, saved.due_days),
-      customer_name: saved.customer_name, customer_address: saved.customer_address, customer_street: saved.customer_street, customer_zip: saved.customer_zip,
-      customer_city: saved.customer_city, customer_email: saved.customer_email, buyer_reference: saved.buyer_reference, note: saved.note,
-      items: saved.items, ...tot, company: companyData(prof),
-    };
-    snapshot.e_ready = invoiceGaps(Object.assign({}, D, { customer_name: saved.customer_name }), prof).e.length === 0;
-    const fin = Object.assign({}, saved, { status: 'final', number, snapshot, final_hash: await sha256(JSON.stringify(snapshot)), finalized_at: nowIso(), payments: [], reminders: [] });
-    const out = await saveVersioned('invoices', fin, t('inv.finalize'));
-    upsertLocal('invoices', out); render();
-    // Sperre verkürzen (es gibt kein Freigeben): Verlängerung auf die Mindestdauer, damit andere Geräte schneller drankommen
-    if (store.mode === 'db') store.base().acquire({ holder: HOLDER, ttlMs: 1000 }).catch(() => {});
-  });
-}
 function renderFinalInvoice(inv) {
-  const s = inv.snapshot, st = invState(inv), L = INV_LABEL();
-  const dun = S.dunning && S.dunning.inv === inv.id ? S.dunning : null;
-  const nextLevel = Math.min(3, (inv.reminders || []).length + 1);
-  return `<div class="card"><div class="row between"><h2 class="mono" style="font-size:1.05rem">${esc(s.number)}</h2><span class="pill c-${st.color}">${esc(L[st.label])}</span></div>
+  const s = inv.snapshot;
+  return `<div class="banner">${esc(t('acc.movedNote'))}</div><div class="card"><div class="row between"><h2 class="mono" style="font-size:1.05rem">${esc(s.number)}</h2></div>
       <p><b>${esc(s.customer_name)}</b></p><p class="muted prose">${esc(s.customer_address)}</p>
       <dl class="kv"><dt>${esc(t('inv.issueDate'))}</dt><dd class="num">${fmtDate(s.issue_date)}</dd><dt>${esc(t('inv.serviceDate'))}</dt><dd class="num">${fmtDate(s.service_date || s.issue_date)}</dd><dt>${esc(t('doc.dueDate'))}</dt><dd class="num">${fmtDate(s.due_date)}</dd>${s.buyer_reference ? `<dt>${esc(t('web.buyerRef'))}</dt><dd>${esc(s.buyer_reference)}</dd>` : ''}</dl>
       <hr>${s.items.map((it) => `<div class="row between"><span class="grow">${esc(numStr(it.qty))} ${esc(unitLabel(it.unit))} × ${esc(it.description)} <span class="muted small">(${it.vat_rate} %)</span></span><span class="num">${money(Math.round(it.qty * it.unit_price * 100) / 100)}</span></div>`).join('')}
       <div class="tot"><span class="muted">${esc(t('inv.net'))}</span><span>${money(s.net)}</span>${s.vat_lines.map((v) => `<span class="muted">${esc(t('inv.vat'))} ${v.rate} %</span><span>${money(v.vat)}</span>`).join('')}<span class="g">${esc(t('inv.gross'))}</span><span class="g">${money(s.gross)}</span></div>
       <button class="btn" data-a="invPdf">${esc(t('web.downloadPdf'))}</button>
-      ${s.e_ready ? `<div class="grid2"><button class="btn sec" data-a="invXr">XRechnung (XML)</button><button class="btn sec" data-a="invZf">ZUGFeRD (PDF)</button></div><p class="muted small">${esc(t('web.eNote'))}</p>`
-        : `<p class="muted small">${esc(t('web.eNotReady'))}</p>`}</div>
-    <div class="card"><h2>${esc(t('inv.payments'))}</h2>
-      <div class="list">${(inv.payments || []).map((p, i) => item({ title: money(p.amount), sub: fmtDate(p.paid_on) + (p.note ? ' · ' + p.note : ''), right: '✕', attrs: `data-a="payDel" data-i="${i}"` })).join('')}</div>
-      <p class="num" style="font-weight:800;color:var(--${st.open > 0 ? 'stamp' : 'ok'})">${esc(t('inv.open'))}: ${money(st.open)}</p>
-      ${st.open > 0 ? `<div class="grid2">${field('p_amt', t('inv.amount'), '', `inputmode="decimal" placeholder="${esc(numStr(st.open))}"`)}${field('p_date', t('inv.paidOn'), fmtDate(todayISO()))}</div>
-        ${field('p_ref', t('doc.reference'), s.number)}
-        <button class="btn sm" data-a="payAdd">${esc(t('inv.addPayment'))}</button>` : ''}</div>
-    ${st.open > 0 ? `<div class="card"><h2>${esc(t('inv.dunning'))}</h2>
-      ${(inv.reminders || []).map((r, i) => `<div class="row between"><span class="small">${esc(r.level === 1 ? t('web.dun1') : t('web.dunN', { n: r.level }))} · ${esc(fmtDate(r.created_at))} · ${esc(t('web.dunUntil'))} ${esc(fmtDate(r.until))}</span><button class="btn sm ghost" data-a="dunOpen" data-i="${i}">${esc(t('common.open'))}</button></div>`).join('')}
-      ${st.overdue ? `<div class="seg">${[1, 2, 3].map((n) => `<button aria-pressed="${(dun ? dun.level : nextLevel) === n}" data-a="dunLevel" data-v="${n}">${esc(n === 1 ? t('web.dun1') : t('web.dunN', { n }))}</button>`).join('')}</div>
-        ${field('dun_until', t('web.dunUntil'), fmtDate(addDays(todayISO(), 10)))}
-        <button class="btn danger" data-a="dunning">${esc(t('web.dunCreate'))}</button>` : `<p class="muted small">${esc(t('web.dunNotDue'))}</p>`}</div>` : ''}
-    ${dun ? `<div class="card"><h2>${esc(dun.letter.subject)}</h2>${area('dun_body', t('reply.body'), dun.letter.body, 'style="min-height:200px"')}
-      <div class="grid2"><button class="btn sm" data-a="dunPdf">${esc(t('web.downloadPdf'))}</button><button class="btn sm sec" data-a="dunCopy">${esc(t('web.copyText'))}</button></div>
-      <div class="letter">${letterPreview(dun.letter)}</div></div>` : ''}
-    <button class="btn ghost" data-go="invoice" data-id="new" data-from="${inv.id}">${esc(t('inv.copyAsDraft'))}</button>
+      ${s.e_ready ? `<div class="grid2"><button class="btn sec" data-a="invXr">XRechnung (XML)</button><button class="btn sec" data-a="invZf">ZUGFeRD (PDF)</button></div>` : ''}</div>
     <p class="muted small">${esc(t('web.finalized', { date: new Date(inv.finalized_at).toLocaleString('de-DE') }))}</p>
     <p class="muted small">${esc(t('inv.hash'))}:</p><p class="mono small" style="overflow-wrap:anywhere">${esc(inv.final_hash || '')}</p>`;
 }
@@ -2005,221 +1839,7 @@ async function zugferdPdf(s) {
   doc.setTitle(`Rechnung ${s.number}`); doc.setAuthor(s.company.name); doc.setSubject('Rechnung'); doc.setProducer('eOffis');
   return new Blob([await doc.save()], { type: 'application/pdf' });
 }
-function dunningLetter(inv, level, until) {
-  const s = inv.snapshot, open = invState(inv).open, c = s.company;
-  const head = level === 1 ? 'Zahlungserinnerung' : `${level}. Mahnung`;
-  return {
-    sender: c.address || c.name, recipient: `${s.customer_name}\n${s.customer_address}`, place_date: fmtDate(todayISO()),
-    reference: `Rechnung ${s.number} vom ${fmtDate(s.issue_date)}`, subject: `${head} zu Rechnung ${s.number}`, salutation: 'Sehr geehrte Damen und Herren,',
-    body: level === 1
-      ? `sicher ist es Ihrer Aufmerksamkeit entgangen: Unsere Rechnung ${s.number} vom ${fmtDate(s.issue_date)} war am ${fmtDate(s.due_date)} fällig. Offen ist noch ein Betrag von ${money(open)}.\n\nBitte überweisen Sie den offenen Betrag bis zum ${fmtDate(until)}${c.iban ? ` auf das Konto IBAN ${fmtIban(c.iban)}` : ''} unter Angabe der Rechnungsnummer.\n\nSollten Sie die Zahlung bereits veranlasst haben, betrachten Sie dieses Schreiben bitte als gegenstandslos.`
-      : `trotz ${level === 2 ? 'unserer Zahlungserinnerung' : 'unserer bisherigen Mahnungen'} ist unsere Rechnung ${s.number} vom ${fmtDate(s.issue_date)} (fällig am ${fmtDate(s.due_date)}) noch nicht vollständig bezahlt. Offen sind ${money(open)}.\n\nWir bitten Sie, den offenen Betrag bis spätestens ${fmtDate(until)}${c.iban ? ` auf das Konto IBAN ${fmtIban(c.iban)}` : ''} unter Angabe der Rechnungsnummer zu überweisen.${level === 3 ? '\n\nSollte die Zahlung bis dahin nicht eingehen, behalten wir uns weitere Schritte vor.' : ''}\n\nFalls sich Ihre Zahlung mit diesem Schreiben überschnitten hat, betrachten Sie es bitte als gegenstandslos.`,
-    closing: 'Mit freundlichen Grüßen', signature: (S.profile && S.profile.company_name) || c.name,
-  };
-}
-async function invPayments(inv, payments, note) {
-  const out = await saveVersioned('invoices', Object.assign({}, inv, { payments }), note);
-  upsertLocal('invoices', out); return out;
-}
-
-/* ---------- DATEV-Buchungsstapel (EXTF 700, Rechnungsausgang) ---------- */
-const DATEV_COLUMNS = ["Umsatz (ohne Soll/Haben-Kz)", "Soll/Haben-Kennzeichen", "WKZ Umsatz", "Kurs", "Basis-Umsatz", "WKZ Basis-Umsatz", "Konto", "Gegenkonto (ohne BU-Schlüssel)", "BU-Schlüssel", "Belegdatum", "Belegfeld 1", "Belegfeld 2", "Skonto", "Buchungstext", "Postensperre", "Diverse Adressnummer", "Geschäftspartnerbank", "Sachverhalt", "Zinssperre", "Beleglink", "Beleginfo - Art 1", "Beleginfo - Inhalt 1", "Beleginfo - Art 2", "Beleginfo - Inhalt 2", "Beleginfo - Art 3", "Beleginfo - Inhalt 3", "Beleginfo - Art 4", "Beleginfo - Inhalt 4", "Beleginfo - Art 5", "Beleginfo - Inhalt 5", "Beleginfo - Art 6", "Beleginfo - Inhalt 6", "Beleginfo - Art 7", "Beleginfo - Inhalt 7", "Beleginfo - Art 8", "Beleginfo - Inhalt 8", "KOST1 - Kostenstelle", "KOST2 - Kostenstelle", "Kost-Menge", "EU-Land u. UStID (Bestimmung)", "EU-Steuersatz (Bestimmung)", "Abw. Versteuerungsart", "Sachverhalt L+L", "Funktionsergänzung L+L", "BU 49 Hauptfunktionstyp", "BU 49 Hauptfunktionsnummer", "BU 49 Funktionsergänzung", "Zusatzinformation - Art 1", "Zusatzinformation- Inhalt 1", "Zusatzinformation - Art 2", "Zusatzinformation- Inhalt 2", "Zusatzinformation - Art 3", "Zusatzinformation- Inhalt 3", "Zusatzinformation - Art 4", "Zusatzinformation- Inhalt 4", "Zusatzinformation - Art 5", "Zusatzinformation- Inhalt 5", "Zusatzinformation - Art 6", "Zusatzinformation- Inhalt 6", "Zusatzinformation - Art 7", "Zusatzinformation- Inhalt 7", "Zusatzinformation - Art 8", "Zusatzinformation- Inhalt 8", "Zusatzinformation - Art 9", "Zusatzinformation- Inhalt 9", "Zusatzinformation - Art 10", "Zusatzinformation- Inhalt 10", "Zusatzinformation - Art 11", "Zusatzinformation- Inhalt 11", "Zusatzinformation - Art 12", "Zusatzinformation- Inhalt 12", "Zusatzinformation - Art 13", "Zusatzinformation- Inhalt 13", "Zusatzinformation - Art 14", "Zusatzinformation- Inhalt 14", "Zusatzinformation - Art 15", "Zusatzinformation- Inhalt 15", "Zusatzinformation - Art 16", "Zusatzinformation- Inhalt 16", "Zusatzinformation - Art 17", "Zusatzinformation- Inhalt 17", "Zusatzinformation - Art 18", "Zusatzinformation- Inhalt 18", "Zusatzinformation - Art 19", "Zusatzinformation- Inhalt 19", "Zusatzinformation - Art 20", "Zusatzinformation- Inhalt 20", "Stück", "Gewicht", "Zahlweise", "Forderungsart", "Veranlagungsjahr", "Zugeordnete Fälligkeit", "Skontotyp", "Auftragsnummer", "Buchungstyp", "USt-Schlüssel (Anzahlungen)", "EU-Land (Anzahlungen)", "Sachverhalt L+L (Anzahlungen)", "EU-Steuersatz (Anzahlungen)", "Erlöskonto (Anzahlungen)", "Herkunft-Kz", "Buchungs GUID", "KOST-Datum", "SEPA-Mandatsreferenz", "Skontosperre", "Gesellschaftername", "Beteiligtennummer", "Identifikationsnummer", "Zeichnernummer", "Postensperre bis", "Bezeichnung SoBil-Sachverhalt", "Kennzeichen SoBil-Buchung", "Festschreibung", "Leistungsdatum", "Datum Zuord. Steuerperiode", "Fälligkeit", "Generalumkehr (GU)", "Steuersatz", "Land", "Abrechnungsreferenz", "BVV-Position", "EU-Land u. UStID (Ursprung)", "EU-Steuersatz (Ursprung)", "Abw. Skontokonto"];
-function cp1252(text) {
-  const special = '€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ', codes = [128, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 142, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 158, 159];
-  const out = [];
-  for (const ch of text) {
-    const n = ch.codePointAt(0);
-    if (n < 128 || (n >= 160 && n <= 255)) out.push(n);
-    else { const i = special.indexOf(ch); if (i < 0) throw new Error(t('web.datevChar', { ch })); out.push(codes[i]); }
-  }
-  return new Uint8Array(out);
-}
-function datevDefaults(skr) { return skr === '04' ? { r7: '4300', r19: '4400' } : { r7: '8300', r19: '8400' }; }
-function buildDatev(P, from, to, entries) {
-  const q = (v) => '"' + String(v).replace(/"/g, '""') + '"', compact = (iso) => iso.replace(/-/g, ''), ger = (iso) => iso.slice(8, 10) + iso.slice(5, 7) + iso.slice(0, 4);
-  const stamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 17);
-  const head = ['"EXTF"', '700', '21', '"Buchungsstapel"', '13', stamp, '', '"RE"', '"eOffis"', '""', P.advisor, P.client, `${P.year}0101`, String(P.accountLength), compact(from), compact(to), '"Rechnungsausgang"', '""', '1', '0', '0', '"EUR"', '', '""', '', '', q(P.skr), '', '', '""', '"eOffis"'];
-  const rows = [];
-  for (const e of entries) {
-    const s = e.inv.snapshot;
-    for (const g of s.vat_lines) {
-      const gross = Math.round((g.net + g.vat) * 100) / 100; if (!gross) continue;
-      const m = g.rate === 7 ? P.revenue7 : P.revenue19;
-      const r = Array(125).fill('');
-      r[0] = gross.toFixed(2).replace('.', ','); r[1] = '"S"'; r[2] = '"EUR"'; r[6] = e.debtor; r[7] = m.account; r[8] = m.bu ? q(m.bu) : '';
-      r[9] = ger(s.issue_date).slice(0, 4); r[10] = q(s.number); r[13] = q(String(s.customer_name).slice(0, 60)); r[113] = '0';
-      r[114] = ger(s.service_date || s.issue_date); r[115] = ger(e.taxDate); r[116] = ger(s.due_date);
-      rows.push(r);
-    }
-  }
-  if (!rows.length) throw new Error(t('web.datevNone'));
-  return [head.join(';'), DATEV_COLUMNS.join(';'), ...rows.map((r) => r.join(';'))].join('\r\n') + '\r\n';
-}
-function datevProblems(P, from, to, entries) {
-  const p = [];
-  if (!/^\d{4,7}$/.test(P.advisor) || +P.advisor < 1001) p.push(t('web.datevAdvisor'));
-  if (!/^\d{1,5}$/.test(P.client) || +P.client < 1) p.push(t('web.datevClient'));
-  const len = P.accountLength;
-  if (!new RegExp(`^[1-9]\\d{${len - 1}}$`).test(P.revenue7.account) || !new RegExp(`^[1-9]\\d{${len - 1}}$`).test(P.revenue19.account)) p.push(t('web.datevAccounts'));
-  if (!from || !to || from > to || !from.startsWith(String(P.year)) || !to.startsWith(String(P.year))) p.push(t('web.datevRange'));
-  for (const e of entries) {
-    if (!new RegExp(`^[1-9]\\d{${len}}$`).test(e.debtor)) p.push(`${e.inv.number}: ${t('web.datevDebtor', { n: len + 1 })}`);
-    if (e.inv.snapshot.issue_date < from || e.inv.snapshot.issue_date > to) p.push(`${e.inv.number}: ${t('web.datevRange')}`);
-    if (!/^[A-Za-z0-9$&%*+\-/]{1,36}$/.test(e.inv.number)) p.push(`${e.inv.number}: ${t('web.datevNumber')}`);
-  }
-  return p;
-}
-VIEWS.datev = {
-  title: () => t('web.hubDatev'),
-  render() {
-    const prof = S.profile || {};
-    const P = S.datevP || (S.datevP = Object.assign({ advisor: '', client: '', year: new Date().getFullYear(), accountLength: 4, skr: '03', revenue7: { account: '8300', bu: '' }, revenue19: { account: '8400', bu: '' } }, prof.datev || {}));
-    const X = S.datevX || (S.datevX = { from: `${P.year}-01-01`, to: todayISO() < `${P.year}-12-31` ? todayISO() : `${P.year}-12-31`, sel: {} });
-    const finals = S.invoices.filter((i) => i.status === 'final' && i.snapshot.issue_date >= X.from && i.snapshot.issue_date <= X.to);
-    if (!S.datevBatches) { S.datevBatches = []; loadDatevBatches().then(render); }
-    const batches = S.datevBatches.slice().reverse();
-    const shown = finals.slice(0, 150), selN = Object.keys(X.sel).length; let fieldsN = 0;
-    return `<p class="muted">${esc(t('web.datevIntro'))}</p>
-      <div class="sec-h">${esc(t('web.datevProfile'))}</div>
-      <div class="card"><div class="grid2">${field('dv_adv', t('web.datevAdvisorL'), P.advisor, 'inputmode="numeric"')}${field('dv_cli', t('web.datevClientL'), P.client, 'inputmode="numeric"')}</div>
-        <div class="grid2">${field('dv_year', t('web.datevYear'), String(P.year), 'inputmode="numeric"')}${field('dv_len', t('web.datevLen'), String(P.accountLength), 'inputmode="numeric"')}</div>
-        <div class="seg">${['03', '04'].map((k) => `<button aria-pressed="${P.skr === k}" data-a="dvSkr" data-v="${k}">SKR ${k}</button>`).join('')}</div>
-        <div class="grid2">${field('dv_r7', t('web.datevR7'), P.revenue7.account, 'inputmode="numeric"')}${field('dv_b7', 'BU 7 %', P.revenue7.bu, 'inputmode="numeric"')}</div>
-        <div class="grid2">${field('dv_r19', t('web.datevR19'), P.revenue19.account, 'inputmode="numeric"')}${field('dv_b19', 'BU 19 %', P.revenue19.bu, 'inputmode="numeric"')}</div>
-        <button class="btn sec" data-a="dvSaveP">${esc(t('web.datevSaveP'))}</button></div>
-      <div class="sec-h">${esc(t('web.datevBatch'))}</div>
-      <div class="card"><div class="grid2">${field('dv_from', t('web.from'), fmtDate(X.from))}${field('dv_to', t('web.to'), fmtDate(X.to))}</div>
-        <button class="btn sm ghost" data-a="dvRange">${esc(t('web.datevApply'))}</button>
-        ${finals.length > 1 ? `<label class="check"><input type="checkbox" data-a="dvAll" ${selN === finals.length ? 'checked' : ''}><span>${esc(t('web.selectAll'))} (${finals.length})</span></label>` : ''}
-        ${finals.length ? shown.map((inv) => { const e = X.sel[inv.id]; const withFields = e && fieldsN++ < 60; return `<div class="card flat" style="padding:10px"><label class="check"><input type="checkbox" data-a="dvSel" data-v="${inv.id}" ${e ? 'checked' : ''}><span><b class="mono">${esc(inv.number)}</b> · ${esc(inv.snapshot.customer_name)} · <span class="num">${esc(money(inv.snapshot.gross))}</span></span></label>
-          ${withFields ? `<div class="grid2">${field('dv_deb_' + inv.id, t('web.datevDebtorL'), e.debtor, 'inputmode="numeric"')}${field('dv_tax_' + inv.id, t('web.datevTaxDate'), fmtDate(e.taxDate))}</div>` : ''}</div>`; }).join('') + (finals.length > shown.length ? `<p class="muted small">+ ${finals.length - shown.length} …</p>` : '') : `<p class="muted">${esc(t('web.datevNoInv'))}</p>`}
-        ${X.problems && X.problems.length ? `<div class="banner warn">${X.problems.map(esc).join('<br>')}</div>` : ''}
-        <button class="btn" data-a="dvExport" ${Object.keys(X.sel).length ? '' : 'disabled'}>${esc(t('web.datevExport'))} (${Object.keys(X.sel).length})</button>
-        <p class="muted small">${esc(t('web.datevNote'))}</p></div>
-      ${batches.length ? group(batches.map((b, i) => cell({ icon: 'box', title: `${fmtDate(b.created_at)} · ${tn('web.docs', b.count)}`, sub: `${fmtDate(b.from)}–${fmtDate(b.to)} · SHA-256 ${String(b.hash || "–").slice(0, 12)}…`, attrs: `data-a="dvAgain" data-i="${batches.length - 1 - i}"` })), t('web.datevHistory')) : ''}`;
-  },
-};
-async function loadDatevBatches() {
-  const legacy = ((S.profile && S.profile.datev_batches) || []).map((b) => Object.assign({ legacy: true }, b));
-  let rows = []; try { rows = (await store.all('meta')).filter((x) => x.kind === 'datev'); } catch (e) { console.warn(e); }
-  S.datevBatches = legacy.concat(rows.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || '')));
-}
-/** Debitorennummer je Kunde aus früheren Stapeln (statt einer wachsenden Liste im Profil) */
-function knownDebtor(name) {
-  const legacy = S.profile && S.profile.datev_debtors && S.profile.datev_debtors[name];
-  for (const b of (S.datevBatches || []).slice().reverse()) for (const [id, deb] of b.entries || []) { const inv = S.invoices.find((x) => x.id === id); if (inv && inv.snapshot.customer_name === name) return deb; }
-  return legacy || null;
-}
-function readDatev() {
-  const P = S.datevP; if (!$('#dv_adv')) return;
-  P.advisor = val('dv_adv').trim(); P.client = val('dv_cli').trim(); P.year = parseInt(val('dv_year'), 10) || P.year; P.accountLength = Math.min(8, Math.max(4, parseInt(val('dv_len'), 10) || 4));
-  P.revenue7 = { account: val('dv_r7').trim(), bu: val('dv_b7').trim() }; P.revenue19 = { account: val('dv_r19').trim(), bu: val('dv_b19').trim() };
-  const X = S.datevX;
-  for (const id of Object.keys(X.sel)) { if ($('#dv_deb_' + id)) { X.sel[id].debtor = val('dv_deb_' + id).trim(); X.sel[id].taxDate = parseDate(val('dv_tax_' + id)) || X.sel[id].taxDate; } }
-}
-
-/* ---------- Kontoauszug ---------- */
-const near = (a, b) => Math.abs(a - b) < 0.01;
-const mentions = (p, ref) => !!ref && String(p || '').replace(/\s/g, '').toLowerCase().includes(String(ref).replace(/\s/g, '').toLowerCase());
 const normName = (v) => String(v || '').toLocaleLowerCase('de-DE').replace(/[^\p{L}\p{N}]/gu, '');
-/** Punktesystem wie im Abgleich: Betrag (auch Skonto) 2, Rechnungsnummer im Verwendungszweck 4, Name 2 */
-function candidatesFor(tx) {
-  const amt = Math.abs(tx.amount);
-  if (tx.amount < 0) {
-    return S.docs.filter((d) => !d.paid && (d.is_incoming_invoice || d.payment_required) && d.amount_gross != null && !/gutschrift|lieferschein/i.test(d.doc_type || '')).map((d) => {
-      const full = near(d.amount_gross, amt);
-      const disc = d.discount_percent > 0 && d.discount_date && tx.date <= d.discount_date && Math.abs(Math.round(d.amount_gross * (100 - d.discount_percent)) / 100 - amt) <= 0.011;
-      const ref = (d.invoice_number || '').length >= 3 && mentions(tx.purpose, d.invoice_number);
-      const sn = normName((d.sender || '').split(/[\n,]/)[0]), rn = normName(tx.counterparty);
-      const name = sn.length >= 4 && rn.length >= 4 && (sn.includes(rn) || rn.includes(sn));
-      return { type: 'doc', id: d.id, score: (full || disc ? 2 : 0) + (ref ? 4 : 0) + (name ? 2 : 0), disc };
-    }).filter((c) => c.score >= 2).sort((x, y) => y.score - x.score);
-  }
-  const idx = openInvIndex(), purpose = String(tx.purpose || '').replace(/\s/g, '').toLowerCase(), cp = normName(tx.counterparty);
-  return idx.map(({ i, open, num, nm }) => {
-    const ref = !!num && purpose.includes(num), amtOk = near(open, amt) || near(i.snapshot.gross, amt);
-    const name = nm.length >= 4 && cp.includes(nm.slice(0, 12));
-    return { type: 'inv', id: i.id, open, score: (amtOk ? 2 : 0) + (ref ? 4 : 0) + (name ? 2 : 0) };
-  }).filter((c) => c.score >= 2).sort((x, y) => y.score - x.score);
-}
-let INV_IDX = null;
-/** Offene Rechnungen einmal je Abgleich vorbereiten (statt je Buchung neu zu rechnen) */
-function openInvIndex() {
-  if (INV_IDX) return INV_IDX;
-  return S.invoices.filter((i) => i.status === 'final').map((i) => ({ i, open: invState(i).open })).filter((x) => x.open > 0)
-    .map((x) => Object.assign(x, { num: String(x.i.number || '').replace(/\s/g, '').toLowerCase(), nm: normName(x.i.snapshot.customer_name) }));
-}
-function matchTx(txs) {
-  INV_IDX = null; INV_IDX = openInvIndex();
-  try { return matchTxInner(txs); } finally { INV_IDX = null; }
-}
-function matchTxInner(txs) {
-  const used = new Set();
-  return txs.map((tx) => {
-    const best = candidatesFor(tx).find((c) => !used.has(c.id));
-    if (best) { used.add(best.id); return Object.assign({ tx }, best, { auto: true }); }
-    return { tx, type: null };
-  });
-}
-VIEWS.bank = {
-  title: () => t('bank.title'),
-  render() {
-    const B = S.bank || (S.bank = { busy: false, list: null, done: {} });
-    const openDocs = S.docs.filter((d) => !d.paid && (d.is_incoming_invoice || d.payment_required));
-    const openInv = S.invoices.filter((i) => i.status === 'final' && invState(i).open > 0);
-    const past = S.docs.filter((d) => d.doc_type === 'Kontoauszug').slice(0, 5);
-    return `<p>${esc(t('bank.intro'))}</p>
-      ${S.sample ? `<label class="btn pick">${ico('bank')}${esc(t('bank.upload'))}<input id="bankIn" class="vh" type="file" multiple accept=".pdf,image/*,application/pdf"></label>` : `<div class="banner">${esc(t('web.noAi'))}</div>`}
-      ${B.busy ? busyCard(B.busy) : ''}${B.error ? `<div class="banner warn">${esc(B.error)}</div>` : ''}
-      ${B.list ? `<div class="sec-h">${esc(t('bank.transactions', { count: B.list.length }))}</div>${B.list.map((m, i) => {
-        const doc = m.type === 'doc' ? getDoc(m.id) : null, inv = m.type === 'inv' ? S.invoices.find((x) => x.id === m.id) : null;
-        const opts = m.tx.amount < 0 ? openDocs.map((d) => [`doc:${d.id}`, `${d.title} · ${money(d.amount_gross, d.currency)}`]) : openInv.map((x) => [`inv:${x.id}`, `${x.number} · ${x.snapshot.customer_name} · ${money(invState(x).open)}`]);
-        return `<div class="card"><p class="num" style="font-weight:800;color:var(--${m.tx.amount < 0 ? 'stamp' : 'ok'})">${money(m.tx.amount)} · ${fmtDate(m.tx.date)}</p>
-          <p>${esc(m.tx.counterparty)}</p><p class="muted small">${esc(m.tx.purpose)}</p>
-          ${doc || inv ? `<p>→ ${esc(doc ? `${t('bank.toDoc')}: ${doc.title} (${money(doc.amount_gross)})${m.disc ? ' · ' + t('web.discount') : ''}` : `${t('bank.toInvoice')}: ${inv.number} (${t('inv.open')} ${money(m.open)})`)}${m.auto ? ` <span class="pill c-grey">${'★'.repeat(Math.min(3, Math.round(m.score / 2)))}</span>` : ''}</p>
-            <button class="btn sm ${B.done[i] ? 'ghost' : ''}" data-a="bankConfirm" data-i="${i}" ${B.done[i] ? 'disabled' : ''}>${esc(B.done[i] ? '✓ ' + t('bank.confirmed') : t('bank.confirm'))}</button>`
-          : `<p class="muted small">${esc(t('bank.noMatch'))}</p>${opts.length ? `<label class="f" for="bsel_${i}">${esc(t('web.assign'))}<select class="in" id="bsel_${i}"><option value="">–</option>${opts.map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join('')}</select></label><button class="btn sm sec" data-a="bankAssign" data-i="${i}">${esc(t('web.assignDo'))}</button>` : ''}
-            <button class="btn sm ghost" data-go="scan">${esc(t('web.uploadMissing'))}</button>`}</div>`;
-      }).join('')}` : ''}
-      ${past.length ? group(past.map((d) => cell({ icon: 'bank', ic: 'g', title: d.title, sub: d.explanation || '', attrs: `data-go="doc" data-id="${d.id}"` })), t('web.pastStatements')) : ''}`;
-  },
-  after() {
-    const inp = $('#bankIn'); if (!inp) return;
-    inp.onchange = () => { const fs = [...inp.files]; inp.value = ''; if (fs.length) readStatement(fs); };
-  },
-};
-async function filesToCanvases(files) {
-  const out = [];
-  for (const f of files) {
-    if (/pdf/.test(f.type) || /\.pdf$/i.test(f.name)) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise;
-      for (let i = 1; i <= pdf.numPages && out.length < 20; i++) { const pg = await pdf.getPage(i); const vp = pg.getViewport({ scale: 1.6 }); const c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height; await pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise; out.push(c); }
-    } else { const img = await loadImage(f); const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; c.getContext('2d').drawImage(img, 0, 0); out.push(c); }
-  }
-  return out;
-}
-async function readStatement(files) {
-  const B = S.bank; B.busy = t('bank.analyzing'); B.list = null; B.error = null; B.done = {}; render();
-  try {
-    const canvases = await filesToCanvases(files);
-    const max = (S.sampleLimits && S.sampleLimits.images && S.sampleLimits.images.maxCount) || 20;
-    const blobs = canvases.slice(0, max).map((c) => dataUrlToBlob(canvasToPage(c).dataUrl));
-    const r = await aiJson('Die Bilder zeigen einen Kontoauszug einer deutschen Bank. Lies alle Buchungen vollständig und genau aus, erfinde keine. Betrag negativ bei Abbuchung, positiv bei Gutschrift. Datum als YYYY-MM-DD.\nAntworte nur mit JSON: {"transactions":[{"date":string,"amount":number,"counterparty":string,"purpose":string}]}', blobs);
-    const txs = (r && Array.isArray(r.transactions) ? r.transactions : []).map((x) => ({ date: parseDate(x.date) || todayISO(), amount: Number(x.amount) || 0, counterparty: String(x.counterparty || ''), purpose: String(x.purpose || '') }));
-    B.list = matchTx(txs);
-    // Kontoauszug selbst als Beleg ablegen (Ordner Rechnungen, erledigt)
-    const id = uid(); let idx = 0;
-    for (const c of canvases) { const pg = canvasToPage(c); await store.put('pages', { id: uid(), docId: id, idx: idx++, dataUrl: pg.dataUrl, w: pg.w, h: pg.h }); }
-    const sum = (sign) => txs.filter((x) => (sign < 0 ? x.amount < 0 : x.amount > 0)).reduce((a, x) => a + x.amount, 0);
-    const dates = txs.map((x) => x.date).sort();
-    const rec = { id, title: `Kontoauszug ${dates.length ? fmtDate(dates[0]) + '–' + fmtDate(dates[dates.length - 1]) : fmtDate(todayISO())}`, doc_type: 'Kontoauszug', folder: 'bank', file_kind: 'pdf', page_count: canvases.length,
-      size_bytes: files.reduce((a, f) => a + f.size, 0), sources: files.map((f) => f.name), sha256: await sha256(JSON.stringify(txs)), status: 'done', tax_flag: 'prebook', archived: false, paid: false,
-      explanation: `${txs.length} Buchungen · Eingänge ${money(sum(1))} · Ausgänge ${money(sum(-1))}`, transactions: txs, next_steps: [], dates: [], analyzed_at: nowIso(), created_at: nowIso(), version: 0 };
-    upsertLocal('docs', await saveVersioned('docs', rec, t('bank.title')));
-  } catch (e) { console.error(e); B.error = e && e.code ? aiError(e) : t('web.pdfFail'); }
-  B.busy = false; if (S.view === 'bank') render();
-}
 
 /* ---------- Steuerberater-Übergabe ---------- */
 VIEWS.export = {
@@ -2290,10 +1910,9 @@ async function exportZip() {
 /* ---------- Mehr & Einstellungen ---------- */
 const HUB = () => [
   ['web.hubMoney', [
-    ['invoice', 'web.hubSales', 'web.hubSalesH', 'data-go="invoices"'],
-    ['bank', 'web.hubPay', 'web.hubPayH', 'data-go="bank"'],
-    ['bell', 'web.hubDun', 'web.hubDunH', 'data-a="hubDun"'],
-  ]],
+    ['invoice', 'acc.hubAcc', 'acc.hubAccH', 'data-a="openAcc"'],
+    ['box', 'web.hubExport', 'web.hubExportH', 'data-go="export"'],
+  ].concat(S.invoices.some((i) => i.status === 'final') ? [['archive', 'acc.oldInvoices', 'acc.oldInvoicesH', 'data-go="invoices"']] : [])],
   ['web.hubRecords', [
     ['folder', 'web.hubReview', 'web.hubReviewH', 'data-a="hubDocs" data-v="open"'],
     ['archive', 'web.hubArchive', 'web.hubArchiveH', 'data-a="hubDocs" data-v="archived"'],
@@ -2303,8 +1922,6 @@ const HUB = () => [
   ['web.hubPlanning', [
     ['clock', 'web.hubDates', 'web.hubDatesH', 'data-go="tasks"'],
     ['cal', 'web.hubTax', 'web.hubTaxH', 'data-go="tax"'],
-    ['box', 'web.hubExport', 'web.hubExportH', 'data-go="export"'],
-    ['doc', 'web.hubDatev', 'web.hubDatevH', 'data-go="datev"'],
     ['bell', 'web.hubRem', 'web.hubRemH', 'data-go="settings"'],
     ['gear', 'web.hubSettings', 'web.hubSettingsH', 'data-go="settings"'],
   ]],
@@ -2354,10 +1971,9 @@ VIEWS.settings = {
         ${field('st_email', t('web.companyMail'), p.email || '', 'type="email"')}
         <div class="grid2 stack">${field('st_contact', t('web.contact'), p.contact || '')}${field('st_phone', t('web.phone'), p.phone || '', 'type="tel"')}</div>
         <div class="grid2 stack">${field('st_tax', t('settings.taxNo'), p.tax_number || '')}${field('st_vat', t('settings.vatId'), p.vat_id || '', 'autocapitalize="characters"')}</div>
-        ${field('st_iban', t('settings.iban'), fmtIban(p.iban), 'style="font-family:var(--f-mono)" autocapitalize="characters"')}
-        ${field('st_prefix', t('settings.prefix'), p.invoice_prefix || 'RE-')}
         ${field('st_mail', t('settings.advisorEmail'), p.tax_advisor_email || '', 'type="email"')}
         <button class="btn" data-a="settingsSave">${esc(t('common.save'))}</button></div>
+      ${accSettingsHtml()}
       <div class="sec-h">${esc(t('web.privacyTitle'))}</div><div class="card"><p class="small muted">${esc(t('web.privacyText'))}</p></div>
       <div class="sec-h">${esc(t('web.gobdTitle'))}</div><div class="card"><p class="small muted">${esc(t('web.gobdText'))}</p></div>`;
   },
@@ -2386,7 +2002,7 @@ async function wipeSpace() {
 }
 async function switchSpace(space) {
   store.space = space; try { localStorage.setItem('eoffis.space', space); } catch {}
-  S.scan = null; S.docUi = null; S.replyUi = null; S.invDraft = null; S.exSel = null; S.bank = null;
+  S.scan = null; S.docUi = null; S.replyUi = null; S.invDraft = null; S.exSel = null; S.bank = null; S.accM = null; S.accSel = null; ACC_SECRET = null;
   S.loaded = false; render();
   await reloadAll().catch(() => { S.loadError = true; });
   try { if (await purgeExamples()) await reloadAll(); } catch (e) { console.error(e); }
@@ -2407,7 +2023,6 @@ document.addEventListener('click', async (e) => {
     if (g.dataset.go === 'export') S.exSel = null;
     if (g.dataset.go === 'scan') { S.scan = null; S.crop = null; }
     if (g.dataset.go === 'erech') S.erech = null;
-    if (g.dataset.go === 'datev') { S.datevP = null; S.datevX = null; }
     if (g.dataset.go === 'docs' && !p.archived && (g.closest('.tabs') || g.closest('.sec-h'))) { S.filters.contracts = false; S.filters.q = ''; S.filters.folder = null; S.filters.review = false; }
     if (g.dataset.go === 'doc' && g.dataset.id !== S.params.id) S.docUi = null;
     return go(g.dataset.go, p);
@@ -2482,73 +2097,16 @@ document.addEventListener('click', async (e) => {
     case 'ruleInt': readRule(); S.taxRule.interval = v; S.taxRule.preview = null; return render();
     case 'rulePreview': readRule(); if (!S.taxRule.title.trim()) { $('#r_title').focus(); return; } S.taxRule.preview = ruleDates(S.taxRule, todayISO(), 12); return render();
     case 'ruleCreate': return guard(async () => { readRule(); const R = S.taxRule; const key = 'custom:' + safeName(R.title).slice(0, 40); const have = new Set(S.tasks.filter((x) => x.template_key === key).map((x) => x.due_date)); let n = 0; for (const d of ruleDates(R, todayISO(), 12)) { if (have.has(d)) continue; const rec = { id: uid(), title: R.title.trim(), kind: 'tax', due_date: d, status: 'open', priority: 'high', notes: '', template_key: key, created_at: nowIso(), version: 1 }; await store.put('tasks', rec); S.tasks.push(rec); n++; } S.taxRule = null; toast(t('tax.created', { count: n })); go('tasks'); });
-    case 'invFilter': S.invFilter = v; S.lim = null; return render();
-    case 'itemAdd': readInvForm(); S.invDraft.items.push(emptyItem()); return render();
-    case 'itemDel': readInvForm(); S.invDraft.items.splice(i, 1); return render();
-    case 'itemVat': readInvForm(); S.invDraft.items[i].vat_rate = +v; return render();
-    case 'invRecalc': readInvForm(); return render();
-    case 'invSave': return invSave(v === 'tpl');
-    case 'invUseTpl': { const id = S.params.id; S.invDraft = null; return go('invoice', { id: 'new', from: id }); }
-    case 'invFinalize': return invFinalize();
     case 'invPdf': { const inv = S.invoices.find((x) => x.id === S.params.id); return saveFile(`${inv.number}.pdf`, invoicePdf(inv.snapshot)); }
     case 'invXr': { const inv = S.invoices.find((x) => x.id === S.params.id); return saveFile(`${inv.number}_XRechnung.xml`, invoiceXml(inv.snapshot, 'xrechnung')); }
     case 'invZf': return guard(async () => { const inv = S.invoices.find((x) => x.id === S.params.id); await saveFile(`${inv.number}_ZUGFeRD.pdf`, await zugferdPdf(inv.snapshot)); });
-    case 'invConfirm': readInvForm(); return render();
-    case 'itemUnit': readInvForm(); S.invDraft.items[i].unit = v; return render();
-    case 'dunLevel': { const inv = S.invoices.find((x) => x.id === S.params.id); const until = parseDate(val('dun_until')) || addDays(todayISO(), 10); S.dunning = { inv: inv.id, level: +v, until, letter: dunningLetter(inv, +v, until) }; return render(); }
-    case 'dunOpen': { const inv = S.invoices.find((x) => x.id === S.params.id); const r = inv.reminders[i]; S.dunning = { inv: inv.id, level: r.level, until: r.until, letter: r.letter, saved: true }; return render(); }
-    case 'payAdd': {
-      const inv = S.invoices.find((x) => x.id === S.params.id); const amt = parseMoney(val('p_amt')); const dt = parseDate(val('p_date'));
-      if (!amt || amt <= 0) return $('#p_amt').focus(); if (!dt) return toast(t('common.invalidDate'));
-      return guard(async () => { await invPayments(inv, (inv.payments || []).concat([{ amount: amt, paid_on: dt, note: val('p_ref').trim() }]), t('inv.addPayment')); render(); });
-    }
-    case 'payDel': { const inv = S.invoices.find((x) => x.id === S.params.id); const p = inv.payments[i]; if (!(await ask(`${money(p.amount)} – ${fmtDate(p.paid_on)}`, t('common.delete'), true))) return; return guard(async () => { await invPayments(inv, inv.payments.filter((_, k) => k !== i), t('common.delete')); render(); }); }
-    case 'dunning': return guard(async () => {
-      const inv = S.invoices.find((x) => x.id === S.params.id); const until = parseDate(val('dun_until')); if (!until) return toast(t('common.invalidDate'));
-      const level = S.dunning && S.dunning.inv === inv.id && !S.dunning.saved ? S.dunning.level : Math.min(3, (inv.reminders || []).length + 1);
-      const letter = dunningLetter(inv, level, until);
-      const out = await saveVersioned('invoices', Object.assign({}, inv, { reminders: (inv.reminders || []).concat([{ level, until, created_at: todayISO(), open: invState(inv).open, letter }]) }), letter.subject);
-      upsertLocal('invoices', out); S.dunning = { inv: inv.id, level, until, letter, saved: true }; render();
-    });
-    case 'dunPdf': S.dunning.letter.body = val('dun_body') || S.dunning.letter.body; return saveFile(`Zahlungserinnerung_${safeName(S.dunning.letter.subject)}.pdf`, letterPdf(S.dunning.letter));
-    case 'dunCopy': S.dunning.letter.body = val('dun_body') || S.dunning.letter.body; return copy(letterText(S.dunning.letter));
-    case 'bankConfirm': {
-      const m = S.bank.list[i];
-      return guard(async () => {
-        if (m.type === 'doc') await persistDoc(getDoc(m.id), { paid: true }, t('bank.title'));
-        else { const inv = S.invoices.find((x) => x.id === m.id); await invPayments(inv, (inv.payments || []).concat([{ amount: Math.min(Math.abs(m.tx.amount), m.open), paid_on: m.tx.date, note: ('Kontoauszug: ' + m.tx.purpose).slice(0, 160) }]), t('bank.title')); }
-        S.bank.done[i] = true; render();
-      });
-    }
-    case 'bankAssign': { const sel = val('bsel_' + i); if (!sel) return; const [type, id] = sel.split(':'); const m = S.bank.list[i]; Object.assign(m, { type, id, open: type === 'inv' ? invState(S.invoices.find((x) => x.id === id)).open : 0, auto: false }); return render(); }
     case 'hubDocs': S.filters = { q: '', f: v === 'archived' ? 'archived' : v === 'contracts' ? 'all' : 'open', folder: null, contracts: v === 'contracts', review: v === 'open' }; S.lim = null; return go('doclist', { k: v });
-    case 'hubDun': S.invFilter = 'overdue'; return go('invoices');
+    case 'openAcc': S.accSel = new Set(); S.filters.f = 'open'; return go('acc');
     case 'exAll': { const tab = S.exTab || 'prebook'; const here = S.docs.filter((x) => x.page_count && (tab === 'prebook' ? x.tax_flag !== 'deadline' : x.tax_flag === 'deadline')); here.forEach((x) => (a.checked ? S.exSel.add(x.id) : S.exSel.delete(x.id))); return render(); }
     case 'exOne': a.checked ? S.exSel.add(v) : S.exSel.delete(v); return render();
     case 'exZip': return exportZip();
     case 'exPdf': return guard(async () => { S.exBusy = true; render(); try { const docs = S.docs.filter((x) => S.exSel.has(x.id) && x.page_count && x.tax_flag !== 'deadline'); const blob = await sortedPdf(docs); S.exBusy = false; render(); await saveFile(`eOffis_Belege_sortiert_${todayISO()}.pdf`, blob); } finally { S.exBusy = false; render(); } });
     case 'exTab': S.exTab = v; return render();
-    case 'dvSkr': { readDatev(); const P = S.datevP; const d0 = datevDefaults(P.skr), d1 = datevDefaults(v); if (P.revenue7.account === d0.r7) P.revenue7.account = d1.r7; if (P.revenue19.account === d0.r19) P.revenue19.account = d1.r19; P.skr = v; return render(); }
-    case 'dvSaveP': return guard(async () => { readDatev(); S.profile = Object.assign({}, S.profile, { datev: clone(S.datevP) }); await store.setProfile(S.profile); toast(t('web.toastSaved')); render(); });
-    case 'dvRange': { readDatev(); const f = parseDate(val('dv_from')), to = parseDate(val('dv_to')); if (!f || !to) return toast(t('common.invalidDate')); S.datevX.from = f; S.datevX.to = to; S.datevX.sel = {}; return render(); }
-    case 'dvSel': { readDatev(); const inv = S.invoices.find((x) => x.id === v); if (a.checked) S.datevX.sel[v] = { debtor: knownDebtor(inv.snapshot.customer_name) || '1' + '0'.repeat(S.datevP.accountLength), taxDate: inv.snapshot.issue_date }; else delete S.datevX.sel[v]; return render(); }
-    case 'dvAll': { readDatev(); const X = S.datevX; const finals = S.invoices.filter((x) => x.status === 'final' && x.snapshot.issue_date >= X.from && x.snapshot.issue_date <= X.to); if (a.checked) { for (const inv of finals) if (!X.sel[inv.id]) X.sel[inv.id] = { debtor: knownDebtor(inv.snapshot.customer_name) || '1' + '0'.repeat(S.datevP.accountLength), taxDate: inv.snapshot.issue_date }; } else X.sel = {}; return render(); }
-    case 'dvExport': return guard(async () => {
-      readDatev(); const P = S.datevP, X = S.datevX;
-      const entries = Object.entries(X.sel).map(([id, e]) => ({ inv: S.invoices.find((x) => x.id === id), debtor: e.debtor, taxDate: e.taxDate }));
-      X.problems = datevProblems(P, X.from, X.to, entries); if (X.problems.length) return render();
-      const csv = buildDatev(P, X.from, X.to, entries); const bytes = cp1252(csv); const hash = await sha256(csv);
-      // Jeder Stapel als eigenes Dokument; CSV nur, solange es unter der Dokumentgrenze bleibt (sonst wird es aus den Rechnungen neu erzeugt)
-      const batch = { id: 'datev-' + uid(), kind: 'datev', created_at: nowIso(), from: X.from, to: X.to, count: entries.length, hash, P: clone(P), entries: entries.map((e) => [e.inv.id, e.debtor, e.taxDate]) };
-      if (csv.length < 150000) batch.csv = csv;
-      if (JSON.stringify(batch).length > 240000) delete batch.entries;
-      await store.put('meta', batch); (S.datevBatches || (S.datevBatches = [])).push(batch);
-      S.profile = Object.assign({}, S.profile, { datev: clone(P) });
-      await store.setProfile(S.profile);
-      await saveFile(`EXTF_Buchungsstapel_${X.from}_${X.to}.csv`, new Blob([bytes], { type: 'text/csv' }));
-      S.datevX.sel = {}; render();
-    });
-    case 'dvAgain': { const b = S.datevBatches[i]; let csv = b.csv; if (!csv && b.entries) csv = buildDatev(b.P || S.datevP, b.from, b.to, b.entries.map(([id, debtor, taxDate]) => ({ inv: S.invoices.find((x) => x.id === id), debtor, taxDate })).filter((e) => e.inv)); if (!csv) return toast(t('common.error')); return saveFile(`EXTF_Buchungsstapel_${b.from}_${b.to}.csv`, new Blob([cp1252(csv)], { type: 'text/csv' })); }
     case 'fwPdf': { const docs = S.docs.filter((x) => S.exSel.has(x.id) && x.tax_flag === 'deadline' && x.page_count); for (const x of docs) { const pages = (await store.where('pages', 'docId', x.id)).sort((p1, p2) => p1.idx - p2.idx); if (x.file_kind === 'xml') await saveFile(`${safeName(x.title)}.xml`, (pages[0] && pages[0].xml) || ''); else await saveFile(`${safeName(x.title)}.pdf`, pagesToPdf(pages)); } return; }
     case 'fwText': return copy(forwardText(S.docs.filter((x) => S.exSel.has(x.id) && x.tax_flag === 'deadline')));
     case 'taskCycle': return guard(async () => { const x = S.tasks.find((k) => k.id === v); const nx = { open: 'in_progress', in_progress: 'done', done: 'open' }[x.status] || 'open'; const saved = await saveVersioned('tasks', Object.assign({}, x, { status: nx }), t('tasks.status_' + nx)); S.tasks[S.tasks.findIndex((k) => k.id === v)] = saved; await spawnNext(saved); render(); });
@@ -2572,11 +2130,10 @@ document.addEventListener('click', async (e) => {
         company_name: val('st_name').trim(), industry: S.setInd || (S.profile && S.profile.industry) || 'sonstiges',
         street: val('st_street').trim(), zip: val('st_zip').trim(), city: val('st_city').trim(), email: val('st_email').trim(), contact: val('st_contact').trim(), phone: val('st_phone').trim(),
         address: [val('st_name').trim(), val('st_street').trim(), [val('st_zip').trim(), val('st_city').trim()].filter(Boolean).join(' ')].filter(Boolean).join('\n'),
-        tax_number: val('st_tax').trim(), vat_id: val('st_vat').trim(), iban: val('st_iban').replace(/\s+/g, '').toUpperCase(),
-        invoice_prefix: val('st_prefix').trim() || 'RE-', tax_advisor_email: val('st_mail').trim() || null,
+        tax_number: val('st_tax').trim(), vat_id: val('st_vat').trim(), tax_advisor_email: val('st_mail').trim() || null,
       });
-      if (p.iban && !ibanValid(p.iban)) toast(t('settings.iban') + ' ✗'); else if (p.vat_id && !vatIdValid(p.vat_id)) toast(t('settings.vatId') + ' ✗');
-      await store.setProfile(p); S.profile = p; S.setInd = null; if ((!p.iban || ibanValid(p.iban)) && (!p.vat_id || vatIdValid(p.vat_id))) toast(t('web.toastSaved')); render();
+      if (p.vat_id && !vatIdValid(p.vat_id)) toast(t('settings.vatId') + ' ✗');
+      await store.setProfile(p); S.profile = p; S.setInd = null; if (!p.vat_id || vatIdValid(p.vat_id)) toast(t('web.toastSaved')); render();
     });
   }
 });

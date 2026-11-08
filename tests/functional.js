@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const SITE = !!process.env.SITE;
 const { FakeDB, newPage, loadApp, chromium } = require(SITE ? './siteharness' : './harness');
-const HTML = fs.readFileSync(path.join(__dirname, '..', 'eoffis.html'), 'utf8');
+const HTML = fs.existsSync(path.join(__dirname, '..', 'eoffis.html')) ? fs.readFileSync(path.join(__dirname, '..', 'eoffis.html'), 'utf8') : '';
 const results = []; let LAST = '';
 const CII = fs.readFileSync(path.join(__dirname, 'cii.xml'), 'utf8');
 const UBL = fs.readFileSync(path.join(__dirname, 'ubl.xml'), 'utf8');
@@ -43,13 +43,14 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     await p.click('[data-a=setLang][data-v=tr]'); assert(/Ayarlar|Dil/.test(await text()), 'Türkisch fehlt');
     await p.click('[data-a=setLang][data-v=de]'); assert(await ev(() => document.documentElement.dir) === 'ltr', 'nicht zurück auf LTR');
   });
-  await check('F03', 'Einstellungen: Betriebsdaten, IBAN-Prüfung', async () => {
+  await check('F03', 'Einstellungen: Betriebsdaten, USt-IdNr.-Prüfung', async () => {
     await p.fill('#st_street', 'Teststr. 1'); await p.fill('#st_zip', '12345'); await p.fill('#st_city', 'Teststadt'); await p.fill('#st_email', 'rechnung@test.example');
-    await p.fill('#st_contact', 'Max Test'); await p.fill('#st_phone', '+49 1 2'); await p.fill('#st_vat', 'DE123456789'); await p.fill('#st_tax', '12/345/67890');
-    await p.fill('#st_iban', 'DE89 3704 0044 0532 0130 01'); await p.click('[data-a=settingsSave]');
-    await p.waitForSelector('.toast'); const toast1 = await p.textContent('.toast'); assert(/IBAN/.test(toast1), 'falsche IBAN nicht erkannt: ' + toast1);
-    await p.fill('#st_iban', 'DE89 3704 0044 0532 0130 00'); await p.click('[data-a=settingsSave]');
-    await p.waitForFunction(() => S.profile.iban === 'DE89370400440532013000' && S.profile.city === 'Teststadt');
+    await p.fill('#st_contact', 'Max Test'); await p.fill('#st_phone', '+49 1 2'); await p.fill('#st_vat', 'DE12345'); await p.fill('#st_tax', '12/345/67890');
+    await p.click('[data-a=settingsSave]');
+    await p.waitForSelector('.toast'); const toast1 = await p.textContent('.toast'); assert(/USt-IdNr/.test(toast1), 'falsche USt-IdNr. nicht erkannt: ' + toast1);
+    await p.fill('#st_vat', 'DE123456789'); await p.click('[data-a=settingsSave]');
+    await p.waitForFunction(() => S.profile.vat_id === 'DE123456789' && S.profile.city === 'Teststadt');
+    assert(!(await p.$('#st_iban')) && !(await p.$('#st_prefix')), 'Rechnungsfelder noch in den Einstellungen');
   });
   await check('F04', 'Foto aufnehmen → A4-Zuschnitt → Seite', async () => {
     await p.click('.tab[data-go=scan]');
@@ -185,60 +186,6 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     assert(f && /BEGIN:VCALENDAR/.test(f.text) && /BEGIN:VALARM/.test(f.text) && /\r\n/.test(f.text), 'ICS ungültig');
     return `${(f.text.match(/BEGIN:VEVENT/g) || []).length} Termine`;
   });
-  await check('F20', 'Rechnung: Entwurf, Prüfampel, Vorlage, aus Vorlage', async () => {
-    await p.click('.tab[data-go=more]'); await p.click('[data-go=invoices]'); await p.click('[data-go=invoice][data-id=new]');
-    await p.fill('#i_cust', 'Kunde Eins GmbH'); await p.fill('#i_street', 'Weg 1'); await p.fill('#i_zip', '50667'); await p.fill('#i_city', 'Köln');
-    await p.fill('#it_d_0', 'Montage'); await p.fill('#it_q_0', '2,5'); await p.fill('#it_p_0', '80'); await p.click('[data-a=itemUnit][data-i="0"][data-v=HUR]');
-    assert(/Für XRechnung\/ZUGFeRD fehlt noch/.test(await text()), 'E-Rechnungs-Ampel fehlt');
-    await p.click('[data-a=invSave][data-v=tpl]'); await p.waitForFunction(() => S.invoices.some((i) => i.is_template));
-    await p.click('[data-a=invUseTpl]'); assert(await p.inputValue('#i_cust') === 'Kunde Eins GmbH', 'Vorlage nicht übernommen');
-    await p.fill('#i_mail', 'buchhaltung@kunde1.example'); await p.fill('#i_ref', 'PO-1');
-    await p.click('[data-a=itemAdd]'); await p.fill('#it_d_1', 'Material'); await p.fill('#it_q_1', '1'); await p.fill('#it_p_1', '19,99'); await p.click('[data-a=itemVat][data-i="1"][data-v="7"]');
-    await p.click('[data-a=invRecalc]'); assert(/Alle Angaben für XRechnung/.test(await text()), 'E-Ready nicht erkannt');
-  });
-  await check('F21', 'Rechnung finalisieren: Nummer, Snapshot, XRechnung, ZUGFeRD, PDF', async () => {
-    assert(await p.isDisabled('[data-a=invFinalize]'), 'Finalisieren ohne Bestätigung möglich');
-    await p.check('#i_confirm'); await p.click('[data-a=invFinalize]'); await p.click('#askYes');
-    await p.waitForFunction(() => S.invoices.some((i) => i.status === 'final'), null, { timeout: 15000 });
-    const inv = await ev(() => S.invoices.find((i) => i.status === 'final'));
-    assert(/^RE-2026-0001$/.test(inv.number), 'Nummer ' + inv.number);
-    assert(inv.snapshot.gross === Math.round((200 * 1.19 + 19.99 * 1.07) * 100) / 100 || Math.abs(inv.snapshot.gross - 259.39) < 0.011, 'Summe ' + inv.snapshot.gross);
-    await p.click('[data-a=invXr]'); const x = await ev(() => __mock.saved.find((s) => /XRechnung\.xml$/.test(s.filename)));
-    const back = await ev((t) => { const e = parseEInvoice(t); return [e.number, e.gross, e.lines.length, e.lines[0].qty]; }, x.text);
-    assert(back[0] === 'RE-2026-0001' && back[2] === 2 && back[3] === 2.5, 'XRechnung-Rücklesen: ' + JSON.stringify(back));
-    await p.click('[data-a=invZf]'); await p.waitForFunction(() => __mock.saved.some((s) => /ZUGFeRD\.pdf$/.test(s.filename)));
-    const zf = await ev(async () => { const { PDFDocument, PDFName, PDFDict, PDFArray } = PDFLib; const d = await PDFDocument.load(await window.__lastBlob.arrayBuffer()); const arr = d.catalog.lookup(PDFName.of('Names'), PDFDict).lookup(PDFName.of('EmbeddedFiles'), PDFDict).lookup(PDFName.of('Names'), PDFArray); const af = d.catalog.lookup(PDFName.of('AF')); return [arr.get(0).decodeText(), !!af, !!d.catalog.lookup(PDFName.of('Metadata'))]; });
-    assert(zf[0] === 'factur-x.xml' && zf[1], 'XML nicht eingebettet: ' + JSON.stringify(zf));
-    await p.click('[data-a=invPdf]');
-    return `Brutto ${inv.snapshot.gross}`;
-  });
-  await check('F22', 'Zahlungen: Teilzahlung, Restbetrag, Löschen', async () => {
-    await p.fill('#p_amt', '100'); await p.click('[data-a=payAdd]'); await p.waitForFunction(() => S.invoices.find((i) => i.status === 'final').payments.length === 1);
-    assert(/Offen: 159,39/.test(await text()), 'Restbetrag falsch');
-    await p.click('[data-a=payDel]'); await p.click('#askYes'); await p.waitForFunction(() => S.invoices.find((i) => i.status === 'final').payments.length === 0);
-  });
-  await check('F23', 'Mahnwesen: Stufe 1–3 nach Fälligkeit', async () => {
-    await ev(() => { const i = S.invoices.find((x) => x.status === 'final'); i.snapshot.due_date = '2026-10-01'; render(); });
-    for (const n of [1, 2, 3]) { await p.click(`[data-a=dunLevel][data-v="${n}"]`); await p.click('[data-a=dunning]'); await p.waitForFunction((k) => S.invoices.find((x) => x.status === 'final').reminders.length === k, n); }
-    const r = await ev(() => S.invoices.find((x) => x.status === 'final').reminders.map((x) => x.letter.subject));
-    assert(/Zahlungserinnerung/.test(r[0]) && /3\. Mahnung/.test(r[2]), JSON.stringify(r));
-  });
-  await check('F24', 'Finalisierte Rechnung unveränderlich, Kopie als Entwurf', async () => {
-    assert(!(await p.$('#i_cust')), 'Bearbeitungsfelder sichtbar');
-    await p.click('[data-go=invoice][data-from]'); assert(await p.inputValue('#i_cust') === 'Kunde Eins GmbH', 'Kopie leer');
-  });
-  await check('F25', 'Kontoauszug: Skonto-Treffer, manuell zuordnen, bestätigen', async () => {
-    await p.click('.tab[data-go=home]'); await p.click('.gear:not(.plus)'); await p.click('[data-go=bank]');
-    // Skonto-Zahlung auf einen offenen Beleg: archivierten SW-Beleg reaktivieren wäre gesperrt → neuen offenen Beleg anlegen
-    await ev(async () => { const rec = { id: 'tdoc1', title: 'Stadtwerke SW-2026-77', doc_type: 'Eingangsrechnung', sender: 'Stadtwerke Muster GmbH', invoice_number: 'SW-2026-77', amount_gross: 119, discount_percent: 2, discount_date: '2026-11-10', is_incoming_invoice: true, payment_required: true, paid: false, folder: 'rechnungen', status: 'saved', dates: [], next_steps: [], created_at: new Date().toISOString(), version: 0 }; upsertLocal('docs', await saveVersioned('docs', rec)); });
-    await p.setInputFiles('#bankIn', { name: 'auszug.png', mimeType: 'image/png', buffer: png });
-    await p.waitForFunction(() => S.bank && S.bank.list, null, { timeout: 15000 });
-    const m = await ev(() => S.bank.list.map((x) => [x.type, x.id, x.disc]));
-    assert(m[0][0] === 'doc' && m[0][1] === 'tdoc1' && m[0][2], 'Skonto-Zuordnung: ' + JSON.stringify(m));
-    await p.click('[data-a=bankConfirm][data-i="0"]'); await p.waitForFunction(() => S.docs.find((d) => d.id === 'tdoc1').paid);
-    assert(await ev(() => S.docs.some((d) => d.doc_type === 'Kontoauszug')), 'Kontoauszug nicht abgelegt');
-    assert(await p.$('#bsel_1'), 'manuelle Zuordnung fehlt');
-  });
   await check('F26', 'Steuerberater: ZIP mit Übersicht, Sammel-PDF, Fristschreiben', async () => {
     await p.click('.tab[data-go=home]'); await p.click('.gear:not(.plus)'); await p.click('[data-go=export]');
     if (!(await ev(() => S.exSel.size))) await p.click('[data-a=exAll]');
@@ -249,21 +196,12 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     await p.click('[data-a=exTab][data-v=deadline]');
     return names.length + ' Dateien im ZIP';
   });
-  await check('F27', 'DATEV: Validierung, Export (CP1252, 125 Spalten), Verlauf', async () => {
-    await p.click('.tab[data-go=home]'); await p.click('.gear:not(.plus)'); await p.click('[data-go=datev]');
-    await p.fill('#dv_adv', '12'); await p.fill('#dv_cli', '1'); await p.click('[data-a=dvSel]'); await p.click('[data-a=dvExport]');
-    assert(/Beraternummer/.test(await text()), 'Validierung greift nicht');
-    await p.fill('#dv_adv', '29098'); await p.click('[data-a=dvExport]');
-    await p.waitForFunction(() => __mock.saved.some((s) => /EXTF/.test(s.filename)));
-    const csv = await ev(() => __mock.saved.find((s) => /EXTF/.test(s.filename)).text);
-    const rows = csv.split('\r\n').filter(Boolean); assert(rows[1].split(';').length === 125 && rows.length === 4, 'Zeilen ' + rows.length);
-    assert(/K.ln|Kunde Eins/.test(csv), 'Buchungstext fehlt');
-    await p.click('[data-a=dvAgain]');
-  });
   await check('F28', 'Mehr: Funktionsübersicht, Suche, Sprünge', async () => {
-    await p.click('.tab[data-go=home]'); await p.click('.gear:not(.plus)'); await p.fill('#hubq', 'datev'); await p.waitForTimeout(400);
-    assert(/DATEV-Export/.test(await text()) && !/Mahnungen/.test(await text()), 'Suche filtert nicht');
-    await p.fill('#hubq', ''); await p.waitForTimeout(300); await p.click('[data-a=hubDun]'); assert(await ev(() => S.view) === 'invoices', 'Sprung Mahnungen');
+    await p.click('.tab[data-go=home]'); await p.click('.gear:not(.plus)'); const all = await text();
+    assert(!/DATEV-Export|Mahnungen|Ausgangsrechnungen|Zahlungen & Kontoauszug/.test(all), 'entfernte Funktionen noch sichtbar');
+    await p.fill('#hubq', 'buchhalt'); await p.waitForTimeout(400);
+    assert(/Buchhaltung/.test(await text()) && !/Steuertermine/.test(await text()), 'Suche filtert nicht');
+    await p.fill('#hubq', ''); await p.waitForTimeout(300); await p.click('[data-a=openAcc]'); assert(await ev(() => S.view) === 'acc', 'Sprung Buchhaltung');
   });
   await check('F29', 'Start: Scannen, nächste Fristen, zuletzt gescannt; Suche über Lupe', async () => {
     await p.click('.tab[data-go=home]'); const tx = await text();
@@ -271,7 +209,7 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     assert(!/Mindestlohn/.test(tx) && !(await p.$('.stat')) && !(await p.$('.qa')), 'Startseite nicht reduziert');
     await p.click('.scanhero'); assert(await ev(() => S.view) === 'scan', 'Scan-Knopf');
     await p.click('.tab[data-go=home]'); await p.click('[data-a=openSearch]'); assert(await ev(() => S.view) === 'more', 'Lupe → Suche');
-    await p.fill('#hubq', 'kontoauszug'); await p.waitForTimeout(400); assert(/Kontoauszug/.test(await text()), 'Funktionssuche');
+    await p.fill('#hubq', 'steuerberater'); await p.waitForTimeout(400); assert(/Steuerberater/.test(await text()), 'Funktionssuche');
     await p.fill('#hubq', ''); await p.waitForTimeout(300); assert(/Mindestlohn/.test(await text()), 'Rechtshinweise unter Mehr');
     await p.click('.tab[data-go=home]');
   });

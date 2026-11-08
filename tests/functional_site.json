@@ -1,0 +1,176 @@
+[
+ {
+  "id": "F01",
+  "name": "Betrieb einrichten (Ersteinrichtung)",
+  "ok": true,
+  "ms": 152,
+  "note": ""
+ },
+ {
+  "id": "F02",
+  "name": "Sprache wechseln inkl. Arabisch (RTL)",
+  "ok": true,
+  "ms": 634,
+  "note": ""
+ },
+ {
+  "id": "F03",
+  "name": "Einstellungen: Betriebsdaten, USt-IdNr.-Prüfung",
+  "ok": true,
+  "ms": 383,
+  "note": ""
+ },
+ {
+  "id": "F04",
+  "name": "Foto aufnehmen → A4-Zuschnitt → Seite",
+  "ok": true,
+  "ms": 329,
+  "note": ""
+ },
+ {
+  "id": "F05",
+  "name": "Foto aus Galerie (mehrere Bilder)",
+  "ok": true,
+  "ms": 75,
+  "note": ""
+ },
+ {
+  "id": "F06",
+  "name": "Seiten umordnen und entfernen",
+  "ok": true,
+  "ms": 346,
+  "note": ""
+ },
+ {
+  "id": "F07",
+  "name": "Scan-Entwurf übersteht Neuladen",
+  "ok": true,
+  "ms": 392,
+  "note": ""
+ },
+ {
+  "id": "F08",
+  "name": "Grenzen: XML nicht mischen, 50 Seiten",
+  "ok": true,
+  "ms": 4,
+  "note": ""
+ },
+ {
+  "id": "F09",
+  "name": "Abschließen → Beleg + KI-Analyse",
+  "ok": true,
+  "ms": 332,
+  "note": ""
+ },
+ {
+  "id": "F10",
+  "name": "Übersetzen",
+  "ok": true,
+  "ms": 156,
+  "note": ""
+ },
+ {
+  "id": "F11",
+  "name": "Schritt 2: Aufgabe aus Analyse, Frist, Erinnerung, Leistung erhalten",
+  "ok": true,
+  "ms": 499,
+  "note": ""
+ },
+ {
+  "id": "F12",
+  "name": "Schritt 3: Kündigung schreiben (Fragen → Entwurf → Autosave)",
+  "ok": true,
+  "ms": 2132,
+  "note": ""
+ },
+ {
+  "id": "F13",
+  "name": "Schritt 4: geprüft, ablegen, archivieren (Sperre + Aufbewahrung)",
+  "ok": true,
+  "ms": 772,
+  "note": ""
+ },
+ {
+  "id": "F14",
+  "name": "Ablage: Ordnerübersicht, Volltextsuche, Archiv, Verträge, Firmen-Checkliste",
+  "ok": true,
+  "ms": 2129,
+  "note": ""
+ },
+ {
+  "id": "F15",
+  "name": "E-Rechnung lesen (XRechnung CII und UBL) und übernehmen",
+  "ok": true,
+  "ms": 969,
+  "note": ""
+ },
+ {
+  "id": "F16",
+  "name": "E-Rechnung über normalen Import erkannt",
+  "ok": true,
+  "ms": 280,
+  "note": ""
+ },
+ {
+  "id": "F17",
+  "name": "Fristen: anlegen, Kategorie, Wiederholung, Status-Kreis, löschen",
+  "ok": true,
+  "ms": 6982,
+  "note": ""
+ },
+ {
+  "id": "F18",
+  "name": "Steuerkalender: Vorlagen, DFV, eigene Regel, keine Duplikate",
+  "ok": true,
+  "ms": 1770,
+  "note": "13 USt-Termine"
+ },
+ {
+  "id": "F19",
+  "name": "Kalender-Export (.ics) mit Erinnerungen",
+  "ok": true,
+  "ms": 108,
+  "note": "4 Termine"
+ },
+ {
+  "id": "F26",
+  "name": "Steuerberater: ZIP mit Übersicht, Sammel-PDF, Fristschreiben",
+  "ok": true,
+  "ms": 685,
+  "note": "4 Dateien im ZIP"
+ },
+ {
+  "id": "F28",
+  "name": "Mehr: Funktionsübersicht, Suche, Sprünge",
+  "ok": true,
+  "ms": 1057,
+  "note": ""
+ },
+ {
+  "id": "F29",
+  "name": "Start: Scannen, nächste Fristen, zuletzt gescannt; Suche über Lupe",
+  "ok": true,
+  "ms": 1295,
+  "note": ""
+ },
+ {
+  "id": "F30",
+  "name": "Beispielunterlagen werden entfernt, eigene bleiben; Testbereich leer und getrennt",
+  "ok": true,
+  "ms": 580,
+  "note": ""
+ },
+ {
+  "id": "F31",
+  "name": "KI nicht erlaubt / Limit erreicht → verständliche Meldung",
+  "ok": true,
+  "ms": 530,
+  "note": ""
+ },
+ {
+  "id": "ERR",
+  "name": "Konsolenfehler",
+  "ok": true,
+  "note": ""
+ }
+]

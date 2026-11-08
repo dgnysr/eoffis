@@ -134,6 +134,13 @@ input.in[readonly], textarea.in[readonly] { background: var(--paper); }
 .chip { border: 1px solid var(--line); background: var(--sheet); border-radius: 999px; padding: 8px 14px; font-weight: 700; font-size: .9rem; cursor: pointer; color: var(--ink); }
 .chip[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
 .chip.quiet { color: var(--muted); }
+.acc-open { border-inline-start: 4px solid var(--warn) !important; }
+.acc-card h2 { font-size: 1.1rem; }
+.acc-row { gap: 10px; align-items: center; }
+.acc-row .cx { flex: 1; min-width: 0; }
+.acc-bar { position: sticky; top: 70px; z-index: 4; border: 2px solid var(--accent); }
+details.acc-y > summary, details.acc-m > summary { list-style: none; }
+details.acc-y > summary::-webkit-details-marker, details.acc-m > summary::-webkit-details-marker { display: none; }
 .pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 10px; font-size: .8rem; font-weight: 700; border: 1px solid currentColor; white-space: nowrap; }
 
 .list { display: flex; flex-direction: column; gap: 8px; }
@@ -599,7 +606,7 @@ const S = {
   loaded: false, loadError: false, sample: null, sampleLimits: null, downloads: null, busy: null,
   scan: null, crop: null, filters: { q: '', f: 'open', folder: null, contracts: false }, invFilter: 'all', showDone: false,
 };
-const FOLDERS = ['firma', 'finanzamt', 'rechnungen', 'bank', 'versicherungen', 'personal', 'behoerden', 'mietvertraege', 'hygiene', 'sonstiges'];
+const FOLDERS = ['buchhaltung', 'firma', 'finanzamt', 'bank', 'versicherungen', 'personal', 'behoerden', 'mietvertraege', 'hygiene', 'sonstiges'];
 const KINDS = ['payment', 'reply', 'contract', 'cancellation', 'skonto', 'tax', 'hygiene', 'personnel', 'permit', 'other'];
 const INDUSTRIES = ['gastro', 'handwerk', 'friseur', 'reinigung', 'einzelhandel', 'sonstiges'];
 
@@ -780,6 +787,7 @@ async function boot() {
   // Früher automatisch angelegte Beispielunterlagen entfernen – jeder sieht nur seine eigenen Unterlagen
   if (!S.loadError) { try { if (await purgeExamples()) await reloadAll(); } catch (e) { console.error(e); } }
   clearTimeout(timer);
+  if (!S.loadError) { try { await accSecret(); await ensureAdvisorTask(); } catch (e) { console.warn(e); } }
   S.loaded = true;
   if (!S.profile) S.view = 'setup';
   render();
@@ -789,10 +797,17 @@ async function reloadAll() {
   if (isSeedProfile(S.profile)) S.profile = null; // Beispiel-Betrieb „Demo Bistro“ → eigene Betriebsdaten anlegen
   if (S.profile && S.profile.language) setLang(S.profile.language);
   const [docs, tasks, invoices, replies] = await Promise.all(['docs', 'tasks', 'invoices', 'replies'].map((c) => store.all(c)));
-  S.datevBatches = null;
-  S.docs = docs.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+  S.docs = docs.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')).map(normalizeDoc);
   S.tasks = tasks; S.invoices = invoices.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')); S.replies = replies;
   S.loadError = false;
+}
+
+/** Ältere Belege an die neue Ablage anpassen (nur im Speicher; gespeichert wird beim nächsten Ändern) */
+function normalizeDoc(d) {
+  if (d.folder === 'rechnungen') d.folder = 'buchhaltung';
+  if (d.folder === 'bank' && /kontoauszug/i.test(d.doc_type || '')) d.folder = 'buchhaltung';
+  if (!d.filed_at && d.status && d.status !== 'saved') d.filed_at = d.reviewed_at || d.done_at || d.created_at;
+  return d;
 }
 
 /* =================== Render =================== */
@@ -869,13 +884,10 @@ VIEWS.setup = {
 const FEATURES = () => [
   ['camera', t('home.scan'), 'scan', {}],
   ['xml', t('web.erech'), 'erech', {}],
-  ['invoice', t('home.newInvoice'), 'invoice', { id: 'new' }],
   ['clock', t('home.newTask'), 'task', { id: 'new' }],
   ['clip', t('home.import'), 'scan', { pick: 1 }],
   ['cal', t('tax.title'), 'tax', {}],
   ['box', t('more.export'), 'export', {}],
-  ['doc', t('web.hubDatev'), 'datev', {}],
-  ['bank', t('more.bank'), 'bank', {}],
   ['folder', t('docs.title'), 'docs', {}],
   ['archive', t('more.archive'), 'docs', { archived: 1 }],
   ['gear', t('settings.title'), 'settings', {}],
@@ -915,7 +927,7 @@ VIEWS.home = {
 
 /* ---------- Belege ---------- */
 /* Ablage: Ordnerübersicht (wie „Dateien“ am iPhone) → Ordner → Dokumente */
-const FICON = { firma: 'gear', finanzamt: 'cal', rechnungen: 'invoice', bank: 'bank', versicherungen: 'check', personal: 'pen', behoerden: 'info', mietvertraege: 'home', hygiene: 'flask', sonstiges: 'folder' };
+const FICON = { buchhaltung: 'invoice', firma: 'gear', finanzamt: 'cal', rechnungen: 'invoice', bank: 'bank', versicherungen: 'check', personal: 'pen', behoerden: 'info', mietvertraege: 'home', hygiene: 'flask', sonstiges: 'folder' };
 const CHECK_FIRMA = [
   ['gewerbe', /gewerbe(an|um|ab)?meldung|gewerbeschein|gewerbeerlaubnis/],
   ['hr', /handelsregister/],
@@ -953,7 +965,8 @@ VIEWS.docs = {
     const firmaMiss = CHECK_FIRMA.filter(([, re]) => !S.docs.some((d) => re.test(docText(d)))).length;
     return `${search}
       ${review ? `<div class="group">${cell({ icon: 'doc', ic: 'o', title: t('web.uiInbox'), sub: t('web.uiInboxH'), right: String(review), attrs: 'data-a="openList" data-v="review"' })}</div>` : ''}
-      ${group(FOLDERS.map((f) => cell({ icon: FICON[f] || 'folder', title: t('docs.folder_' + f), sub: f === 'firma' ? (firmaMiss ? t('web.uiFirmaMiss', { count: firmaMiss }) : t('web.uiFirmaOk')) : '', right: String(cnt(f)), attrs: `data-a="openList" data-v="f:${f}"` })), t('web.uiFolders'))}
+      ${group(FOLDERS.map((f) => { const accOpenN = f === 'buchhaltung' ? live.filter((d) => d.folder === f && !isTransferred(d)).length : 0;
+        return cell({ icon: FICON[f] || 'folder', ic: accOpenN ? 'o' : '', title: t('docs.folder_' + f), sub: f === 'firma' ? (firmaMiss ? t('web.uiFirmaMiss', { count: firmaMiss }) : t('web.uiFirmaOk')) : accOpenN ? `● ${accOpenN} ${t('acc.notTransferred')}` : '', right: String(cnt(f)), attrs: f === 'buchhaltung' ? 'data-a="openAcc"' : `data-a="openList" data-v="f:${f}"` }); }), t('web.uiFolders'))}
       ${group([
         cell({ icon: 'pen', ic: 'g', title: t('web.contracts'), right: String(contracts), attrs: 'data-a="openList" data-v="contracts"' }),
         cell({ icon: 'check', ic: 'g', title: t('web.done'), right: String(live.filter((d) => d.status === 'done').length), attrs: 'data-a="openList" data-v="done"' }),
@@ -1291,7 +1304,7 @@ function einvoiceTable(e) {
     ${e.lines.map((l) => `<tr><td>${esc(l.name)}</td><td class="r">${esc(numStr(l.qty))}</td><td class="r">${l.rate != null ? esc(numStr(l.rate)) + ' %' : ''}</td><td class="r">${esc(money(l.net, e.currency))}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function docStep1(d, st) {
-  return `<div class="card"><div class="row between"><h2>${esc(t('doc.original'))}</h2>
+  return `${accCards(d, st)}<div class="card"><div class="row between"><h2>${esc(t('doc.original'))}</h2>
       ${d.page_count ? `<button class="btn sm sec" data-a="docDownload">${esc(d.file_kind === 'xml' ? t('web.downloadXml') : t('web.downloadPdf'))}</button>` : ''}</div>
       <div class="thumbs" id="thumbs">${d.page_count ? '<div class="spin"></div>' : `<p class="muted">${esc(t('doc.noFile'))}</p>`}</div></div>
     ${st.analyzing ? busyCard(t('doc.analyzing')) : !d.analyzed_at && d.page_count ? (S.sample ? `<button class="btn" data-a="analyze">${ico('spark')}${esc(t('doc.analyze'))}</button>` : `<div class="banner">${esc(t('web.noAi'))}</div>`) : ''}
@@ -1406,9 +1419,10 @@ Verträge: "contract_end" (Vertragsende), "cancellation_date" (letzter Tag, an d
 Skonto: "discount_date", "discount_percent" (Zahl), "discount_terms" – nur wenn genannt.
 Rechnungen: "invoice_checks" prüft die Pflichtangaben nach § 14 Abs. 4 UStG (Name/Anschrift beider Parteien, Steuernummer oder USt-IdNr., Ausstellungsdatum, Rechnungsnummer, Menge/Art der Leistung, Leistungsdatum, Entgelt nach Steuersätzen, Steuersatz und Steuerbetrag oder Befreiungshinweis) und rechnet die Summen nach. Kleinbetragsrechnung bis 250 € nach § 33 UStDV vereinfacht. Jeder Eintrag {"label","status":"present"|"missing"|"unclear","detail"} auf ${LANG_NAMES[lang]}. Bei Nicht-Rechnungen leere Liste. Das ist keine rechtsverbindliche Freigabe.
 "ocr_text": der vollständig lesbare Originaltext (höchstens 15000 Zeichen) für die Volltextsuche.
-"folder" ist einer von: ${FOLDERS.join(', ')} – firma = Firmen-Stammdaten (Gewerbeanmeldung, Handelsregisterauszug, Ausweis des Inhabers, Zuteilung Steuernummer/USt-IdNr., Gesellschaftsvertrag), finanzamt = Steuerbescheide und Schreiben des Finanzamts, rechnungen = Eingangsrechnungen/Lieferscheine, bank = Bank, Kredite, Kontoauszüge, versicherungen = Versicherungspolicen und -schreiben, personal = Arbeitsverträge/Lohn/Sozialversicherung, behoerden = sonstige Behörden/Kammern, mietvertraege = Miete/Pacht. "dates[].kind" ist einer von: payment, reply, contract, cancellation, skonto, other; "date" ist null, wenn kein eindeutiges Datum genannt ist.
+"folder" ist einer von: ${FOLDERS.join(', ')} – firma = Firmen-Stammdaten (Gewerbeanmeldung, Handelsregisterauszug, Ausweis des Inhabers, Zuteilung Steuernummer/USt-IdNr., Gesellschaftsvertrag), finanzamt = Steuerbescheide und Schreiben des Finanzamts, buchhaltung = Buchhaltungsbelege (Eingangsrechnungen, Quittungen/Kassenbons, Lieferscheine, Kontoauszüge, Gutschriften), bank = Bank- und Kreditverträge, Schreiben der Bank (außer Kontoauszügen), versicherungen = Versicherungspolicen und -schreiben, personal = Arbeitsverträge/Lohn/Sozialversicherung, behoerden = sonstige Behörden/Kammern, mietvertraege = Miete/Pacht. "dates[].kind" ist einer von: payment, reply, contract, cancellation, skonto, other; "date" ist null, wenn kein eindeutiges Datum genannt ist.
+Buchhaltung: "acc_type" ist "rechnung" (Eingangsrechnung an den Betrieb), "quittung" (Quittung, Kassenbon, Tank-/Bewirtungsbeleg), "lieferschein", "kontoauszug", "gutschrift" oder "none" (kein Buchhaltungsbeleg, z. B. Behördenschreiben, Vertrag, Mahnung ohne neue Rechnung). "document_number": Nummer dieses Belegs (Rechnungs-, Lieferschein-, Quittungsnummer) oder null. "reference_numbers": im Beleg genannte andere Nummern, mit denen er zu anderen Belegen gehört (Lieferschein-, Auftrags-, Bestell-, Rechnungsnummern), sonst leere Liste.
 Antworte nur mit einem JSON-Objekt dieser Form:
-{"title":string,"doc_type":string,"sender":string|null,"sender_address":string|null,"recipient":string|null,"recipient_address":string|null,"invoice_number":string|null,"amount_gross":number|null,"amount_net":number|null,"vat_amount":number|null,"currency":string|null,"payment_required":boolean,"payment_due_date":string|null,"iban":string|null,"bic":string|null,"payment_reference":string|null,"is_contract":boolean,"is_incoming_invoice":boolean,"folder":string,"explanation":string,"next_steps":[string],"dates":[{"kind":string,"date":string|null,"description":string}],"document_date":string|null,"suggested_action":{"type":string,"question":string},"action_needed":boolean,"suggested_task":string,"response_recipient":string|null,"response_address":string|null,"response_reference":string|null,"response_subject":string|null,"recipient_email":string|null,"contract_end":string|null,"cancellation_date":string|null,"contract_number":string|null,"contract_terms":string|null,"discount_date":string|null,"discount_percent":number|null,"discount_terms":string|null,"invoice_checks":[{"label":string,"status":string,"detail":string}],"ocr_text":string}`;
+{"title":string,"acc_type":string,"document_number":string|null,"reference_numbers":[string],"doc_type":string,"sender":string|null,"sender_address":string|null,"recipient":string|null,"recipient_address":string|null,"invoice_number":string|null,"amount_gross":number|null,"amount_net":number|null,"vat_amount":number|null,"currency":string|null,"payment_required":boolean,"payment_due_date":string|null,"iban":string|null,"bic":string|null,"payment_reference":string|null,"is_contract":boolean,"is_incoming_invoice":boolean,"folder":string,"explanation":string,"next_steps":[string],"dates":[{"kind":string,"date":string|null,"description":string}],"document_date":string|null,"suggested_action":{"type":string,"question":string},"action_needed":boolean,"suggested_task":string,"response_recipient":string|null,"response_address":string|null,"response_reference":string|null,"response_subject":string|null,"recipient_email":string|null,"contract_end":string|null,"cancellation_date":string|null,"contract_number":string|null,"contract_terms":string|null,"discount_date":string|null,"discount_percent":number|null,"discount_terms":string|null,"invoice_checks":[{"label":string,"status":string,"detail":string}],"ocr_text":string}`;
     const r = await aiJson(prompt, inp.images);
     if (!r || typeof r !== 'object') throw { code: 'invalid_json' };
     const docDate = (r.document_date && parseDate(r.document_date)) || todayISO();
@@ -1424,7 +1438,9 @@ Antworte nur mit einem JSON-Objekt dieser Form:
       amount_gross: num(r.amount_gross), amount_net: num(r.amount_net), vat_amount: num(r.vat_amount), currency: r.currency || 'EUR',
       payment_required: !!r.payment_required, due_date: iso(r.payment_due_date), iban: r.iban ? String(r.iban).replace(/\s+/g, '') : null,
       bic: r.bic || null, payment_reference: r.payment_reference || null, is_contract: !!r.is_contract, is_incoming_invoice: !!r.is_incoming_invoice,
-      folder: FOLDERS.includes(r.folder) ? r.folder : 'sonstiges', explanation: r.explanation || '',
+      folder: ACC_TYPES.includes(r.acc_type) ? 'buchhaltung' : FOLDERS.includes(r.folder) ? r.folder : r.folder === 'rechnungen' ? 'buchhaltung' : 'sonstiges', explanation: r.explanation || '',
+      acc_type: ACC_TYPES.includes(r.acc_type) ? r.acc_type : 'none', document_number: r.document_number ? String(r.document_number) : null,
+      reference_numbers: Array.isArray(r.reference_numbers) ? r.reference_numbers.map(String).filter(Boolean).slice(0, 10) : [],
       next_steps: Array.isArray(r.next_steps) ? r.next_steps.map(String).slice(0, 6) : [],
       dates: (() => {
         const list = Array.isArray(r.dates) ? r.dates.map((x) => ({ kind: KINDS.includes(x.kind) ? x.kind : 'other', date: iso(x.date), description: String(x.description || '') })).slice(0, 10) : [];
@@ -1609,7 +1625,7 @@ function einvoicePatch(e) {
     sender: e.seller.name || null, sender_address: e.seller.address || null, recipient: e.buyer.name || null, recipient_address: e.buyer.address || null,
     invoice_number: e.number || null, amount_net: e.net, vat_amount: e.vat, amount_gross: e.gross ?? e.payable, currency: e.currency,
     payment_required: (e.payable ?? e.gross ?? 0) > 0, due_date: e.due_date || null, iban: e.iban ? e.iban.replace(/\s+/g, '') : null, bic: e.bic || null,
-    payment_reference: e.reference || e.number || null, is_incoming_invoice: true, folder: 'rechnungen', document_date: e.issue_date || null,
+    payment_reference: e.reference || e.number || null, is_incoming_invoice: true, folder: 'buchhaltung', acc_type: 'rechnung', document_number: e.number || null, document_date: e.issue_date || null,
     explanation: `${e.format}: Rechnung ${e.number || ''} von ${e.seller.name || '–'} vom ${fmtDate(e.issue_date)} über ${money(e.gross ?? e.payable, e.currency)}${e.due_date ? `, fällig am ${fmtDate(e.due_date)}` : ''}.`,
     next_steps: ['Rechnung sachlich prüfen (Leistung erhalten, Preise korrekt)', e.due_date ? `Bis ${fmtDate(e.due_date)} bezahlen` : 'Zahlung veranlassen', 'Für den Steuerberater als Vorbuchhaltung markieren'],
     dates: e.due_date ? [{ kind: 'payment', date: e.due_date, description: 'Zahlungsziel' }] : [],
@@ -1865,7 +1881,7 @@ async function spawnNext(task) {
   if (!task.recur || !task.due_date || task.status !== 'done') return;
   const due = nextDue(task.due_date, task.recur);
   if (S.tasks.some((x) => x.series === (task.series || task.id) && x.due_date === due)) return;
-  const rec = { id: uid(), title: task.title, kind: task.kind, due_date: due, status: 'open', priority: task.priority, notes: task.notes || '', recur: task.recur, series: task.series || task.id, document_id: task.document_id || null, created_at: nowIso(), version: 0 };
+  const rec = { id: uid(), title: task.title, kind: task.kind, due_date: due, status: 'open', priority: task.priority, notes: task.notes || '', recur: task.recur, series: task.series || task.id, document_id: task.document_id || null, template_key: task.template_key || null, created_at: nowIso(), version: 0 };
   const saved = await saveVersioned('tasks', rec); S.tasks.push(saved); toast(t('tasks.nextCreated', { date: fmtDate(due) }));
 }
 async function taskSave() {
@@ -1966,41 +1982,16 @@ async function taxCreate() {
 }
 
 /* ---------- Rechnungen ---------- */
-function invTotals(items) {
-  const by = new Map(); let net = 0;
-  for (const it of items) { const l = Math.round(it.qty * it.unit_price * 100) / 100; net += l; by.set(it.vat_rate, (by.get(it.vat_rate) || 0) + l); }
-  const vat_lines = [...by.entries()].sort((a, b) => a[0] - b[0]).map(([rate, n]) => ({ rate, net: Math.round(n * 100) / 100, vat: Math.round(n * rate) / 100 }));
-  net = Math.round(net * 100) / 100; const vat = Math.round(vat_lines.reduce((s, v) => s + v.vat, 0) * 100) / 100;
-  return { net, vat, gross: Math.round((net + vat) * 100) / 100, vat_lines };
-}
-function invState(inv) {
-  if (inv.is_template) return { label: 'template', color: 'grey', open: 0, overdue: false };
-  if (inv.status !== 'final') return { label: 'draft', color: 'grey', open: 0, overdue: false };
-  const paid = (inv.payments || []).reduce((s, p) => s + p.amount, 0);
-  const open = Math.round((inv.snapshot.gross - paid) * 100) / 100;
-  if (open <= 0.005) return { label: 'paid', color: 'green', open: 0, overdue: false };
-  const overdue = daysUntil(inv.snapshot.due_date) < 0;
-  return { label: overdue ? 'overdue' : 'open', color: overdue ? 'red' : 'orange', open, overdue };
-}
-const INV_LABEL = () => ({ draft: t('inv.draft'), template: t('inv.template'), paid: t('inv.paidFull'), open: t('inv.open'), overdue: t('inv.overdue') });
 VIEWS.invoices = {
-  title: () => t('inv.title'),
+  title: () => t('acc.oldInvoices'),
   render() {
-    const f = S.invFilter;
-    const list = S.invoices.filter((i) => f === 'templates' ? i.is_template : !i.is_template && (f === 'all' || (f === 'draft' && i.status === 'draft') || (f === 'open' && ['open', 'overdue'].includes(invState(i).label)) || (f === 'overdue' && invState(i).label === 'overdue')));
-    const L = INV_LABEL();
-    return `<button class="btn" data-go="invoice" data-id="new">＋ ${esc(t('inv.new'))}</button>
-      <div class="chips">${[['all', t('common.all')], ['draft', t('inv.draft')], ['open', t('inv.open')], ['overdue', t('inv.overdue')], ['templates', t('inv.templates')]].map(([k, l]) => chip(l, f === k, `data-a="invFilter" data-v="${k}"`)).join('')}</div>
-      <div class="list">${list.length ? list.slice(0, lim('inv')).map((i) => { const st = invState(i); const gross = i.status === 'final' ? i.snapshot.gross : invTotals(i.items || []).gross; return item({
-        title: `${i.number || L[st.label]} · ${i.customer_name || '–'}`,
-        sub: `${fmtDate(i.issue_date)} · ${L[st.label]}${st.open > 0 ? ' · ' + t('inv.open') + ' ' + money(st.open) : ''}${i.example ? ' · ' + t('web.example') : ''}`,
-        right: money(gross), sevc: st.color, attrs: `data-go="invoice" data-id="${i.id}"` }); }).join('') + moreBtn('inv', list.length) : `<div class="empty">${ico('invoice')}<p class="muted">${esc(t('inv.empty'))}</p></div>`}</div>
-      <p class="muted small">${esc(t('inv.limits'))}</p>`;
+    const list = S.invoices.filter((i) => i.status === 'final' && !i.is_template);
+    return `<div class="banner">${esc(t('acc.movedNote'))}</div>
+      <div class="list">${list.length ? list.slice(0, lim('inv')).map((i) => item({ title: `${i.number} · ${i.snapshot.customer_name || '–'}`, sub: fmtDate(i.snapshot.issue_date), right: money(i.snapshot.gross), attrs: `data-go="invoice" data-id="${i.id}"` })).join('') + moreBtn('inv', list.length) : `<div class="empty">${ico('invoice')}<p class="muted">${esc(t('inv.empty'))}</p></div>`}</div>`;
   },
 };
 const UNITS = [['C62', 'Stück'], ['HUR', 'Std.'], ['DAY', 'Tag'], ['KGM', 'kg'], ['MTR', 'm']];
 const unitLabel = (u) => (UNITS.find((x) => x[0] === u) || UNITS[0])[1];
-const emptyItem = () => ({ description: '', qty: '1', price: '', vat_rate: 19, unit: 'C62' });
 /** IBAN-Prüfziffer (Modulo 97) */
 function ibanValid(iban) {
   const s = String(iban || '').replace(/\s+/g, '').toUpperCase();
@@ -2021,174 +2012,24 @@ function companyData(p) {
     tax_number: p.tax_number || '', vat_id: (p.vat_id || '').replace(/\s+/g, ''), iban: (p.iban || '').replace(/\s+/g, ''),
     address: [p.company_name, sp.street, [sp.zip, sp.city].filter(Boolean).join(' ')].filter(Boolean).join('\n') };
 }
-function invDraftFrom(src, asCopy) {
-  const sp = src.customer_street !== undefined ? { street: src.customer_street, zip: src.customer_zip, city: src.customer_city } : splitAddress(src.customer_address || '');
-  return {
-    id: asCopy ? null : src.id, version: asCopy ? 0 : src.version, is_template: asCopy ? false : !!src.is_template,
-    customer_name: src.customer_name || '', customer_street: sp.street || '', customer_zip: sp.zip || '', customer_city: sp.city || '', customer_email: src.customer_email || '',
-    buyer_reference: src.buyer_reference || '', note: src.note || '',
-    issue: fmtDate(asCopy ? todayISO() : src.issue_date || todayISO()), service: !asCopy && src.service_date ? fmtDate(src.service_date) : '',
-    due_days: String(src.due_days ?? 14), confirmed: false,
-    items: (src.items && src.items.length ? src.items : [{ description: '', qty: 1, unit_price: '', vat_rate: 19, unit: 'C62' }]).map((i) => ({ description: i.description, qty: numStr(i.qty), price: numStr(i.unit_price), vat_rate: i.vat_rate, unit: i.unit || 'C62' })),
-    created_at: asCopy ? null : src.created_at, history: asCopy ? [] : src.history,
-  };
-}
-function readInvForm() {
-  const D = S.invDraft; if (!$('#i_cust')) return;
-  D.customer_name = val('i_cust'); D.customer_street = val('i_street'); D.customer_zip = val('i_zip'); D.customer_city = val('i_city'); D.customer_email = val('i_mail');
-  D.buyer_reference = val('i_ref'); D.note = val('i_note'); D.issue = val('i_issue'); D.service = val('i_service'); D.due_days = val('i_due');
-  D.confirmed = !!($('#i_confirm') && $('#i_confirm').checked);
-  D.items.forEach((it, n) => { it.description = val('it_d_' + n); it.qty = val('it_q_' + n); it.price = val('it_p_' + n); });
-}
-const itemsOf = (D) => D.items.filter((r) => r.description.trim()).map((r) => ({ description: r.description.trim(), qty: parseMoney(r.qty) || 0, unit_price: parseMoney(r.price) || 0, vat_rate: Number(r.vat_rate) === 7 ? 7 : 19, unit: r.unit || 'C62' }));
-/** Fehlende Angaben: Basis (Rechnung nach § 14 UStG) und zusätzlich für die E-Rechnung (XRechnung/ZUGFeRD) */
-function invoiceGaps(D, p) {
-  const c = companyData(p), base = [], e = [];
-  if (!c.name) base.push(t('auth.companyName'));
-  if (!c.street || !c.zip || !c.city) base.push(t('settings.address'));
-  if (!c.tax_number && !c.vat_id) base.push(t('settings.taxNo') + ' / ' + t('settings.vatId'));
-  if (!D.customer_name.trim()) base.push(t('inv.customer'));
-  if (!D.customer_street.trim() || !D.customer_zip.trim() || !D.customer_city.trim()) base.push(t('inv.customerAddress'));
-  if (!itemsOf(D).length) base.push(t('inv.items'));
-  if (!c.iban || !ibanValid(c.iban)) e.push(t('settings.iban') + (c.iban ? ' ✗' : ''));
-  if (c.vat_id && !vatIdValid(c.vat_id)) e.push(t('settings.vatId') + ' ✗');
-  if (!c.email) e.push(t('web.sellerMail'));
-  if (!c.contact || !c.phone) e.push(t('web.contactPhone'));
-  if (!D.customer_email.trim()) e.push(t('web.buyerMail'));
-  if (!D.buyer_reference.trim()) e.push(t('web.buyerRef'));
-  return { base, e };
-}
+/* Rechnungen schreibt jetzt das Buchhaltungsprogramm. Frühere finalisierte Ausgangsrechnungen bleiben einsehbar (PDF, XRechnung, ZUGFeRD). */
 VIEWS.invoice = {
-  title: () => { const i = S.invoices.find((x) => x.id === S.params.id); return i ? i.number || (i.is_template ? t('inv.template') : t('inv.draft')) : t('inv.new'); },
+  title: () => { const i = S.invoices.find((x) => x.id === S.params.id); return i ? i.number || t('inv.draft') : t('acc.oldInvoices'); },
   render() {
     const inv = S.invoices.find((x) => x.id === S.params.id);
-    if (inv && inv.status === 'final') return renderFinalInvoice(inv);
-    if (!S.invDraft || S.invDraft._for !== S.params.id + (S.params.from || '')) {
-      const src = S.params.from ? S.invoices.find((x) => x.id === S.params.from) : inv;
-      S.invDraft = src ? invDraftFrom(src, !!S.params.from) : invDraftFrom({}, true);
-      S.invDraft._for = S.params.id + (S.params.from || '');
-    }
-    const D = S.invDraft; const tot = invTotals(itemsOf(D)); const iss = parseDate(D.issue); const gaps = invoiceGaps(D, S.profile);
-    return `${D.is_template ? `<div class="banner">${esc(t('inv.template'))}</div>` : ''}
-      <div class="sec-h">${esc(t('inv.customer'))}</div>
-      <div class="card">${field('i_cust', t('inv.customer'), D.customer_name, 'autocomplete="off"')}
-        ${field('i_street', t('web.street'), D.customer_street)}
-        <div class="grid2">${field('i_zip', t('web.zip'), D.customer_zip, 'inputmode="numeric"')}${field('i_city', t('web.city'), D.customer_city)}</div>
-        ${field('i_mail', t('web.buyerMail'), D.customer_email, 'type="email"')}
-        ${field('i_ref', t('web.buyerRef'), D.buyer_reference, `placeholder="${esc(t('web.buyerRefPh'))}"`)}</div>
-      <div class="sec-h">${esc(t('web.dates'))}</div>
-      <div class="card"><div class="grid2">${field('i_issue', t('inv.issueDate'), D.issue, `placeholder="${esc(t('common.dateHint'))}"`)}${field('i_service', t('inv.serviceDate'), D.service, `placeholder="${esc(D.issue)}"`)}</div>
-        ${field('i_due', t('inv.dueDays'), D.due_days, 'inputmode="numeric"')}
-        ${iss ? `<p class="muted small">${esc(t('doc.dueDate'))}: <span class="num">${fmtDate(addDays(iss, parseInt(D.due_days, 10) || 0))}</span></p>` : ''}</div>
-      <div class="sec-h">${esc(t('inv.items'))}</div>
-      ${D.items.map((it, n) => `<div class="card"><div class="row between"><span class="muted">Pos. ${n + 1}</span>${D.items.length > 1 ? `<button class="ib" data-a="itemDel" data-i="${n}" aria-label="${esc(t('common.delete'))}">✕</button>` : ''}</div>
-        ${field('it_d_' + n, t('inv.description'), it.description)}
-        <div class="grid2">${field('it_q_' + n, t('inv.qty'), it.qty, 'inputmode="decimal"')}${field('it_p_' + n, t('inv.price'), it.price, 'inputmode="decimal"')}</div>
-        <div class="chips">${UNITS.map(([u, l]) => `<button class="chip quiet" aria-pressed="${it.unit === u}" data-a="itemUnit" data-i="${n}" data-v="${u}">${esc(l)}</button>`).join('')}</div>
-        <div class="chips">${[7, 19].map((r) => chip(`${t('inv.vatRate')} ${r} %`, Number(it.vat_rate) === r, `data-a="itemVat" data-i="${n}" data-v="${r}"`)).join('')}</div></div>`).join('')}
-      <button class="btn ghost" data-a="itemAdd">＋ ${esc(t('inv.addItem'))}</button>
-      ${area('i_note', t('web.note'), D.note, 'style="min-height:60px"')}
-      <div class="card"><div class="tot"><span class="muted">${esc(t('inv.net'))}</span><span>${money(tot.net)}</span>
-        ${tot.vat_lines.map((v) => `<span class="muted">${esc(t('inv.vat'))} ${v.rate} %</span><span>${money(v.vat)}</span>`).join('')}
-        <span class="g">${esc(t('inv.gross'))}</span><span class="g">${money(tot.gross)}</span></div>
-        <button class="btn sm ghost" data-a="invRecalc">↻ ${esc(t('web.recalc'))}</button></div>
-      ${D.is_template ? `<button class="btn" data-a="invUseTpl">${esc(t('inv.useTemplate'))}</button><button class="btn sec" data-a="invSave" data-v="tpl">${esc(t('common.save'))}</button>`
-        : `${gaps.base.length ? `<div class="banner warn">${esc(t('web.missingBase'))}: ${esc(gaps.base.join(', '))}</div>` : ''}
-           ${gaps.e.length ? `<div class="banner">${esc(t('web.missingE'))}: ${esc(gaps.e.join(', '))}</div>` : `<div class="banner">✓ ${esc(t('web.eReady'))}</div>`}
-           <label class="check"><input type="checkbox" id="i_confirm" ${D.confirmed ? 'checked' : ''} data-a="invConfirm">${esc(t('web.confirmFinal'))}</label>
-           <button class="btn" data-a="invFinalize" ${D.confirmed && !gaps.base.length ? '' : 'disabled'}>🔒 ${esc(t('inv.finalize'))}</button>
-           <div class="grid2"><button class="btn sec" data-a="invSave">${esc(t('inv.saveDraft'))}</button><button class="btn ghost" data-a="invSave" data-v="tpl">${esc(t('inv.saveTemplate'))}</button></div>
-           ${gaps.e.length || gaps.base.length ? `<button class="btn sm ghost" data-go="settings">${esc(t('settings.title'))} ›</button>` : ''}`}
-      <p class="muted small">${esc(t('inv.limits'))}</p>`;
+    if (!inv || inv.status !== 'final') return `<div class="banner">${esc(t('acc.movedNote'))}</div>`;
+    return renderFinalInvoice(inv);
   },
 };
-async function invSave(asTemplate, silent) {
-  readInvForm(); const D = S.invDraft;
-  const issue = parseDate(D.issue), service = D.service.trim() ? parseDate(D.service) : null;
-  if (!issue || (D.service.trim() && !service)) { toast(t('common.invalidDate')); return null; }
-  const keepId = D.id && !!D.is_template === !!asTemplate;
-  const items = itemsOf(D), tot = invTotals(items);
-  const rec = {
-    id: keepId ? D.id : uid(), version: keepId ? D.version || 0 : 0, status: 'draft', is_template: !!asTemplate,
-    customer_name: D.customer_name.trim(), customer_street: D.customer_street.trim(), customer_zip: D.customer_zip.trim(), customer_city: D.customer_city.trim(),
-    customer_email: D.customer_email.trim(), buyer_reference: D.buyer_reference.trim(), note: D.note.trim(),
-    customer_address: [D.customer_street.trim(), [D.customer_zip.trim(), D.customer_city.trim()].filter(Boolean).join(' ')].filter(Boolean).join('\n'),
-    issue_date: issue, service_date: service,
-    due_days: Math.max(0, Math.min(365, parseInt(D.due_days, 10) || 0)), items, net: tot.net, vat: tot.vat, gross: tot.gross,
-    created_at: keepId ? D.created_at || nowIso() : nowIso(), history: keepId ? D.history || [] : [], payments: [],
-  };
-  try {
-    const saved = await saveVersioned('invoices', rec);
-    upsertLocal('invoices', saved);
-    const keepConfirm = D.confirmed;
-    S.invDraft = null;
-    if (!silent) toast(t('web.toastSaved'));
-    S.params = { id: saved.id }; render();
-    if (S.invDraft) S.invDraft.confirmed = keepConfirm;
-    return saved;
-  } catch (e) { if (e.conflict) { toast(t('doc.conflict')); await reloadAll(); S.invDraft = null; render(); } else toast(t('web.saveFailed', { msg: errText(e) })); return null; }
-}
-async function invFinalize() {
-  readInvForm(); const D = S.invDraft;
-  const gaps = invoiceGaps(D, S.profile);
-  if (gaps.base.length) return toast(t('web.missingBase') + ': ' + gaps.base.join(', '));
-  if (!D.confirmed) return;
-  if (!(await ask(t('inv.finalizeConfirm'), t('inv.finalize')))) return;
-  const saved = await invSave(false, true); if (!saved) return;
-  await guard(async () => {
-    // Fortlaufende Nummer: Profil frisch lesen; im Konto-Speicher zusätzlich kurz sperren (zweites Gerät/Tab)
-    if (store.mode === 'db') {
-      let lease = null;
-      for (let i = 0; i < 70; i++) { lease = await store.base().acquire({ holder: HOLDER, ttlMs: 2500 }); if (lease.acquired) break; if (i === 3) toast(t('web.numberWait')); await new Promise((r) => setTimeout(r, 200 + Math.random() * 250)); }
-      if (!lease || !lease.acquired) throw new Error(t('web.numberBusy'));
-    }
-    const prof = Object.assign({}, (await store.getProfile()) || S.profile);
-    const n = prof.next_invoice_no || 1;
-    const number = `${prof.invoice_prefix || 'RE-'}${saved.issue_date.slice(0, 4)}-${String(n).padStart(4, '0')}`;
-    const known = await store.where('invoices', 'number', number); if (known.some((i) => i.number === number)) throw new Error(t('web.numberTaken', { number }));
-    prof.next_invoice_no = n + 1; await store.setProfile(prof); S.profile = prof;
-    const tot = invTotals(saved.items);
-    const snapshot = {
-      number, issue_date: saved.issue_date, service_date: saved.service_date || saved.issue_date, due_date: addDays(saved.issue_date, saved.due_days),
-      customer_name: saved.customer_name, customer_address: saved.customer_address, customer_street: saved.customer_street, customer_zip: saved.customer_zip,
-      customer_city: saved.customer_city, customer_email: saved.customer_email, buyer_reference: saved.buyer_reference, note: saved.note,
-      items: saved.items, ...tot, company: companyData(prof),
-    };
-    snapshot.e_ready = invoiceGaps(Object.assign({}, D, { customer_name: saved.customer_name }), prof).e.length === 0;
-    const fin = Object.assign({}, saved, { status: 'final', number, snapshot, final_hash: await sha256(JSON.stringify(snapshot)), finalized_at: nowIso(), payments: [], reminders: [] });
-    const out = await saveVersioned('invoices', fin, t('inv.finalize'));
-    upsertLocal('invoices', out); render();
-    // Sperre verkürzen (es gibt kein Freigeben): Verlängerung auf die Mindestdauer, damit andere Geräte schneller drankommen
-    if (store.mode === 'db') store.base().acquire({ holder: HOLDER, ttlMs: 1000 }).catch(() => {});
-  });
-}
 function renderFinalInvoice(inv) {
-  const s = inv.snapshot, st = invState(inv), L = INV_LABEL();
-  const dun = S.dunning && S.dunning.inv === inv.id ? S.dunning : null;
-  const nextLevel = Math.min(3, (inv.reminders || []).length + 1);
-  return `<div class="card"><div class="row between"><h2 class="mono" style="font-size:1.05rem">${esc(s.number)}</h2><span class="pill c-${st.color}">${esc(L[st.label])}</span></div>
+  const s = inv.snapshot;
+  return `<div class="banner">${esc(t('acc.movedNote'))}</div><div class="card"><div class="row between"><h2 class="mono" style="font-size:1.05rem">${esc(s.number)}</h2></div>
       <p><b>${esc(s.customer_name)}</b></p><p class="muted prose">${esc(s.customer_address)}</p>
       <dl class="kv"><dt>${esc(t('inv.issueDate'))}</dt><dd class="num">${fmtDate(s.issue_date)}</dd><dt>${esc(t('inv.serviceDate'))}</dt><dd class="num">${fmtDate(s.service_date || s.issue_date)}</dd><dt>${esc(t('doc.dueDate'))}</dt><dd class="num">${fmtDate(s.due_date)}</dd>${s.buyer_reference ? `<dt>${esc(t('web.buyerRef'))}</dt><dd>${esc(s.buyer_reference)}</dd>` : ''}</dl>
       <hr>${s.items.map((it) => `<div class="row between"><span class="grow">${esc(numStr(it.qty))} ${esc(unitLabel(it.unit))} × ${esc(it.description)} <span class="muted small">(${it.vat_rate} %)</span></span><span class="num">${money(Math.round(it.qty * it.unit_price * 100) / 100)}</span></div>`).join('')}
       <div class="tot"><span class="muted">${esc(t('inv.net'))}</span><span>${money(s.net)}</span>${s.vat_lines.map((v) => `<span class="muted">${esc(t('inv.vat'))} ${v.rate} %</span><span>${money(v.vat)}</span>`).join('')}<span class="g">${esc(t('inv.gross'))}</span><span class="g">${money(s.gross)}</span></div>
       <button class="btn" data-a="invPdf">${esc(t('web.downloadPdf'))}</button>
-      ${s.e_ready ? `<div class="grid2"><button class="btn sec" data-a="invXr">XRechnung (XML)</button><button class="btn sec" data-a="invZf">ZUGFeRD (PDF)</button></div><p class="muted small">${esc(t('web.eNote'))}</p>`
-        : `<p class="muted small">${esc(t('web.eNotReady'))}</p>`}</div>
-    <div class="card"><h2>${esc(t('inv.payments'))}</h2>
-      <div class="list">${(inv.payments || []).map((p, i) => item({ title: money(p.amount), sub: fmtDate(p.paid_on) + (p.note ? ' · ' + p.note : ''), right: '✕', attrs: `data-a="payDel" data-i="${i}"` })).join('')}</div>
-      <p class="num" style="font-weight:800;color:var(--${st.open > 0 ? 'stamp' : 'ok'})">${esc(t('inv.open'))}: ${money(st.open)}</p>
-      ${st.open > 0 ? `<div class="grid2">${field('p_amt', t('inv.amount'), '', `inputmode="decimal" placeholder="${esc(numStr(st.open))}"`)}${field('p_date', t('inv.paidOn'), fmtDate(todayISO()))}</div>
-        ${field('p_ref', t('doc.reference'), s.number)}
-        <button class="btn sm" data-a="payAdd">${esc(t('inv.addPayment'))}</button>` : ''}</div>
-    ${st.open > 0 ? `<div class="card"><h2>${esc(t('inv.dunning'))}</h2>
-      ${(inv.reminders || []).map((r, i) => `<div class="row between"><span class="small">${esc(r.level === 1 ? t('web.dun1') : t('web.dunN', { n: r.level }))} · ${esc(fmtDate(r.created_at))} · ${esc(t('web.dunUntil'))} ${esc(fmtDate(r.until))}</span><button class="btn sm ghost" data-a="dunOpen" data-i="${i}">${esc(t('common.open'))}</button></div>`).join('')}
-      ${st.overdue ? `<div class="seg">${[1, 2, 3].map((n) => `<button aria-pressed="${(dun ? dun.level : nextLevel) === n}" data-a="dunLevel" data-v="${n}">${esc(n === 1 ? t('web.dun1') : t('web.dunN', { n }))}</button>`).join('')}</div>
-        ${field('dun_until', t('web.dunUntil'), fmtDate(addDays(todayISO(), 10)))}
-        <button class="btn danger" data-a="dunning">${esc(t('web.dunCreate'))}</button>` : `<p class="muted small">${esc(t('web.dunNotDue'))}</p>`}</div>` : ''}
-    ${dun ? `<div class="card"><h2>${esc(dun.letter.subject)}</h2>${area('dun_body', t('reply.body'), dun.letter.body, 'style="min-height:200px"')}
-      <div class="grid2"><button class="btn sm" data-a="dunPdf">${esc(t('web.downloadPdf'))}</button><button class="btn sm sec" data-a="dunCopy">${esc(t('web.copyText'))}</button></div>
-      <div class="letter">${letterPreview(dun.letter)}</div></div>` : ''}
-    <button class="btn ghost" data-go="invoice" data-id="new" data-from="${inv.id}">${esc(t('inv.copyAsDraft'))}</button>
+      ${s.e_ready ? `<div class="grid2"><button class="btn sec" data-a="invXr">XRechnung (XML)</button><button class="btn sec" data-a="invZf">ZUGFeRD (PDF)</button></div>` : ''}</div>
     <p class="muted small">${esc(t('web.finalized', { date: new Date(inv.finalized_at).toLocaleString('de-DE') }))}</p>
     <p class="muted small">${esc(t('inv.hash'))}:</p><p class="mono small" style="overflow-wrap:anywhere">${esc(inv.final_hash || '')}</p>`;
 }
@@ -2300,221 +2141,7 @@ async function zugferdPdf(s) {
   doc.setTitle(`Rechnung ${s.number}`); doc.setAuthor(s.company.name); doc.setSubject('Rechnung'); doc.setProducer('eOffis');
   return new Blob([await doc.save()], { type: 'application/pdf' });
 }
-function dunningLetter(inv, level, until) {
-  const s = inv.snapshot, open = invState(inv).open, c = s.company;
-  const head = level === 1 ? 'Zahlungserinnerung' : `${level}. Mahnung`;
-  return {
-    sender: c.address || c.name, recipient: `${s.customer_name}\n${s.customer_address}`, place_date: fmtDate(todayISO()),
-    reference: `Rechnung ${s.number} vom ${fmtDate(s.issue_date)}`, subject: `${head} zu Rechnung ${s.number}`, salutation: 'Sehr geehrte Damen und Herren,',
-    body: level === 1
-      ? `sicher ist es Ihrer Aufmerksamkeit entgangen: Unsere Rechnung ${s.number} vom ${fmtDate(s.issue_date)} war am ${fmtDate(s.due_date)} fällig. Offen ist noch ein Betrag von ${money(open)}.\n\nBitte überweisen Sie den offenen Betrag bis zum ${fmtDate(until)}${c.iban ? ` auf das Konto IBAN ${fmtIban(c.iban)}` : ''} unter Angabe der Rechnungsnummer.\n\nSollten Sie die Zahlung bereits veranlasst haben, betrachten Sie dieses Schreiben bitte als gegenstandslos.`
-      : `trotz ${level === 2 ? 'unserer Zahlungserinnerung' : 'unserer bisherigen Mahnungen'} ist unsere Rechnung ${s.number} vom ${fmtDate(s.issue_date)} (fällig am ${fmtDate(s.due_date)}) noch nicht vollständig bezahlt. Offen sind ${money(open)}.\n\nWir bitten Sie, den offenen Betrag bis spätestens ${fmtDate(until)}${c.iban ? ` auf das Konto IBAN ${fmtIban(c.iban)}` : ''} unter Angabe der Rechnungsnummer zu überweisen.${level === 3 ? '\n\nSollte die Zahlung bis dahin nicht eingehen, behalten wir uns weitere Schritte vor.' : ''}\n\nFalls sich Ihre Zahlung mit diesem Schreiben überschnitten hat, betrachten Sie es bitte als gegenstandslos.`,
-    closing: 'Mit freundlichen Grüßen', signature: (S.profile && S.profile.company_name) || c.name,
-  };
-}
-async function invPayments(inv, payments, note) {
-  const out = await saveVersioned('invoices', Object.assign({}, inv, { payments }), note);
-  upsertLocal('invoices', out); return out;
-}
-
-/* ---------- DATEV-Buchungsstapel (EXTF 700, Rechnungsausgang) ---------- */
-const DATEV_COLUMNS = ["Umsatz (ohne Soll/Haben-Kz)", "Soll/Haben-Kennzeichen", "WKZ Umsatz", "Kurs", "Basis-Umsatz", "WKZ Basis-Umsatz", "Konto", "Gegenkonto (ohne BU-Schlüssel)", "BU-Schlüssel", "Belegdatum", "Belegfeld 1", "Belegfeld 2", "Skonto", "Buchungstext", "Postensperre", "Diverse Adressnummer", "Geschäftspartnerbank", "Sachverhalt", "Zinssperre", "Beleglink", "Beleginfo - Art 1", "Beleginfo - Inhalt 1", "Beleginfo - Art 2", "Beleginfo - Inhalt 2", "Beleginfo - Art 3", "Beleginfo - Inhalt 3", "Beleginfo - Art 4", "Beleginfo - Inhalt 4", "Beleginfo - Art 5", "Beleginfo - Inhalt 5", "Beleginfo - Art 6", "Beleginfo - Inhalt 6", "Beleginfo - Art 7", "Beleginfo - Inhalt 7", "Beleginfo - Art 8", "Beleginfo - Inhalt 8", "KOST1 - Kostenstelle", "KOST2 - Kostenstelle", "Kost-Menge", "EU-Land u. UStID (Bestimmung)", "EU-Steuersatz (Bestimmung)", "Abw. Versteuerungsart", "Sachverhalt L+L", "Funktionsergänzung L+L", "BU 49 Hauptfunktionstyp", "BU 49 Hauptfunktionsnummer", "BU 49 Funktionsergänzung", "Zusatzinformation - Art 1", "Zusatzinformation- Inhalt 1", "Zusatzinformation - Art 2", "Zusatzinformation- Inhalt 2", "Zusatzinformation - Art 3", "Zusatzinformation- Inhalt 3", "Zusatzinformation - Art 4", "Zusatzinformation- Inhalt 4", "Zusatzinformation - Art 5", "Zusatzinformation- Inhalt 5", "Zusatzinformation - Art 6", "Zusatzinformation- Inhalt 6", "Zusatzinformation - Art 7", "Zusatzinformation- Inhalt 7", "Zusatzinformation - Art 8", "Zusatzinformation- Inhalt 8", "Zusatzinformation - Art 9", "Zusatzinformation- Inhalt 9", "Zusatzinformation - Art 10", "Zusatzinformation- Inhalt 10", "Zusatzinformation - Art 11", "Zusatzinformation- Inhalt 11", "Zusatzinformation - Art 12", "Zusatzinformation- Inhalt 12", "Zusatzinformation - Art 13", "Zusatzinformation- Inhalt 13", "Zusatzinformation - Art 14", "Zusatzinformation- Inhalt 14", "Zusatzinformation - Art 15", "Zusatzinformation- Inhalt 15", "Zusatzinformation - Art 16", "Zusatzinformation- Inhalt 16", "Zusatzinformation - Art 17", "Zusatzinformation- Inhalt 17", "Zusatzinformation - Art 18", "Zusatzinformation- Inhalt 18", "Zusatzinformation - Art 19", "Zusatzinformation- Inhalt 19", "Zusatzinformation - Art 20", "Zusatzinformation- Inhalt 20", "Stück", "Gewicht", "Zahlweise", "Forderungsart", "Veranlagungsjahr", "Zugeordnete Fälligkeit", "Skontotyp", "Auftragsnummer", "Buchungstyp", "USt-Schlüssel (Anzahlungen)", "EU-Land (Anzahlungen)", "Sachverhalt L+L (Anzahlungen)", "EU-Steuersatz (Anzahlungen)", "Erlöskonto (Anzahlungen)", "Herkunft-Kz", "Buchungs GUID", "KOST-Datum", "SEPA-Mandatsreferenz", "Skontosperre", "Gesellschaftername", "Beteiligtennummer", "Identifikationsnummer", "Zeichnernummer", "Postensperre bis", "Bezeichnung SoBil-Sachverhalt", "Kennzeichen SoBil-Buchung", "Festschreibung", "Leistungsdatum", "Datum Zuord. Steuerperiode", "Fälligkeit", "Generalumkehr (GU)", "Steuersatz", "Land", "Abrechnungsreferenz", "BVV-Position", "EU-Land u. UStID (Ursprung)", "EU-Steuersatz (Ursprung)", "Abw. Skontokonto"];
-function cp1252(text) {
-  const special = '€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ', codes = [128, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 142, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 158, 159];
-  const out = [];
-  for (const ch of text) {
-    const n = ch.codePointAt(0);
-    if (n < 128 || (n >= 160 && n <= 255)) out.push(n);
-    else { const i = special.indexOf(ch); if (i < 0) throw new Error(t('web.datevChar', { ch })); out.push(codes[i]); }
-  }
-  return new Uint8Array(out);
-}
-function datevDefaults(skr) { return skr === '04' ? { r7: '4300', r19: '4400' } : { r7: '8300', r19: '8400' }; }
-function buildDatev(P, from, to, entries) {
-  const q = (v) => '"' + String(v).replace(/"/g, '""') + '"', compact = (iso) => iso.replace(/-/g, ''), ger = (iso) => iso.slice(8, 10) + iso.slice(5, 7) + iso.slice(0, 4);
-  const stamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 17);
-  const head = ['"EXTF"', '700', '21', '"Buchungsstapel"', '13', stamp, '', '"RE"', '"eOffis"', '""', P.advisor, P.client, `${P.year}0101`, String(P.accountLength), compact(from), compact(to), '"Rechnungsausgang"', '""', '1', '0', '0', '"EUR"', '', '""', '', '', q(P.skr), '', '', '""', '"eOffis"'];
-  const rows = [];
-  for (const e of entries) {
-    const s = e.inv.snapshot;
-    for (const g of s.vat_lines) {
-      const gross = Math.round((g.net + g.vat) * 100) / 100; if (!gross) continue;
-      const m = g.rate === 7 ? P.revenue7 : P.revenue19;
-      const r = Array(125).fill('');
-      r[0] = gross.toFixed(2).replace('.', ','); r[1] = '"S"'; r[2] = '"EUR"'; r[6] = e.debtor; r[7] = m.account; r[8] = m.bu ? q(m.bu) : '';
-      r[9] = ger(s.issue_date).slice(0, 4); r[10] = q(s.number); r[13] = q(String(s.customer_name).slice(0, 60)); r[113] = '0';
-      r[114] = ger(s.service_date || s.issue_date); r[115] = ger(e.taxDate); r[116] = ger(s.due_date);
-      rows.push(r);
-    }
-  }
-  if (!rows.length) throw new Error(t('web.datevNone'));
-  return [head.join(';'), DATEV_COLUMNS.join(';'), ...rows.map((r) => r.join(';'))].join('\r\n') + '\r\n';
-}
-function datevProblems(P, from, to, entries) {
-  const p = [];
-  if (!/^\d{4,7}$/.test(P.advisor) || +P.advisor < 1001) p.push(t('web.datevAdvisor'));
-  if (!/^\d{1,5}$/.test(P.client) || +P.client < 1) p.push(t('web.datevClient'));
-  const len = P.accountLength;
-  if (!new RegExp(`^[1-9]\\d{${len - 1}}$`).test(P.revenue7.account) || !new RegExp(`^[1-9]\\d{${len - 1}}$`).test(P.revenue19.account)) p.push(t('web.datevAccounts'));
-  if (!from || !to || from > to || !from.startsWith(String(P.year)) || !to.startsWith(String(P.year))) p.push(t('web.datevRange'));
-  for (const e of entries) {
-    if (!new RegExp(`^[1-9]\\d{${len}}$`).test(e.debtor)) p.push(`${e.inv.number}: ${t('web.datevDebtor', { n: len + 1 })}`);
-    if (e.inv.snapshot.issue_date < from || e.inv.snapshot.issue_date > to) p.push(`${e.inv.number}: ${t('web.datevRange')}`);
-    if (!/^[A-Za-z0-9$&%*+\-/]{1,36}$/.test(e.inv.number)) p.push(`${e.inv.number}: ${t('web.datevNumber')}`);
-  }
-  return p;
-}
-VIEWS.datev = {
-  title: () => t('web.hubDatev'),
-  render() {
-    const prof = S.profile || {};
-    const P = S.datevP || (S.datevP = Object.assign({ advisor: '', client: '', year: new Date().getFullYear(), accountLength: 4, skr: '03', revenue7: { account: '8300', bu: '' }, revenue19: { account: '8400', bu: '' } }, prof.datev || {}));
-    const X = S.datevX || (S.datevX = { from: `${P.year}-01-01`, to: todayISO() < `${P.year}-12-31` ? todayISO() : `${P.year}-12-31`, sel: {} });
-    const finals = S.invoices.filter((i) => i.status === 'final' && i.snapshot.issue_date >= X.from && i.snapshot.issue_date <= X.to);
-    if (!S.datevBatches) { S.datevBatches = []; loadDatevBatches().then(render); }
-    const batches = S.datevBatches.slice().reverse();
-    const shown = finals.slice(0, 150), selN = Object.keys(X.sel).length; let fieldsN = 0;
-    return `<p class="muted">${esc(t('web.datevIntro'))}</p>
-      <div class="sec-h">${esc(t('web.datevProfile'))}</div>
-      <div class="card"><div class="grid2">${field('dv_adv', t('web.datevAdvisorL'), P.advisor, 'inputmode="numeric"')}${field('dv_cli', t('web.datevClientL'), P.client, 'inputmode="numeric"')}</div>
-        <div class="grid2">${field('dv_year', t('web.datevYear'), String(P.year), 'inputmode="numeric"')}${field('dv_len', t('web.datevLen'), String(P.accountLength), 'inputmode="numeric"')}</div>
-        <div class="seg">${['03', '04'].map((k) => `<button aria-pressed="${P.skr === k}" data-a="dvSkr" data-v="${k}">SKR ${k}</button>`).join('')}</div>
-        <div class="grid2">${field('dv_r7', t('web.datevR7'), P.revenue7.account, 'inputmode="numeric"')}${field('dv_b7', 'BU 7 %', P.revenue7.bu, 'inputmode="numeric"')}</div>
-        <div class="grid2">${field('dv_r19', t('web.datevR19'), P.revenue19.account, 'inputmode="numeric"')}${field('dv_b19', 'BU 19 %', P.revenue19.bu, 'inputmode="numeric"')}</div>
-        <button class="btn sec" data-a="dvSaveP">${esc(t('web.datevSaveP'))}</button></div>
-      <div class="sec-h">${esc(t('web.datevBatch'))}</div>
-      <div class="card"><div class="grid2">${field('dv_from', t('web.from'), fmtDate(X.from))}${field('dv_to', t('web.to'), fmtDate(X.to))}</div>
-        <button class="btn sm ghost" data-a="dvRange">${esc(t('web.datevApply'))}</button>
-        ${finals.length > 1 ? `<label class="check"><input type="checkbox" data-a="dvAll" ${selN === finals.length ? 'checked' : ''}><span>${esc(t('web.selectAll'))} (${finals.length})</span></label>` : ''}
-        ${finals.length ? shown.map((inv) => { const e = X.sel[inv.id]; const withFields = e && fieldsN++ < 60; return `<div class="card flat" style="padding:10px"><label class="check"><input type="checkbox" data-a="dvSel" data-v="${inv.id}" ${e ? 'checked' : ''}><span><b class="mono">${esc(inv.number)}</b> · ${esc(inv.snapshot.customer_name)} · <span class="num">${esc(money(inv.snapshot.gross))}</span></span></label>
-          ${withFields ? `<div class="grid2">${field('dv_deb_' + inv.id, t('web.datevDebtorL'), e.debtor, 'inputmode="numeric"')}${field('dv_tax_' + inv.id, t('web.datevTaxDate'), fmtDate(e.taxDate))}</div>` : ''}</div>`; }).join('') + (finals.length > shown.length ? `<p class="muted small">+ ${finals.length - shown.length} …</p>` : '') : `<p class="muted">${esc(t('web.datevNoInv'))}</p>`}
-        ${X.problems && X.problems.length ? `<div class="banner warn">${X.problems.map(esc).join('<br>')}</div>` : ''}
-        <button class="btn" data-a="dvExport" ${Object.keys(X.sel).length ? '' : 'disabled'}>${esc(t('web.datevExport'))} (${Object.keys(X.sel).length})</button>
-        <p class="muted small">${esc(t('web.datevNote'))}</p></div>
-      ${batches.length ? group(batches.map((b, i) => cell({ icon: 'box', title: `${fmtDate(b.created_at)} · ${tn('web.docs', b.count)}`, sub: `${fmtDate(b.from)}–${fmtDate(b.to)} · SHA-256 ${String(b.hash || "–").slice(0, 12)}…`, attrs: `data-a="dvAgain" data-i="${batches.length - 1 - i}"` })), t('web.datevHistory')) : ''}`;
-  },
-};
-async function loadDatevBatches() {
-  const legacy = ((S.profile && S.profile.datev_batches) || []).map((b) => Object.assign({ legacy: true }, b));
-  let rows = []; try { rows = (await store.all('meta')).filter((x) => x.kind === 'datev'); } catch (e) { console.warn(e); }
-  S.datevBatches = legacy.concat(rows.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || '')));
-}
-/** Debitorennummer je Kunde aus früheren Stapeln (statt einer wachsenden Liste im Profil) */
-function knownDebtor(name) {
-  const legacy = S.profile && S.profile.datev_debtors && S.profile.datev_debtors[name];
-  for (const b of (S.datevBatches || []).slice().reverse()) for (const [id, deb] of b.entries || []) { const inv = S.invoices.find((x) => x.id === id); if (inv && inv.snapshot.customer_name === name) return deb; }
-  return legacy || null;
-}
-function readDatev() {
-  const P = S.datevP; if (!$('#dv_adv')) return;
-  P.advisor = val('dv_adv').trim(); P.client = val('dv_cli').trim(); P.year = parseInt(val('dv_year'), 10) || P.year; P.accountLength = Math.min(8, Math.max(4, parseInt(val('dv_len'), 10) || 4));
-  P.revenue7 = { account: val('dv_r7').trim(), bu: val('dv_b7').trim() }; P.revenue19 = { account: val('dv_r19').trim(), bu: val('dv_b19').trim() };
-  const X = S.datevX;
-  for (const id of Object.keys(X.sel)) { if ($('#dv_deb_' + id)) { X.sel[id].debtor = val('dv_deb_' + id).trim(); X.sel[id].taxDate = parseDate(val('dv_tax_' + id)) || X.sel[id].taxDate; } }
-}
-
-/* ---------- Kontoauszug ---------- */
-const near = (a, b) => Math.abs(a - b) < 0.01;
-const mentions = (p, ref) => !!ref && String(p || '').replace(/\s/g, '').toLowerCase().includes(String(ref).replace(/\s/g, '').toLowerCase());
 const normName = (v) => String(v || '').toLocaleLowerCase('de-DE').replace(/[^\p{L}\p{N}]/gu, '');
-/** Punktesystem wie im Abgleich: Betrag (auch Skonto) 2, Rechnungsnummer im Verwendungszweck 4, Name 2 */
-function candidatesFor(tx) {
-  const amt = Math.abs(tx.amount);
-  if (tx.amount < 0) {
-    return S.docs.filter((d) => !d.paid && (d.is_incoming_invoice || d.payment_required) && d.amount_gross != null && !/gutschrift|lieferschein/i.test(d.doc_type || '')).map((d) => {
-      const full = near(d.amount_gross, amt);
-      const disc = d.discount_percent > 0 && d.discount_date && tx.date <= d.discount_date && Math.abs(Math.round(d.amount_gross * (100 - d.discount_percent)) / 100 - amt) <= 0.011;
-      const ref = (d.invoice_number || '').length >= 3 && mentions(tx.purpose, d.invoice_number);
-      const sn = normName((d.sender || '').split(/[\n,]/)[0]), rn = normName(tx.counterparty);
-      const name = sn.length >= 4 && rn.length >= 4 && (sn.includes(rn) || rn.includes(sn));
-      return { type: 'doc', id: d.id, score: (full || disc ? 2 : 0) + (ref ? 4 : 0) + (name ? 2 : 0), disc };
-    }).filter((c) => c.score >= 2).sort((x, y) => y.score - x.score);
-  }
-  const idx = openInvIndex(), purpose = String(tx.purpose || '').replace(/\s/g, '').toLowerCase(), cp = normName(tx.counterparty);
-  return idx.map(({ i, open, num, nm }) => {
-    const ref = !!num && purpose.includes(num), amtOk = near(open, amt) || near(i.snapshot.gross, amt);
-    const name = nm.length >= 4 && cp.includes(nm.slice(0, 12));
-    return { type: 'inv', id: i.id, open, score: (amtOk ? 2 : 0) + (ref ? 4 : 0) + (name ? 2 : 0) };
-  }).filter((c) => c.score >= 2).sort((x, y) => y.score - x.score);
-}
-let INV_IDX = null;
-/** Offene Rechnungen einmal je Abgleich vorbereiten (statt je Buchung neu zu rechnen) */
-function openInvIndex() {
-  if (INV_IDX) return INV_IDX;
-  return S.invoices.filter((i) => i.status === 'final').map((i) => ({ i, open: invState(i).open })).filter((x) => x.open > 0)
-    .map((x) => Object.assign(x, { num: String(x.i.number || '').replace(/\s/g, '').toLowerCase(), nm: normName(x.i.snapshot.customer_name) }));
-}
-function matchTx(txs) {
-  INV_IDX = null; INV_IDX = openInvIndex();
-  try { return matchTxInner(txs); } finally { INV_IDX = null; }
-}
-function matchTxInner(txs) {
-  const used = new Set();
-  return txs.map((tx) => {
-    const best = candidatesFor(tx).find((c) => !used.has(c.id));
-    if (best) { used.add(best.id); return Object.assign({ tx }, best, { auto: true }); }
-    return { tx, type: null };
-  });
-}
-VIEWS.bank = {
-  title: () => t('bank.title'),
-  render() {
-    const B = S.bank || (S.bank = { busy: false, list: null, done: {} });
-    const openDocs = S.docs.filter((d) => !d.paid && (d.is_incoming_invoice || d.payment_required));
-    const openInv = S.invoices.filter((i) => i.status === 'final' && invState(i).open > 0);
-    const past = S.docs.filter((d) => d.doc_type === 'Kontoauszug').slice(0, 5);
-    return `<p>${esc(t('bank.intro'))}</p>
-      ${S.sample ? `<label class="btn pick">${ico('bank')}${esc(t('bank.upload'))}<input id="bankIn" class="vh" type="file" multiple accept=".pdf,image/*,application/pdf"></label>` : `<div class="banner">${esc(t('web.noAi'))}</div>`}
-      ${B.busy ? busyCard(B.busy) : ''}${B.error ? `<div class="banner warn">${esc(B.error)}</div>` : ''}
-      ${B.list ? `<div class="sec-h">${esc(t('bank.transactions', { count: B.list.length }))}</div>${B.list.map((m, i) => {
-        const doc = m.type === 'doc' ? getDoc(m.id) : null, inv = m.type === 'inv' ? S.invoices.find((x) => x.id === m.id) : null;
-        const opts = m.tx.amount < 0 ? openDocs.map((d) => [`doc:${d.id}`, `${d.title} · ${money(d.amount_gross, d.currency)}`]) : openInv.map((x) => [`inv:${x.id}`, `${x.number} · ${x.snapshot.customer_name} · ${money(invState(x).open)}`]);
-        return `<div class="card"><p class="num" style="font-weight:800;color:var(--${m.tx.amount < 0 ? 'stamp' : 'ok'})">${money(m.tx.amount)} · ${fmtDate(m.tx.date)}</p>
-          <p>${esc(m.tx.counterparty)}</p><p class="muted small">${esc(m.tx.purpose)}</p>
-          ${doc || inv ? `<p>→ ${esc(doc ? `${t('bank.toDoc')}: ${doc.title} (${money(doc.amount_gross)})${m.disc ? ' · ' + t('web.discount') : ''}` : `${t('bank.toInvoice')}: ${inv.number} (${t('inv.open')} ${money(m.open)})`)}${m.auto ? ` <span class="pill c-grey">${'★'.repeat(Math.min(3, Math.round(m.score / 2)))}</span>` : ''}</p>
-            <button class="btn sm ${B.done[i] ? 'ghost' : ''}" data-a="bankConfirm" data-i="${i}" ${B.done[i] ? 'disabled' : ''}>${esc(B.done[i] ? '✓ ' + t('bank.confirmed') : t('bank.confirm'))}</button>`
-          : `<p class="muted small">${esc(t('bank.noMatch'))}</p>${opts.length ? `<label class="f" for="bsel_${i}">${esc(t('web.assign'))}<select class="in" id="bsel_${i}"><option value="">–</option>${opts.map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join('')}</select></label><button class="btn sm sec" data-a="bankAssign" data-i="${i}">${esc(t('web.assignDo'))}</button>` : ''}
-            <button class="btn sm ghost" data-go="scan">${esc(t('web.uploadMissing'))}</button>`}</div>`;
-      }).join('')}` : ''}
-      ${past.length ? group(past.map((d) => cell({ icon: 'bank', ic: 'g', title: d.title, sub: d.explanation || '', attrs: `data-go="doc" data-id="${d.id}"` })), t('web.pastStatements')) : ''}`;
-  },
-  after() {
-    const inp = $('#bankIn'); if (!inp) return;
-    inp.onchange = () => { const fs = [...inp.files]; inp.value = ''; if (fs.length) readStatement(fs); };
-  },
-};
-async function filesToCanvases(files) {
-  const out = [];
-  for (const f of files) {
-    if (/pdf/.test(f.type) || /\.pdf$/i.test(f.name)) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise;
-      for (let i = 1; i <= pdf.numPages && out.length < 20; i++) { const pg = await pdf.getPage(i); const vp = pg.getViewport({ scale: 1.6 }); const c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height; await pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise; out.push(c); }
-    } else { const img = await loadImage(f); const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; c.getContext('2d').drawImage(img, 0, 0); out.push(c); }
-  }
-  return out;
-}
-async function readStatement(files) {
-  const B = S.bank; B.busy = t('bank.analyzing'); B.list = null; B.error = null; B.done = {}; render();
-  try {
-    const canvases = await filesToCanvases(files);
-    const max = (S.sampleLimits && S.sampleLimits.images && S.sampleLimits.images.maxCount) || 20;
-    const blobs = canvases.slice(0, max).map((c) => dataUrlToBlob(canvasToPage(c).dataUrl));
-    const r = await aiJson('Die Bilder zeigen einen Kontoauszug einer deutschen Bank. Lies alle Buchungen vollständig und genau aus, erfinde keine. Betrag negativ bei Abbuchung, positiv bei Gutschrift. Datum als YYYY-MM-DD.\nAntworte nur mit JSON: {"transactions":[{"date":string,"amount":number,"counterparty":string,"purpose":string}]}', blobs);
-    const txs = (r && Array.isArray(r.transactions) ? r.transactions : []).map((x) => ({ date: parseDate(x.date) || todayISO(), amount: Number(x.amount) || 0, counterparty: String(x.counterparty || ''), purpose: String(x.purpose || '') }));
-    B.list = matchTx(txs);
-    // Kontoauszug selbst als Beleg ablegen (Ordner Rechnungen, erledigt)
-    const id = uid(); let idx = 0;
-    for (const c of canvases) { const pg = canvasToPage(c); await store.put('pages', { id: uid(), docId: id, idx: idx++, dataUrl: pg.dataUrl, w: pg.w, h: pg.h }); }
-    const sum = (sign) => txs.filter((x) => (sign < 0 ? x.amount < 0 : x.amount > 0)).reduce((a, x) => a + x.amount, 0);
-    const dates = txs.map((x) => x.date).sort();
-    const rec = { id, title: `Kontoauszug ${dates.length ? fmtDate(dates[0]) + '–' + fmtDate(dates[dates.length - 1]) : fmtDate(todayISO())}`, doc_type: 'Kontoauszug', folder: 'bank', file_kind: 'pdf', page_count: canvases.length,
-      size_bytes: files.reduce((a, f) => a + f.size, 0), sources: files.map((f) => f.name), sha256: await sha256(JSON.stringify(txs)), status: 'done', tax_flag: 'prebook', archived: false, paid: false,
-      explanation: `${txs.length} Buchungen · Eingänge ${money(sum(1))} · Ausgänge ${money(sum(-1))}`, transactions: txs, next_steps: [], dates: [], analyzed_at: nowIso(), created_at: nowIso(), version: 0 };
-    upsertLocal('docs', await saveVersioned('docs', rec, t('bank.title')));
-  } catch (e) { console.error(e); B.error = e && e.code ? aiError(e) : t('web.pdfFail'); }
-  B.busy = false; if (S.view === 'bank') render();
-}
 
 /* ---------- Steuerberater-Übergabe ---------- */
 VIEWS.export = {
@@ -2585,10 +2212,9 @@ async function exportZip() {
 /* ---------- Mehr & Einstellungen ---------- */
 const HUB = () => [
   ['web.hubMoney', [
-    ['invoice', 'web.hubSales', 'web.hubSalesH', 'data-go="invoices"'],
-    ['bank', 'web.hubPay', 'web.hubPayH', 'data-go="bank"'],
-    ['bell', 'web.hubDun', 'web.hubDunH', 'data-a="hubDun"'],
-  ]],
+    ['invoice', 'acc.hubAcc', 'acc.hubAccH', 'data-a="openAcc"'],
+    ['box', 'web.hubExport', 'web.hubExportH', 'data-go="export"'],
+  ].concat(S.invoices.some((i) => i.status === 'final') ? [['archive', 'acc.oldInvoices', 'acc.oldInvoicesH', 'data-go="invoices"']] : [])],
   ['web.hubRecords', [
     ['folder', 'web.hubReview', 'web.hubReviewH', 'data-a="hubDocs" data-v="open"'],
     ['archive', 'web.hubArchive', 'web.hubArchiveH', 'data-a="hubDocs" data-v="archived"'],
@@ -2598,8 +2224,6 @@ const HUB = () => [
   ['web.hubPlanning', [
     ['clock', 'web.hubDates', 'web.hubDatesH', 'data-go="tasks"'],
     ['cal', 'web.hubTax', 'web.hubTaxH', 'data-go="tax"'],
-    ['box', 'web.hubExport', 'web.hubExportH', 'data-go="export"'],
-    ['doc', 'web.hubDatev', 'web.hubDatevH', 'data-go="datev"'],
     ['bell', 'web.hubRem', 'web.hubRemH', 'data-go="settings"'],
     ['gear', 'web.hubSettings', 'web.hubSettingsH', 'data-go="settings"'],
   ]],
@@ -2649,10 +2273,9 @@ VIEWS.settings = {
         ${field('st_email', t('web.companyMail'), p.email || '', 'type="email"')}
         <div class="grid2 stack">${field('st_contact', t('web.contact'), p.contact || '')}${field('st_phone', t('web.phone'), p.phone || '', 'type="tel"')}</div>
         <div class="grid2 stack">${field('st_tax', t('settings.taxNo'), p.tax_number || '')}${field('st_vat', t('settings.vatId'), p.vat_id || '', 'autocapitalize="characters"')}</div>
-        ${field('st_iban', t('settings.iban'), fmtIban(p.iban), 'style="font-family:var(--f-mono)" autocapitalize="characters"')}
-        ${field('st_prefix', t('settings.prefix'), p.invoice_prefix || 'RE-')}
         ${field('st_mail', t('settings.advisorEmail'), p.tax_advisor_email || '', 'type="email"')}
         <button class="btn" data-a="settingsSave">${esc(t('common.save'))}</button></div>
+      ${accSettingsHtml()}
       <div class="sec-h">${esc(t('web.privacyTitle'))}</div><div class="card"><p class="small muted">${esc(t('web.privacyText'))}</p></div>
       <div class="sec-h">${esc(t('web.gobdTitle'))}</div><div class="card"><p class="small muted">${esc(t('web.gobdText'))}</p></div>`;
   },
@@ -2681,7 +2304,7 @@ async function wipeSpace() {
 }
 async function switchSpace(space) {
   store.space = space; try { localStorage.setItem('eoffis.space', space); } catch {}
-  S.scan = null; S.docUi = null; S.replyUi = null; S.invDraft = null; S.exSel = null; S.bank = null;
+  S.scan = null; S.docUi = null; S.replyUi = null; S.invDraft = null; S.exSel = null; S.bank = null; S.accM = null; S.accSel = null; ACC_SECRET = null;
   S.loaded = false; render();
   await reloadAll().catch(() => { S.loadError = true; });
   try { if (await purgeExamples()) await reloadAll(); } catch (e) { console.error(e); }
@@ -2702,7 +2325,6 @@ document.addEventListener('click', async (e) => {
     if (g.dataset.go === 'export') S.exSel = null;
     if (g.dataset.go === 'scan') { S.scan = null; S.crop = null; }
     if (g.dataset.go === 'erech') S.erech = null;
-    if (g.dataset.go === 'datev') { S.datevP = null; S.datevX = null; }
     if (g.dataset.go === 'docs' && !p.archived && (g.closest('.tabs') || g.closest('.sec-h'))) { S.filters.contracts = false; S.filters.q = ''; S.filters.folder = null; S.filters.review = false; }
     if (g.dataset.go === 'doc' && g.dataset.id !== S.params.id) S.docUi = null;
     return go(g.dataset.go, p);
@@ -2777,73 +2399,16 @@ document.addEventListener('click', async (e) => {
     case 'ruleInt': readRule(); S.taxRule.interval = v; S.taxRule.preview = null; return render();
     case 'rulePreview': readRule(); if (!S.taxRule.title.trim()) { $('#r_title').focus(); return; } S.taxRule.preview = ruleDates(S.taxRule, todayISO(), 12); return render();
     case 'ruleCreate': return guard(async () => { readRule(); const R = S.taxRule; const key = 'custom:' + safeName(R.title).slice(0, 40); const have = new Set(S.tasks.filter((x) => x.template_key === key).map((x) => x.due_date)); let n = 0; for (const d of ruleDates(R, todayISO(), 12)) { if (have.has(d)) continue; const rec = { id: uid(), title: R.title.trim(), kind: 'tax', due_date: d, status: 'open', priority: 'high', notes: '', template_key: key, created_at: nowIso(), version: 1 }; await store.put('tasks', rec); S.tasks.push(rec); n++; } S.taxRule = null; toast(t('tax.created', { count: n })); go('tasks'); });
-    case 'invFilter': S.invFilter = v; S.lim = null; return render();
-    case 'itemAdd': readInvForm(); S.invDraft.items.push(emptyItem()); return render();
-    case 'itemDel': readInvForm(); S.invDraft.items.splice(i, 1); return render();
-    case 'itemVat': readInvForm(); S.invDraft.items[i].vat_rate = +v; return render();
-    case 'invRecalc': readInvForm(); return render();
-    case 'invSave': return invSave(v === 'tpl');
-    case 'invUseTpl': { const id = S.params.id; S.invDraft = null; return go('invoice', { id: 'new', from: id }); }
-    case 'invFinalize': return invFinalize();
     case 'invPdf': { const inv = S.invoices.find((x) => x.id === S.params.id); return saveFile(`${inv.number}.pdf`, invoicePdf(inv.snapshot)); }
     case 'invXr': { const inv = S.invoices.find((x) => x.id === S.params.id); return saveFile(`${inv.number}_XRechnung.xml`, invoiceXml(inv.snapshot, 'xrechnung')); }
     case 'invZf': return guard(async () => { const inv = S.invoices.find((x) => x.id === S.params.id); await saveFile(`${inv.number}_ZUGFeRD.pdf`, await zugferdPdf(inv.snapshot)); });
-    case 'invConfirm': readInvForm(); return render();
-    case 'itemUnit': readInvForm(); S.invDraft.items[i].unit = v; return render();
-    case 'dunLevel': { const inv = S.invoices.find((x) => x.id === S.params.id); const until = parseDate(val('dun_until')) || addDays(todayISO(), 10); S.dunning = { inv: inv.id, level: +v, until, letter: dunningLetter(inv, +v, until) }; return render(); }
-    case 'dunOpen': { const inv = S.invoices.find((x) => x.id === S.params.id); const r = inv.reminders[i]; S.dunning = { inv: inv.id, level: r.level, until: r.until, letter: r.letter, saved: true }; return render(); }
-    case 'payAdd': {
-      const inv = S.invoices.find((x) => x.id === S.params.id); const amt = parseMoney(val('p_amt')); const dt = parseDate(val('p_date'));
-      if (!amt || amt <= 0) return $('#p_amt').focus(); if (!dt) return toast(t('common.invalidDate'));
-      return guard(async () => { await invPayments(inv, (inv.payments || []).concat([{ amount: amt, paid_on: dt, note: val('p_ref').trim() }]), t('inv.addPayment')); render(); });
-    }
-    case 'payDel': { const inv = S.invoices.find((x) => x.id === S.params.id); const p = inv.payments[i]; if (!(await ask(`${money(p.amount)} – ${fmtDate(p.paid_on)}`, t('common.delete'), true))) return; return guard(async () => { await invPayments(inv, inv.payments.filter((_, k) => k !== i), t('common.delete')); render(); }); }
-    case 'dunning': return guard(async () => {
-      const inv = S.invoices.find((x) => x.id === S.params.id); const until = parseDate(val('dun_until')); if (!until) return toast(t('common.invalidDate'));
-      const level = S.dunning && S.dunning.inv === inv.id && !S.dunning.saved ? S.dunning.level : Math.min(3, (inv.reminders || []).length + 1);
-      const letter = dunningLetter(inv, level, until);
-      const out = await saveVersioned('invoices', Object.assign({}, inv, { reminders: (inv.reminders || []).concat([{ level, until, created_at: todayISO(), open: invState(inv).open, letter }]) }), letter.subject);
-      upsertLocal('invoices', out); S.dunning = { inv: inv.id, level, until, letter, saved: true }; render();
-    });
-    case 'dunPdf': S.dunning.letter.body = val('dun_body') || S.dunning.letter.body; return saveFile(`Zahlungserinnerung_${safeName(S.dunning.letter.subject)}.pdf`, letterPdf(S.dunning.letter));
-    case 'dunCopy': S.dunning.letter.body = val('dun_body') || S.dunning.letter.body; return copy(letterText(S.dunning.letter));
-    case 'bankConfirm': {
-      const m = S.bank.list[i];
-      return guard(async () => {
-        if (m.type === 'doc') await persistDoc(getDoc(m.id), { paid: true }, t('bank.title'));
-        else { const inv = S.invoices.find((x) => x.id === m.id); await invPayments(inv, (inv.payments || []).concat([{ amount: Math.min(Math.abs(m.tx.amount), m.open), paid_on: m.tx.date, note: ('Kontoauszug: ' + m.tx.purpose).slice(0, 160) }]), t('bank.title')); }
-        S.bank.done[i] = true; render();
-      });
-    }
-    case 'bankAssign': { const sel = val('bsel_' + i); if (!sel) return; const [type, id] = sel.split(':'); const m = S.bank.list[i]; Object.assign(m, { type, id, open: type === 'inv' ? invState(S.invoices.find((x) => x.id === id)).open : 0, auto: false }); return render(); }
     case 'hubDocs': S.filters = { q: '', f: v === 'archived' ? 'archived' : v === 'contracts' ? 'all' : 'open', folder: null, contracts: v === 'contracts', review: v === 'open' }; S.lim = null; return go('doclist', { k: v });
-    case 'hubDun': S.invFilter = 'overdue'; return go('invoices');
+    case 'openAcc': S.accSel = new Set(); S.filters.f = 'open'; return go('acc');
     case 'exAll': { const tab = S.exTab || 'prebook'; const here = S.docs.filter((x) => x.page_count && (tab === 'prebook' ? x.tax_flag !== 'deadline' : x.tax_flag === 'deadline')); here.forEach((x) => (a.checked ? S.exSel.add(x.id) : S.exSel.delete(x.id))); return render(); }
     case 'exOne': a.checked ? S.exSel.add(v) : S.exSel.delete(v); return render();
     case 'exZip': return exportZip();
     case 'exPdf': return guard(async () => { S.exBusy = true; render(); try { const docs = S.docs.filter((x) => S.exSel.has(x.id) && x.page_count && x.tax_flag !== 'deadline'); const blob = await sortedPdf(docs); S.exBusy = false; render(); await saveFile(`eOffis_Belege_sortiert_${todayISO()}.pdf`, blob); } finally { S.exBusy = false; render(); } });
     case 'exTab': S.exTab = v; return render();
-    case 'dvSkr': { readDatev(); const P = S.datevP; const d0 = datevDefaults(P.skr), d1 = datevDefaults(v); if (P.revenue7.account === d0.r7) P.revenue7.account = d1.r7; if (P.revenue19.account === d0.r19) P.revenue19.account = d1.r19; P.skr = v; return render(); }
-    case 'dvSaveP': return guard(async () => { readDatev(); S.profile = Object.assign({}, S.profile, { datev: clone(S.datevP) }); await store.setProfile(S.profile); toast(t('web.toastSaved')); render(); });
-    case 'dvRange': { readDatev(); const f = parseDate(val('dv_from')), to = parseDate(val('dv_to')); if (!f || !to) return toast(t('common.invalidDate')); S.datevX.from = f; S.datevX.to = to; S.datevX.sel = {}; return render(); }
-    case 'dvSel': { readDatev(); const inv = S.invoices.find((x) => x.id === v); if (a.checked) S.datevX.sel[v] = { debtor: knownDebtor(inv.snapshot.customer_name) || '1' + '0'.repeat(S.datevP.accountLength), taxDate: inv.snapshot.issue_date }; else delete S.datevX.sel[v]; return render(); }
-    case 'dvAll': { readDatev(); const X = S.datevX; const finals = S.invoices.filter((x) => x.status === 'final' && x.snapshot.issue_date >= X.from && x.snapshot.issue_date <= X.to); if (a.checked) { for (const inv of finals) if (!X.sel[inv.id]) X.sel[inv.id] = { debtor: knownDebtor(inv.snapshot.customer_name) || '1' + '0'.repeat(S.datevP.accountLength), taxDate: inv.snapshot.issue_date }; } else X.sel = {}; return render(); }
-    case 'dvExport': return guard(async () => {
-      readDatev(); const P = S.datevP, X = S.datevX;
-      const entries = Object.entries(X.sel).map(([id, e]) => ({ inv: S.invoices.find((x) => x.id === id), debtor: e.debtor, taxDate: e.taxDate }));
-      X.problems = datevProblems(P, X.from, X.to, entries); if (X.problems.length) return render();
-      const csv = buildDatev(P, X.from, X.to, entries); const bytes = cp1252(csv); const hash = await sha256(csv);
-      // Jeder Stapel als eigenes Dokument; CSV nur, solange es unter der Dokumentgrenze bleibt (sonst wird es aus den Rechnungen neu erzeugt)
-      const batch = { id: 'datev-' + uid(), kind: 'datev', created_at: nowIso(), from: X.from, to: X.to, count: entries.length, hash, P: clone(P), entries: entries.map((e) => [e.inv.id, e.debtor, e.taxDate]) };
-      if (csv.length < 150000) batch.csv = csv;
-      if (JSON.stringify(batch).length > 240000) delete batch.entries;
-      await store.put('meta', batch); (S.datevBatches || (S.datevBatches = [])).push(batch);
-      S.profile = Object.assign({}, S.profile, { datev: clone(P) });
-      await store.setProfile(S.profile);
-      await saveFile(`EXTF_Buchungsstapel_${X.from}_${X.to}.csv`, new Blob([bytes], { type: 'text/csv' }));
-      S.datevX.sel = {}; render();
-    });
-    case 'dvAgain': { const b = S.datevBatches[i]; let csv = b.csv; if (!csv && b.entries) csv = buildDatev(b.P || S.datevP, b.from, b.to, b.entries.map(([id, debtor, taxDate]) => ({ inv: S.invoices.find((x) => x.id === id), debtor, taxDate })).filter((e) => e.inv)); if (!csv) return toast(t('common.error')); return saveFile(`EXTF_Buchungsstapel_${b.from}_${b.to}.csv`, new Blob([cp1252(csv)], { type: 'text/csv' })); }
     case 'fwPdf': { const docs = S.docs.filter((x) => S.exSel.has(x.id) && x.tax_flag === 'deadline' && x.page_count); for (const x of docs) { const pages = (await store.where('pages', 'docId', x.id)).sort((p1, p2) => p1.idx - p2.idx); if (x.file_kind === 'xml') await saveFile(`${safeName(x.title)}.xml`, (pages[0] && pages[0].xml) || ''); else await saveFile(`${safeName(x.title)}.pdf`, pagesToPdf(pages)); } return; }
     case 'fwText': return copy(forwardText(S.docs.filter((x) => S.exSel.has(x.id) && x.tax_flag === 'deadline')));
     case 'taskCycle': return guard(async () => { const x = S.tasks.find((k) => k.id === v); const nx = { open: 'in_progress', in_progress: 'done', done: 'open' }[x.status] || 'open'; const saved = await saveVersioned('tasks', Object.assign({}, x, { status: nx }), t('tasks.status_' + nx)); S.tasks[S.tasks.findIndex((k) => k.id === v)] = saved; await spawnNext(saved); render(); });
@@ -2867,12 +2432,754 @@ document.addEventListener('click', async (e) => {
         company_name: val('st_name').trim(), industry: S.setInd || (S.profile && S.profile.industry) || 'sonstiges',
         street: val('st_street').trim(), zip: val('st_zip').trim(), city: val('st_city').trim(), email: val('st_email').trim(), contact: val('st_contact').trim(), phone: val('st_phone').trim(),
         address: [val('st_name').trim(), val('st_street').trim(), [val('st_zip').trim(), val('st_city').trim()].filter(Boolean).join(' ')].filter(Boolean).join('\n'),
-        tax_number: val('st_tax').trim(), vat_id: val('st_vat').trim(), iban: val('st_iban').replace(/\s+/g, '').toUpperCase(),
-        invoice_prefix: val('st_prefix').trim() || 'RE-', tax_advisor_email: val('st_mail').trim() || null,
+        tax_number: val('st_tax').trim(), vat_id: val('st_vat').trim(), tax_advisor_email: val('st_mail').trim() || null,
       });
-      if (p.iban && !ibanValid(p.iban)) toast(t('settings.iban') + ' ✗'); else if (p.vat_id && !vatIdValid(p.vat_id)) toast(t('settings.vatId') + ' ✗');
-      await store.setProfile(p); S.profile = p; S.setInd = null; if ((!p.iban || ibanValid(p.iban)) && (!p.vat_id || vatIdValid(p.vat_id))) toast(t('web.toastSaved')); render();
+      if (p.vat_id && !vatIdValid(p.vat_id)) toast(t('settings.vatId') + ' ✗');
+      await store.setProfile(p); S.profile = p; S.setInd = null; if (!p.vat_id || vatIdValid(p.vat_id)) toast(t('web.toastSaved')); render();
     });
+  }
+});
+
+
+/* =================== Buchhaltung: ablegen, übertragen, an Steuerberater (Paket 1, 08.11.2026) ===================
+   eOffis ist kein Buchhaltungsprogramm: Buchhaltungsbelege (Rechnung, Quittung, Lieferschein, Kontoauszug, Gutschrift)
+   werden erkannt und entweder an das Buchhaltungsprogramm des Betriebs übertragen (Lexware Office, DATEV, sevDesk, andere)
+   oder im Ordner „Buchhaltung“ abgelegt (Jahr / Monat / Belegart, auf Wunsch zusätzlich in einem PC-Ordner). */
+const ACC_TYPES = ['rechnung', 'quittung', 'lieferschein', 'kontoauszug', 'gutschrift'];
+const ACC_DIR = { rechnung: 'Rechnungen', quittung: 'Quittungen', lieferschein: 'Lieferscheine', kontoauszug: 'Kontoauszuege', gutschrift: 'Gutschriften' };
+const ACC_PROGS = ['lexware', 'datev', 'sevdesk', 'other'];
+const SEVDESK_MAIL = 'autobox@sevdesk.email';
+const LEX_KEY_URL = 'https://app.lexware.de/addons/public-api';
+const ACC_TEXT = {
+  de: {
+    folderName: 'Buchhaltung (Rechnungen, Lieferscheine)', folderTitle: 'Buchhaltung',
+    type_rechnung: 'Rechnung', type_quittung: 'Quittung / Kassenbon', type_lieferschein: 'Lieferschein', type_kontoauszug: 'Kontoauszug', type_gutschrift: 'Gutschrift',
+    fileTitleAcc: 'Buchhaltungsbeleg erkannt: {{type}}', fileTarget: 'Ablage', fileTransfer: 'An Buchhaltungsprogramm übertragen', fileToFolder: 'In Ordner „Buchhaltung“ ablegen',
+    fileOther: 'Kein Buchhaltungsbeleg? Anderen Ordner wählen', fileSuggest: 'Vorschlag: im Ordner „{{folder}}“ ablegen?', fileYes: 'Ja, in „{{folder}}“ ablegen',
+    fileAsk: 'Wohin gehört dieses Dokument?', fileAskH: 'Buchhaltungsbelege kommen in den Ordner „Buchhaltung“ und können an dein Buchhaltungsprogramm übertragen werden.',
+    accGroup: 'Buchhaltungsbeleg', otherFolders: 'Anderer Ordner', filedIn: 'Abgelegt: {{path}}', fileDone: 'Abgelegt in {{path}}',
+    transferredTo: 'Übertragen an {{to}} am {{date}}', notTransferred: 'nicht übertragen', advisorSent: 'an Steuerberater gesendet', pcSaved: 'auf PC gespeichert',
+    prog_lexware: 'Lexware Office', prog_datev: 'DATEV', prog_sevdesk: 'sevDesk', prog_other: 'Anderes Programm',
+    pickProgram: 'Welches Buchhaltungsprogramm nutzt du?', lexXl: 'Nutzt du Lexware Office im Tarif XL?',
+    lexXlH: 'Nur im Tarif XL gibt es die Schnittstelle (API) für die direkte Übertragung und den Belegempfang per E-Mail.', yes: 'Ja', no: 'Nein',
+    lexKey: 'API-Schlüssel von Lexware Office', lexKeyH: 'In Lexware Office: Einstellungen → Erweiterungen → Public API → Schlüssel erzeugen (nur Administrator, Tarif XL). Der Schlüssel wird geschützt in deinem eOffis-Konto gespeichert.',
+    lexKeyOpen: 'Lexware-Seite öffnen', lexUseMail: 'Ohne Schlüssel: per E-Mail an den Lexware-Belegempfang',
+    lexApp: 'Ohne Tarif XL überträgst du Belege über die Lexware-App: „Teilen“ tippen und „Lexware Office“ wählen. Die App muss auf dem Handy installiert sein.',
+    addrDatev: 'Deine DATEV-Upload-Mail-Adresse', addrDatevH: 'Einrichten in DATEV Unternehmen online: Belege → Einstellungen → Upload Mail → „Jetzt einrichten“. Senden geht nur von der dort hinterlegten Absenderadresse (PDF, bis 20 MB).',
+    addrSev: 'sevDesk-Autobox', addrSevH: 'sevDesk nimmt Belege an autobox@sevdesk.email an – aber nur von der E-Mail-Adresse, mit der du bei sevDesk angemeldet bist.',
+    addrLex: 'Belegempfangs-Adresse von Lexware Office', addrLexH: 'In Lexware Office: Einstellungen → Belegempfang. Deine Absenderadresse muss dort als Belegsender freigegeben sein.',
+    otherName: 'Name des Programms', addrOther: 'E-Mail-Adresse für Belege', addrOtherH: 'Viele Programme haben eine eigene Adresse für Belege. Du findest sie meist in den Einstellungen unter „Belegeingang“ oder „Upload“.',
+    addrBad: 'Bitte eine gültige E-Mail-Adresse eingeben.', saveContinue: 'Speichern und weiter',
+    transferTitle: 'An {{to}} übertragen', nFiles: '{{count}} Datei(en) bereit', preparing: 'Dateien werden vorbereitet …',
+    step1Copy: '1. Adresse kopieren', step2Share: '2. „Teilen“ tippen → Mail-App wählen → Adresse bei „An“ einfügen → senden', stepApp: '„Teilen“ tippen → „Lexware Office“ wählen',
+    share: 'Teilen', copyAddr: 'Kopieren', noShare: 'Dieses Gerät kann Dateien nicht direkt teilen. Lade die Datei(en) herunter und hänge sie an eine Mail an.',
+    noShareApp: 'Am PC: Datei herunterladen und in Lexware Office unter Belege → „Beleg hochladen“ hochladen.', download: 'Herunterladen', openMail: 'Mail-Programm öffnen',
+    markSent: 'Ich habe gesendet – als übertragen markieren', directNow: 'Jetzt direkt übertragen', apiBusy: 'Wird an Lexware Office übertragen …',
+    apiOk: '{{count}} Beleg(e) an Lexware Office übertragen.', apiFail: 'Direkte Übertragung fehlgeschlagen: {{msg}}', apiKeyBad: 'Der API-Schlüssel wurde nicht angenommen. Bitte in den Einstellungen prüfen.',
+    apiMissing: 'Die direkte Übertragung ist noch nicht eingerichtet. Bitte über „Teilen“ senden.', useShare: 'Stattdessen über „Teilen“ senden', sentOk: 'Als übertragen markiert.',
+    again: 'Bereits übertragen: {{list}}. Trotzdem erneut senden?', againBtn: 'Erneut senden', changeProgram: 'Programm ändern',
+    settingsTitle: 'Buchhaltungsprogramm', settingsNone: 'Noch nicht gewählt – wird beim ersten Übertragen gefragt.', keySaved: 'API-Schlüssel gespeichert', keyDel: 'Schlüssel löschen',
+    pcSave: 'Auch auf diesem PC speichern', pcPick: 'PC-Ordner wählen', pcPickH: 'Buchhaltungsbelege werden zusätzlich in diesem Ordner gespeichert: Jahr / Monat / Belegart.',
+    pcFolder: 'PC-Ordner: {{name}}', pcDone: '{{count}} Datei(en) im PC-Ordner gespeichert.', pcDenied: 'Kein Zugriff auf den PC-Ordner. Bitte erneut wählen.',
+    folderOpenN: '{{count}} Beleg(e) noch nicht an {{to}} übertragen.', folderOpenNoProg: '{{count}} Beleg(e) noch nicht an dein Buchhaltungsprogramm übertragen.', transferAll: 'Jetzt alle übertragen',
+    advisorOpenN: '{{count}} Beleg(e) noch nicht an den Steuerberater gesendet.', advisorAll: 'Alle an Steuerberater senden',
+    selected: '{{count}} ausgewählt', selTransfer: 'Übertragen', selAdvisor: 'An Steuerberater', selPc: 'Auf PC', selClear: 'Auswahl aufheben', selMonth: 'Monat auswählen',
+    empty: 'Noch keine Buchhaltungsbelege. Scanne eine Rechnung, Quittung oder einen Lieferschein.',
+    advisorTitle: 'An Steuerberater senden', advisorMail: 'E-Mail des Steuerberaters', advisorZip: 'ZIP mit {{count}} Belegen (Jahr / Monat / Belegart) und Übersicht',
+    advisorTask: 'Belege des Vormonats an Steuerberater senden', advisorOk: 'Als an Steuerberater gesendet markiert.',
+    linkAsk: 'Gehört zu {{kind}} „{{title}}“ vom {{date}}?', linkYes: 'Ja, verknüpfen', linkNo: 'Nein', linked: 'Verknüpft mit: {{list}}',
+    linkedNote: 'Verknüpfte Lieferscheine werden beim Übertragen der Rechnung mitgeschickt.', unlink: 'Verknüpfung lösen',
+    oldInvoices: 'Frühere Ausgangsrechnungen', oldInvoicesH: 'Nur noch zum Ansehen und Herunterladen',
+    movedNote: 'Rechnungen schreiben, Mahnungen, Kontoabgleich und DATEV-Export erledigt jetzt dein Buchhaltungsprogramm. eOffis legt Belege ab und überträgt sie dorthin.',
+    hubAcc: 'Buchhaltung', hubAccH: 'Belege ablegen und übertragen',
+  },
+  tr: {
+    folderName: 'Muhasebe (faturalar, irsaliyeler)', folderTitle: 'Muhasebe',
+    type_rechnung: 'Fatura', type_quittung: 'Makbuz / fiş', type_lieferschein: 'İrsaliye', type_kontoauszug: 'Hesap dökümü', type_gutschrift: 'Alacak dekontu',
+    fileTitleAcc: 'Muhasebe belgesi tanındı: {{type}}', fileTarget: 'Klasör', fileTransfer: 'Muhasebe programına aktar', fileToFolder: '„Muhasebe“ klasörüne kaydet',
+    fileOther: 'Muhasebe belgesi değil mi? Başka klasör seç', fileSuggest: 'Öneri: „{{folder}}“ klasörüne kaydedilsin mi?', fileYes: 'Evet, „{{folder}}“ klasörüne kaydet',
+    fileAsk: 'Bu belge nereye ait?', fileAskH: 'Muhasebe belgeleri „Muhasebe“ klasörüne gider ve muhasebe programına aktarılabilir.',
+    accGroup: 'Muhasebe belgesi', otherFolders: 'Başka klasör', filedIn: 'Kaydedildi: {{path}}', fileDone: '{{path}} içine kaydedildi',
+    transferredTo: '{{date}} tarihinde {{to}} programına aktarıldı', notTransferred: 'aktarılmadı', advisorSent: 'muhasebeciye gönderildi', pcSaved: 'PC’ye kaydedildi',
+    prog_lexware: 'Lexware Office', prog_datev: 'DATEV', prog_sevdesk: 'sevDesk', prog_other: 'Başka program',
+    pickProgram: 'Hangi muhasebe programını kullanıyorsun?', lexXl: 'Lexware Office’i XL tarifesinde mi kullanıyorsun?',
+    lexXlH: 'Doğrudan aktarım için arayüz (API) ve e-postayla belge alımı yalnızca XL tarifesinde var.', yes: 'Evet', no: 'Hayır',
+    lexKey: 'Lexware Office API anahtarı', lexKeyH: 'Lexware Office’te: Ayarlar → Eklentiler → Public API → anahtar oluştur (yalnızca yönetici, XL tarifesi). Anahtar eOffis hesabında korunarak saklanır.',
+    lexKeyOpen: 'Lexware sayfasını aç', lexUseMail: 'Anahtarsız: Lexware belge alım adresine e-postayla',
+    lexApp: 'XL tarifesi olmadan belgeleri Lexware uygulamasıyla aktarırsın: „Paylaş“a dokun ve „Lexware Office“i seç. Uygulama telefonda yüklü olmalı.',
+    addrDatev: 'DATEV Upload Mail adresin', addrDatevH: 'DATEV Unternehmen online’da kur: Belege → Einstellungen → Upload Mail → „Jetzt einrichten“. Yalnızca orada kayıtlı gönderen adresinden gönderebilirsin (PDF, en fazla 20 MB).',
+    addrSev: 'sevDesk Autobox', addrSevH: 'sevDesk belgeleri autobox@sevdesk.email adresinden alır – ama yalnızca sevDesk’e kayıtlı olduğun e-posta adresinden gönderilirse.',
+    addrLex: 'Lexware Office belge alım adresi', addrLexH: 'Lexware Office’te: Ayarlar → Belegempfang. Gönderen adresin orada belge göndericisi olarak onaylı olmalı.',
+    otherName: 'Programın adı', addrOther: 'Belgeler için e-posta adresi', addrOtherH: 'Birçok programın belgeler için kendi adresi var. Genellikle ayarlarda „Belge girişi“ veya „Yükleme“ altında bulunur.',
+    addrBad: 'Lütfen geçerli bir e-posta adresi gir.', saveContinue: 'Kaydet ve devam et',
+    transferTitle: '{{to}} programına aktar', nFiles: '{{count}} dosya hazır', preparing: 'Dosyalar hazırlanıyor …',
+    step1Copy: '1. Adresi kopyala', step2Share: '2. „Paylaş“a dokun → e-posta uygulamasını seç → adresi „Kime“ alanına yapıştır → gönder', stepApp: '„Paylaş“a dokun → „Lexware Office“i seç',
+    share: 'Paylaş', copyAddr: 'Kopyala', noShare: 'Bu cihaz dosyaları doğrudan paylaşamıyor. Dosyaları indir ve bir e-postaya ekle.',
+    noShareApp: 'PC’de: dosyayı indir ve Lexware Office’te Belege → „Beleg hochladen“ ile yükle.', download: 'İndir', openMail: 'E-posta programını aç',
+    markSent: 'Gönderdim – aktarıldı olarak işaretle', directNow: 'Şimdi doğrudan aktar', apiBusy: 'Lexware Office’e aktarılıyor …',
+    apiOk: '{{count}} belge Lexware Office’e aktarıldı.', apiFail: 'Doğrudan aktarım başarısız: {{msg}}', apiKeyBad: 'API anahtarı kabul edilmedi. Lütfen ayarlardan kontrol et.',
+    apiMissing: 'Doğrudan aktarım henüz kurulmadı. Lütfen „Paylaş“ ile gönder.', useShare: 'Bunun yerine „Paylaş“ ile gönder', sentOk: 'Aktarıldı olarak işaretlendi.',
+    again: 'Zaten aktarıldı: {{list}}. Yine de tekrar gönderilsin mi?', againBtn: 'Tekrar gönder', changeProgram: 'Programı değiştir',
+    settingsTitle: 'Muhasebe programı', settingsNone: 'Henüz seçilmedi – ilk aktarımda sorulur.', keySaved: 'API anahtarı kayıtlı', keyDel: 'Anahtarı sil',
+    pcSave: 'Bu PC’ye de kaydet', pcPick: 'PC klasörü seç', pcPickH: 'Muhasebe belgeleri ayrıca bu klasöre kaydedilir: Yıl / Ay / Belge türü.',
+    pcFolder: 'PC klasörü: {{name}}', pcDone: '{{count}} dosya PC klasörüne kaydedildi.', pcDenied: 'PC klasörüne erişim yok. Lütfen yeniden seç.',
+    folderOpenN: '{{count}} belge henüz {{to}} programına aktarılmadı.', folderOpenNoProg: '{{count}} belge henüz muhasebe programına aktarılmadı.', transferAll: 'Şimdi hepsini aktar',
+    advisorOpenN: '{{count}} belge henüz muhasebeciye gönderilmedi.', advisorAll: 'Hepsini muhasebeciye gönder',
+    selected: '{{count}} seçildi', selTransfer: 'Aktar', selAdvisor: 'Muhasebeciye', selPc: 'PC’ye', selClear: 'Seçimi kaldır', selMonth: 'Ayı seç',
+    empty: 'Henüz muhasebe belgesi yok. Bir fatura, makbuz veya irsaliye tara.',
+    advisorTitle: 'Muhasebeciye gönder', advisorMail: 'Muhasebecinin e-postası', advisorZip: '{{count}} belgelik ZIP (Yıl / Ay / Belge türü) ve özet',
+    advisorTask: 'Geçen ayın belgelerini muhasebeciye gönder', advisorOk: 'Muhasebeciye gönderildi olarak işaretlendi.',
+    linkAsk: '{{date}} tarihli {{kind}} „{{title}}“ ile ilgili mi?', linkYes: 'Evet, bağla', linkNo: 'Hayır', linked: 'Bağlı: {{list}}',
+    linkedNote: 'Bağlı irsaliyeler fatura aktarılırken birlikte gönderilir.', unlink: 'Bağlantıyı kaldır',
+    oldInvoices: 'Eski giden faturalar', oldInvoicesH: 'Yalnızca görüntüleme ve indirme',
+    movedNote: 'Fatura yazma, ihtarlar, hesap eşleştirme ve DATEV dışa aktarımı artık muhasebe programının işi. eOffis belgeleri kaydeder ve oraya aktarır.',
+    hubAcc: 'Muhasebe', hubAccH: 'Belgeleri kaydet ve aktar',
+  },
+  pl: {
+    folderName: 'Księgowość (faktury, dowody dostawy)', folderTitle: 'Księgowość',
+    type_rechnung: 'Faktura', type_quittung: 'Paragon / pokwitowanie', type_lieferschein: 'Dowód dostawy', type_kontoauszug: 'Wyciąg bankowy', type_gutschrift: 'Nota uznaniowa',
+    fileTitleAcc: 'Rozpoznano dokument księgowy: {{type}}', fileTarget: 'Folder', fileTransfer: 'Przekaż do programu księgowego', fileToFolder: 'Zapisz w folderze „Księgowość”',
+    fileOther: 'To nie dokument księgowy? Wybierz inny folder', fileSuggest: 'Propozycja: zapisać w folderze „{{folder}}”?', fileYes: 'Tak, zapisz w „{{folder}}”',
+    fileAsk: 'Gdzie należy ten dokument?', fileAskH: 'Dokumenty księgowe trafiają do folderu „Księgowość” i można je przekazać do programu księgowego.',
+    accGroup: 'Dokument księgowy', otherFolders: 'Inny folder', filedIn: 'Zapisano: {{path}}', fileDone: 'Zapisano w {{path}}',
+    transferredTo: 'Przekazano do {{to}} dnia {{date}}', notTransferred: 'nieprzekazany', advisorSent: 'wysłano do doradcy podatkowego', pcSaved: 'zapisano na PC',
+    prog_lexware: 'Lexware Office', prog_datev: 'DATEV', prog_sevdesk: 'sevDesk', prog_other: 'Inny program',
+    pickProgram: 'Z jakiego programu księgowego korzystasz?', lexXl: 'Czy korzystasz z Lexware Office w taryfie XL?',
+    lexXlH: 'Interfejs (API) do bezpośredniego przekazywania i odbiór dokumentów e-mailem są tylko w taryfie XL.', yes: 'Tak', no: 'Nie',
+    lexKey: 'Klucz API Lexware Office', lexKeyH: 'W Lexware Office: Ustawienia → Rozszerzenia → Public API → utwórz klucz (tylko administrator, taryfa XL). Klucz jest bezpiecznie zapisany na Twoim koncie eOffis.',
+    lexKeyOpen: 'Otwórz stronę Lexware', lexUseMail: 'Bez klucza: e-mailem na adres odbioru dokumentów Lexware',
+    lexApp: 'Bez taryfy XL przekazujesz dokumenty przez aplikację Lexware: dotknij „Udostępnij” i wybierz „Lexware Office”. Aplikacja musi być zainstalowana w telefonie.',
+    addrDatev: 'Twój adres DATEV Upload Mail', addrDatevH: 'Ustaw w DATEV Unternehmen online: Belege → Einstellungen → Upload Mail → „Jetzt einrichten”. Wysyłać można tylko z zapisanego tam adresu nadawcy (PDF, do 20 MB).',
+    addrSev: 'sevDesk Autobox', addrSevH: 'sevDesk przyjmuje dokumenty na autobox@sevdesk.email – ale tylko z adresu e-mail, którym logujesz się do sevDesk.',
+    addrLex: 'Adres odbioru dokumentów Lexware Office', addrLexH: 'W Lexware Office: Ustawienia → Belegempfang. Twój adres nadawcy musi być tam zatwierdzony.',
+    otherName: 'Nazwa programu', addrOther: 'Adres e-mail do dokumentów', addrOtherH: 'Wiele programów ma własny adres do dokumentów. Zwykle znajdziesz go w ustawieniach w sekcji „Wpływ dokumentów” lub „Upload”.',
+    addrBad: 'Podaj prawidłowy adres e-mail.', saveContinue: 'Zapisz i dalej',
+    transferTitle: 'Przekaż do {{to}}', nFiles: 'Gotowe pliki: {{count}}', preparing: 'Przygotowywanie plików …',
+    step1Copy: '1. Skopiuj adres', step2Share: '2. Dotknij „Udostępnij” → wybierz aplikację poczty → wklej adres w „Do” → wyślij', stepApp: 'Dotknij „Udostępnij” → wybierz „Lexware Office”',
+    share: 'Udostępnij', copyAddr: 'Kopiuj', noShare: 'To urządzenie nie może bezpośrednio udostępniać plików. Pobierz pliki i dołącz je do e-maila.',
+    noShareApp: 'Na PC: pobierz plik i prześlij go w Lexware Office w Belege → „Beleg hochladen”.', download: 'Pobierz', openMail: 'Otwórz program pocztowy',
+    markSent: 'Wysłałem – oznacz jako przekazane', directNow: 'Przekaż teraz bezpośrednio', apiBusy: 'Przekazywanie do Lexware Office …',
+    apiOk: 'Przekazano dokumentów do Lexware Office: {{count}}.', apiFail: 'Bezpośrednie przekazanie nie powiodło się: {{msg}}', apiKeyBad: 'Klucz API nie został przyjęty. Sprawdź go w ustawieniach.',
+    apiMissing: 'Bezpośrednie przekazywanie nie jest jeszcze skonfigurowane. Wyślij przez „Udostępnij”.', useShare: 'Zamiast tego wyślij przez „Udostępnij”', sentOk: 'Oznaczono jako przekazane.',
+    again: 'Już przekazano: {{list}}. Mimo to wysłać ponownie?', againBtn: 'Wyślij ponownie', changeProgram: 'Zmień program',
+    settingsTitle: 'Program księgowy', settingsNone: 'Jeszcze nie wybrano – pytanie pojawi się przy pierwszym przekazaniu.', keySaved: 'Klucz API zapisany', keyDel: 'Usuń klucz',
+    pcSave: 'Zapisz też na tym PC', pcPick: 'Wybierz folder na PC', pcPickH: 'Dokumenty księgowe będą dodatkowo zapisywane w tym folderze: rok / miesiąc / rodzaj.',
+    pcFolder: 'Folder na PC: {{name}}', pcDone: 'Zapisano plików w folderze PC: {{count}}.', pcDenied: 'Brak dostępu do folderu na PC. Wybierz go ponownie.',
+    folderOpenN: 'Dokumenty jeszcze nieprzekazane do {{to}}: {{count}}.', folderOpenNoProg: 'Dokumenty jeszcze nieprzekazane do programu księgowego: {{count}}.', transferAll: 'Przekaż wszystkie teraz',
+    advisorOpenN: 'Dokumenty jeszcze niewysłane do doradcy podatkowego: {{count}}.', advisorAll: 'Wyślij wszystkie do doradcy',
+    selected: 'Wybrano: {{count}}', selTransfer: 'Przekaż', selAdvisor: 'Do doradcy', selPc: 'Na PC', selClear: 'Wyczyść wybór', selMonth: 'Wybierz miesiąc',
+    empty: 'Brak dokumentów księgowych. Zeskanuj fakturę, paragon lub dowód dostawy.',
+    advisorTitle: 'Wyślij do doradcy podatkowego', advisorMail: 'E-mail doradcy podatkowego', advisorZip: 'ZIP z {{count}} dokumentami (rok / miesiąc / rodzaj) i zestawieniem',
+    advisorTask: 'Wyślij dokumenty z poprzedniego miesiąca do doradcy podatkowego', advisorOk: 'Oznaczono jako wysłane do doradcy.',
+    linkAsk: 'Należy do: {{kind}} „{{title}}” z dnia {{date}}?', linkYes: 'Tak, połącz', linkNo: 'Nie', linked: 'Połączono z: {{list}}',
+    linkedNote: 'Połączone dowody dostawy są wysyłane razem z fakturą.', unlink: 'Usuń połączenie',
+    oldInvoices: 'Wcześniejsze faktury wychodzące', oldInvoicesH: 'Tylko do podglądu i pobrania',
+    movedNote: 'Wystawianie faktur, upomnienia, uzgadnianie konta i eksport DATEV robi teraz Twój program księgowy. eOffis zapisuje dokumenty i tam je przekazuje.',
+    hubAcc: 'Księgowość', hubAccH: 'Zapisywanie i przekazywanie dokumentów',
+  },
+  ru: {
+    folderName: 'Бухгалтерия (счета, накладные)', folderTitle: 'Бухгалтерия',
+    type_rechnung: 'Счёт', type_quittung: 'Квитанция / чек', type_lieferschein: 'Накладная', type_kontoauszug: 'Выписка со счёта', type_gutschrift: 'Кредит-нота',
+    fileTitleAcc: 'Распознан бухгалтерский документ: {{type}}', fileTarget: 'Папка', fileTransfer: 'Передать в бухгалтерскую программу', fileToFolder: 'Сохранить в папку «Бухгалтерия»',
+    fileOther: 'Не бухгалтерский документ? Выбрать другую папку', fileSuggest: 'Предложение: сохранить в папку «{{folder}}»?', fileYes: 'Да, сохранить в «{{folder}}»',
+    fileAsk: 'Куда относится этот документ?', fileAskH: 'Бухгалтерские документы попадают в папку «Бухгалтерия» и могут быть переданы в вашу бухгалтерскую программу.',
+    accGroup: 'Бухгалтерский документ', otherFolders: 'Другая папка', filedIn: 'Сохранено: {{path}}', fileDone: 'Сохранено в {{path}}',
+    transferredTo: 'Передано в {{to}} {{date}}', notTransferred: 'не передано', advisorSent: 'отправлено налоговому консультанту', pcSaved: 'сохранено на ПК',
+    prog_lexware: 'Lexware Office', prog_datev: 'DATEV', prog_sevdesk: 'sevDesk', prog_other: 'Другая программа',
+    pickProgram: 'Какую бухгалтерскую программу вы используете?', lexXl: 'Вы пользуетесь Lexware Office по тарифу XL?',
+    lexXlH: 'Интерфейс (API) для прямой передачи и приём документов по e-mail есть только в тарифе XL.', yes: 'Да', no: 'Нет',
+    lexKey: 'API-ключ Lexware Office', lexKeyH: 'В Lexware Office: Настройки → Расширения → Public API → создать ключ (только администратор, тариф XL). Ключ надёжно хранится в вашем аккаунте eOffis.',
+    lexKeyOpen: 'Открыть страницу Lexware', lexUseMail: 'Без ключа: по e-mail на адрес приёма документов Lexware',
+    lexApp: 'Без тарифа XL документы передаются через приложение Lexware: нажмите «Поделиться» и выберите «Lexware Office». Приложение должно быть установлено на телефоне.',
+    addrDatev: 'Ваш адрес DATEV Upload Mail', addrDatevH: 'Настройка в DATEV Unternehmen online: Belege → Einstellungen → Upload Mail → «Jetzt einrichten». Отправлять можно только с указанного там адреса (PDF, до 20 МБ).',
+    addrSev: 'sevDesk Autobox', addrSevH: 'sevDesk принимает документы на autobox@sevdesk.email – но только с адреса, под которым вы зарегистрированы в sevDesk.',
+    addrLex: 'Адрес приёма документов Lexware Office', addrLexH: 'В Lexware Office: Настройки → Belegempfang. Ваш адрес отправителя должен быть там разрешён.',
+    otherName: 'Название программы', addrOther: 'E-mail для документов', addrOtherH: 'У многих программ есть свой адрес для документов. Обычно он в настройках в разделе «Входящие документы» или «Загрузка».',
+    addrBad: 'Введите корректный адрес e-mail.', saveContinue: 'Сохранить и продолжить',
+    transferTitle: 'Передать в {{to}}', nFiles: 'Готово файлов: {{count}}', preparing: 'Подготовка файлов …',
+    step1Copy: '1. Скопировать адрес', step2Share: '2. Нажмите «Поделиться» → выберите почту → вставьте адрес в «Кому» → отправьте', stepApp: 'Нажмите «Поделиться» → выберите «Lexware Office»',
+    share: 'Поделиться', copyAddr: 'Копировать', noShare: 'Это устройство не может напрямую делиться файлами. Скачайте файлы и приложите их к письму.',
+    noShareApp: 'На ПК: скачайте файл и загрузите его в Lexware Office в разделе Belege → «Beleg hochladen».', download: 'Скачать', openMail: 'Открыть почтовую программу',
+    markSent: 'Я отправил – отметить как переданное', directNow: 'Передать напрямую сейчас', apiBusy: 'Передача в Lexware Office …',
+    apiOk: 'Передано документов в Lexware Office: {{count}}.', apiFail: 'Прямая передача не удалась: {{msg}}', apiKeyBad: 'API-ключ не принят. Проверьте его в настройках.',
+    apiMissing: 'Прямая передача ещё не настроена. Отправьте через «Поделиться».', useShare: 'Вместо этого отправить через «Поделиться»', sentOk: 'Отмечено как переданное.',
+    again: 'Уже передано: {{list}}. Всё равно отправить ещё раз?', againBtn: 'Отправить снова', changeProgram: 'Сменить программу',
+    settingsTitle: 'Бухгалтерская программа', settingsNone: 'Ещё не выбрана – спросим при первой передаче.', keySaved: 'API-ключ сохранён', keyDel: 'Удалить ключ',
+    pcSave: 'Сохранить и на этом ПК', pcPick: 'Выбрать папку на ПК', pcPickH: 'Бухгалтерские документы дополнительно сохраняются в этой папке: год / месяц / вид.',
+    pcFolder: 'Папка на ПК: {{name}}', pcDone: 'Сохранено файлов в папке ПК: {{count}}.', pcDenied: 'Нет доступа к папке на ПК. Выберите её снова.',
+    folderOpenN: 'Документов ещё не передано в {{to}}: {{count}}.', folderOpenNoProg: 'Документов ещё не передано в бухгалтерскую программу: {{count}}.', transferAll: 'Передать все сейчас',
+    advisorOpenN: 'Документов ещё не отправлено налоговому консультанту: {{count}}.', advisorAll: 'Отправить все консультанту',
+    selected: 'Выбрано: {{count}}', selTransfer: 'Передать', selAdvisor: 'Консультанту', selPc: 'На ПК', selClear: 'Снять выбор', selMonth: 'Выбрать месяц',
+    empty: 'Бухгалтерских документов пока нет. Отсканируйте счёт, чек или накладную.',
+    advisorTitle: 'Отправить налоговому консультанту', advisorMail: 'E-mail налогового консультанта', advisorZip: 'ZIP с {{count}} документами (год / месяц / вид) и обзором',
+    advisorTask: 'Отправить документы прошлого месяца налоговому консультанту', advisorOk: 'Отмечено как отправленное консультанту.',
+    linkAsk: 'Относится к: {{kind}} «{{title}}» от {{date}}?', linkYes: 'Да, связать', linkNo: 'Нет', linked: 'Связано с: {{list}}',
+    linkedNote: 'Связанные накладные отправляются вместе со счётом.', unlink: 'Убрать связь',
+    oldInvoices: 'Прежние исходящие счета', oldInvoicesH: 'Только просмотр и скачивание',
+    movedNote: 'Выставление счетов, напоминания об оплате, сверка счёта и экспорт DATEV теперь делает ваша бухгалтерская программа. eOffis сохраняет документы и передаёт их туда.',
+    hubAcc: 'Бухгалтерия', hubAccH: 'Сохранять и передавать документы',
+  },
+  ar: {
+    folderName: 'المحاسبة (فواتير، إيصالات تسليم)', folderTitle: 'المحاسبة',
+    type_rechnung: 'فاتورة', type_quittung: 'إيصال / فاتورة صندوق', type_lieferschein: 'إيصال تسليم', type_kontoauszug: 'كشف حساب', type_gutschrift: 'إشعار دائن',
+    fileTitleAcc: 'تم التعرّف على مستند محاسبي: {{type}}', fileTarget: 'المجلد', fileTransfer: 'نقل إلى برنامج المحاسبة', fileToFolder: 'حفظ في مجلد „المحاسبة“',
+    fileOther: 'ليس مستندًا محاسبيًا؟ اختر مجلدًا آخر', fileSuggest: 'اقتراح: الحفظ في مجلد „{{folder}}“؟', fileYes: 'نعم، احفظ في „{{folder}}“',
+    fileAsk: 'إلى أين ينتمي هذا المستند؟', fileAskH: 'تذهب المستندات المحاسبية إلى مجلد „المحاسبة“ ويمكن نقلها إلى برنامج المحاسبة.',
+    accGroup: 'مستند محاسبي', otherFolders: 'مجلد آخر', filedIn: 'تم الحفظ: {{path}}', fileDone: 'تم الحفظ في {{path}}',
+    transferredTo: 'نُقل إلى {{to}} في {{date}}', notTransferred: 'لم يُنقل', advisorSent: 'أُرسل إلى المستشار الضريبي', pcSaved: 'حُفظ على الحاسوب',
+    prog_lexware: 'Lexware Office', prog_datev: 'DATEV', prog_sevdesk: 'sevDesk', prog_other: 'برنامج آخر',
+    pickProgram: 'أي برنامج محاسبة تستخدم؟', lexXl: 'هل تستخدم Lexware Office بباقة XL؟',
+    lexXlH: 'واجهة النقل المباشر (API) واستلام المستندات بالبريد الإلكتروني متوفرة فقط في باقة XL.', yes: 'نعم', no: 'لا',
+    lexKey: 'مفتاح API لـ Lexware Office', lexKeyH: 'في Lexware Office: الإعدادات ← الإضافات ← Public API ← إنشاء مفتاح (للمسؤول فقط، باقة XL). يُحفظ المفتاح بأمان في حساب eOffis.',
+    lexKeyOpen: 'فتح صفحة Lexware', lexUseMail: 'بدون مفتاح: بالبريد إلى عنوان استلام المستندات في Lexware',
+    lexApp: 'بدون باقة XL تنقل المستندات عبر تطبيق Lexware: اضغط „مشاركة“ واختر „Lexware Office“. يجب أن يكون التطبيق مثبتًا على الهاتف.',
+    addrDatev: 'عنوان DATEV Upload Mail الخاص بك', addrDatevH: 'الإعداد في DATEV Unternehmen online: Belege ← Einstellungen ← Upload Mail ← „Jetzt einrichten“. الإرسال ممكن فقط من عنوان المرسل المسجّل هناك (PDF حتى 20 ميغابايت).',
+    addrSev: 'sevDesk Autobox', addrSevH: 'يستقبل sevDesk المستندات على autobox@sevdesk.email – لكن فقط من البريد الذي سجّلت به في sevDesk.',
+    addrLex: 'عنوان استلام المستندات في Lexware Office', addrLexH: 'في Lexware Office: الإعدادات ← Belegempfang. يجب أن يكون عنوان المرسل لديك مسموحًا هناك.',
+    otherName: 'اسم البرنامج', addrOther: 'البريد الإلكتروني للمستندات', addrOtherH: 'لكثير من البرامج عنوان خاص للمستندات. تجده عادة في الإعدادات تحت „وارد المستندات“ أو „رفع“.',
+    addrBad: 'يرجى إدخال بريد إلكتروني صالح.', saveContinue: 'حفظ ومتابعة',
+    transferTitle: 'نقل إلى {{to}}', nFiles: '{{count}} ملف جاهز', preparing: 'جارٍ تجهيز الملفات …',
+    step1Copy: '1. انسخ العنوان', step2Share: '2. اضغط „مشاركة“ ← اختر تطبيق البريد ← الصق العنوان في „إلى“ ← أرسل', stepApp: 'اضغط „مشاركة“ ← اختر „Lexware Office“',
+    share: 'مشاركة', copyAddr: 'نسخ', noShare: 'لا يستطيع هذا الجهاز مشاركة الملفات مباشرة. نزّل الملفات وأرفقها برسالة بريد.',
+    noShareApp: 'على الحاسوب: نزّل الملف وارفعه في Lexware Office من Belege ← „Beleg hochladen“.', download: 'تنزيل', openMail: 'فتح برنامج البريد',
+    markSent: 'أرسلت – علّم كمنقول', directNow: 'انقل مباشرة الآن', apiBusy: 'جارٍ النقل إلى Lexware Office …',
+    apiOk: 'تم نقل {{count}} مستند إلى Lexware Office.', apiFail: 'فشل النقل المباشر: {{msg}}', apiKeyBad: 'لم يُقبل مفتاح API. يرجى التحقق منه في الإعدادات.',
+    apiMissing: 'النقل المباشر غير مُعدّ بعد. يرجى الإرسال عبر „مشاركة“.', useShare: 'أرسل عبر „مشاركة“ بدلًا من ذلك', sentOk: 'تم التعليم كمنقول.',
+    again: 'نُقل مسبقًا: {{list}}. إرسال مرة أخرى رغم ذلك؟', againBtn: 'إرسال مرة أخرى', changeProgram: 'تغيير البرنامج',
+    settingsTitle: 'برنامج المحاسبة', settingsNone: 'لم يُختر بعد – سيُسأل عند أول نقل.', keySaved: 'تم حفظ مفتاح API', keyDel: 'حذف المفتاح',
+    pcSave: 'احفظ أيضًا على هذا الحاسوب', pcPick: 'اختر مجلدًا على الحاسوب', pcPickH: 'تُحفظ المستندات المحاسبية أيضًا في هذا المجلد: السنة / الشهر / النوع.',
+    pcFolder: 'مجلد الحاسوب: {{name}}', pcDone: 'تم حفظ {{count}} ملف في مجلد الحاسوب.', pcDenied: 'لا يوجد وصول إلى مجلد الحاسوب. يرجى اختياره مرة أخرى.',
+    folderOpenN: '{{count}} مستند لم يُنقل بعد إلى {{to}}.', folderOpenNoProg: '{{count}} مستند لم يُنقل بعد إلى برنامج المحاسبة.', transferAll: 'انقل الكل الآن',
+    advisorOpenN: '{{count}} مستند لم يُرسل بعد إلى المستشار الضريبي.', advisorAll: 'أرسل الكل إلى المستشار',
+    selected: 'تم اختيار {{count}}', selTransfer: 'نقل', selAdvisor: 'إلى المستشار', selPc: 'إلى الحاسوب', selClear: 'إلغاء الاختيار', selMonth: 'اختيار الشهر',
+    empty: 'لا توجد مستندات محاسبية بعد. امسح فاتورة أو إيصالًا أو إيصال تسليم.',
+    advisorTitle: 'إرسال إلى المستشار الضريبي', advisorMail: 'بريد المستشار الضريبي', advisorZip: 'ملف ZIP بـ {{count}} مستند (السنة / الشهر / النوع) مع ملخّص',
+    advisorTask: 'إرسال مستندات الشهر الماضي إلى المستشار الضريبي', advisorOk: 'تم التعليم كمُرسل إلى المستشار.',
+    linkAsk: 'هل ينتمي إلى {{kind}} „{{title}}“ بتاريخ {{date}}؟', linkYes: 'نعم، اربط', linkNo: 'لا', linked: 'مرتبط بـ: {{list}}',
+    linkedNote: 'تُرسل إيصالات التسليم المرتبطة مع الفاتورة.', unlink: 'إلغاء الربط',
+    oldInvoices: 'فواتير صادرة سابقة', oldInvoicesH: 'للعرض والتنزيل فقط',
+    movedNote: 'كتابة الفواتير والتذكيرات ومطابقة الحساب وتصدير DATEV صارت من مهام برنامج المحاسبة. يحفظ eOffis المستندات وينقلها إليه.',
+    hubAcc: 'المحاسبة', hubAccH: 'حفظ المستندات ونقلها',
+  },
+  ro: {
+    folderName: 'Contabilitate (facturi, avize)', folderTitle: 'Contabilitate',
+    type_rechnung: 'Factură', type_quittung: 'Chitanță / bon', type_lieferschein: 'Aviz de livrare', type_kontoauszug: 'Extras de cont', type_gutschrift: 'Notă de credit',
+    fileTitleAcc: 'Document contabil recunoscut: {{type}}', fileTarget: 'Dosar', fileTransfer: 'Transmite în programul de contabilitate', fileToFolder: 'Salvează în dosarul „Contabilitate”',
+    fileOther: 'Nu e document contabil? Alege alt dosar', fileSuggest: 'Propunere: salvezi în dosarul „{{folder}}”?', fileYes: 'Da, salvează în „{{folder}}”',
+    fileAsk: 'Unde aparține acest document?', fileAskH: 'Documentele contabile ajung în dosarul „Contabilitate” și pot fi transmise programului tău de contabilitate.',
+    accGroup: 'Document contabil', otherFolders: 'Alt dosar', filedIn: 'Salvat: {{path}}', fileDone: 'Salvat în {{path}}',
+    transferredTo: 'Transmis la {{to}} pe {{date}}', notTransferred: 'netransmis', advisorSent: 'trimis consultantului fiscal', pcSaved: 'salvat pe PC',
+    prog_lexware: 'Lexware Office', prog_datev: 'DATEV', prog_sevdesk: 'sevDesk', prog_other: 'Alt program',
+    pickProgram: 'Ce program de contabilitate folosești?', lexXl: 'Folosești Lexware Office cu tariful XL?',
+    lexXlH: 'Interfața (API) pentru transmitere directă și primirea documentelor pe e-mail există doar în tariful XL.', yes: 'Da', no: 'Nu',
+    lexKey: 'Cheia API Lexware Office', lexKeyH: 'În Lexware Office: Setări → Extensii → Public API → generează cheia (doar administrator, tarif XL). Cheia este păstrată protejat în contul tău eOffis.',
+    lexKeyOpen: 'Deschide pagina Lexware', lexUseMail: 'Fără cheie: pe e-mail la adresa de primire documente Lexware',
+    lexApp: 'Fără tariful XL transmiți documentele prin aplicația Lexware: atinge „Partajează” și alege „Lexware Office”. Aplicația trebuie să fie instalată pe telefon.',
+    addrDatev: 'Adresa ta DATEV Upload Mail', addrDatevH: 'Configurare în DATEV Unternehmen online: Belege → Einstellungen → Upload Mail → „Jetzt einrichten”. Trimiterea merge doar de la adresa expeditorului înregistrată acolo (PDF, până la 20 MB).',
+    addrSev: 'sevDesk Autobox', addrSevH: 'sevDesk primește documente la autobox@sevdesk.email – dar doar de la adresa de e-mail cu care ești înregistrat în sevDesk.',
+    addrLex: 'Adresa de primire documente Lexware Office', addrLexH: 'În Lexware Office: Setări → Belegempfang. Adresa ta de expeditor trebuie să fie aprobată acolo.',
+    otherName: 'Numele programului', addrOther: 'Adresa de e-mail pentru documente', addrOtherH: 'Multe programe au o adresă proprie pentru documente. De obicei o găsești în setări, la „Documente primite” sau „Încărcare”.',
+    addrBad: 'Introdu o adresă de e-mail validă.', saveContinue: 'Salvează și continuă',
+    transferTitle: 'Transmite la {{to}}', nFiles: '{{count}} fișier(e) pregătite', preparing: 'Se pregătesc fișierele …',
+    step1Copy: '1. Copiază adresa', step2Share: '2. Atinge „Partajează” → alege aplicația de e-mail → lipește adresa la „Către” → trimite', stepApp: 'Atinge „Partajează” → alege „Lexware Office”',
+    share: 'Partajează', copyAddr: 'Copiază', noShare: 'Acest dispozitiv nu poate partaja direct fișiere. Descarcă fișierele și atașează-le la un e-mail.',
+    noShareApp: 'Pe PC: descarcă fișierul și încarcă-l în Lexware Office la Belege → „Beleg hochladen”.', download: 'Descarcă', openMail: 'Deschide programul de e-mail',
+    markSent: 'Am trimis – marchează ca transmis', directNow: 'Transmite direct acum', apiBusy: 'Se transmite la Lexware Office …',
+    apiOk: '{{count}} document(e) transmise la Lexware Office.', apiFail: 'Transmiterea directă a eșuat: {{msg}}', apiKeyBad: 'Cheia API nu a fost acceptată. Verific-o în setări.',
+    apiMissing: 'Transmiterea directă nu este încă configurată. Trimite prin „Partajează”.', useShare: 'Trimite în schimb prin „Partajează”', sentOk: 'Marcat ca transmis.',
+    again: 'Deja transmis: {{list}}. Trimiți totuși din nou?', againBtn: 'Trimite din nou', changeProgram: 'Schimbă programul',
+    settingsTitle: 'Program de contabilitate', settingsNone: 'Încă neales – vei fi întrebat la prima transmitere.', keySaved: 'Cheia API salvată', keyDel: 'Șterge cheia',
+    pcSave: 'Salvează și pe acest PC', pcPick: 'Alege dosarul de pe PC', pcPickH: 'Documentele contabile se salvează în plus în acest dosar: an / lună / tip.',
+    pcFolder: 'Dosar PC: {{name}}', pcDone: '{{count}} fișier(e) salvate în dosarul PC.', pcDenied: 'Nu există acces la dosarul PC. Alege-l din nou.',
+    folderOpenN: '{{count}} document(e) încă netransmise la {{to}}.', folderOpenNoProg: '{{count}} document(e) încă netransmise programului de contabilitate.', transferAll: 'Transmite-le pe toate acum',
+    advisorOpenN: '{{count}} document(e) încă netrimise consultantului fiscal.', advisorAll: 'Trimite-le pe toate consultantului',
+    selected: '{{count}} selectate', selTransfer: 'Transmite', selAdvisor: 'La consultant', selPc: 'Pe PC', selClear: 'Anulează selecția', selMonth: 'Selectează luna',
+    empty: 'Încă nu există documente contabile. Scanează o factură, o chitanță sau un aviz.',
+    advisorTitle: 'Trimite consultantului fiscal', advisorMail: 'E-mailul consultantului fiscal', advisorZip: 'ZIP cu {{count}} documente (an / lună / tip) și rezumat',
+    advisorTask: 'Trimite documentele lunii trecute consultantului fiscal', advisorOk: 'Marcat ca trimis consultantului.',
+    linkAsk: 'Aparține de {{kind}} „{{title}}” din {{date}}?', linkYes: 'Da, leagă', linkNo: 'Nu', linked: 'Legat de: {{list}}',
+    linkedNote: 'Avizele legate se trimit împreună cu factura.', unlink: 'Anulează legătura',
+    oldInvoices: 'Facturi emise anterior', oldInvoicesH: 'Doar pentru vizualizare și descărcare',
+    movedNote: 'Emiterea facturilor, somațiile, potrivirea extraselor și exportul DATEV le face acum programul tău de contabilitate. eOffis salvează documentele și le transmite acolo.',
+    hubAcc: 'Contabilitate', hubAccH: 'Salvează și transmite documente',
+  },
+};
+for (const l of Object.keys(ACC_TEXT)) {
+  I18N[l] = I18N[l] || {};
+  I18N[l].acc = Object.assign({}, I18N[l].acc || {}, ACC_TEXT[l]);
+  I18N[l].docs = Object.assign({}, I18N[l].docs || {}, { folder_buchhaltung: ACC_TEXT[l].folderName });
+}
+
+/* ---------- Belegart, Ablagepfad, Dateiname ---------- */
+function accTypeOf(d) {
+  if (!d) return null;
+  if (ACC_TYPES.includes(d.acc_type)) return d.acc_type;
+  if (d.acc_type === 'none') return null;
+  const s = `${d.doc_type || ''} ${d.title || ''}`.toLowerCase();
+  if (/lieferschein/.test(s)) return 'lieferschein';
+  if (/kontoauszug/.test(s)) return 'kontoauszug';
+  if (/gutschrift/.test(s)) return 'gutschrift';
+  if (/quittung|kassenbon|kassenbeleg|tankbeleg|bewirtungsbeleg/.test(s)) return 'quittung';
+  if (/mahnung|zahlungserinnerung/.test(s)) return null;
+  if (d.is_incoming_invoice || /rechnung/.test(s)) return 'rechnung';
+  return null;
+}
+const accDateOf = (d) => String(d.document_date || d.created_at || todayISO()).slice(0, 10);
+function monthLabel(iso, l) { const [y, m] = iso.split('-').map(Number); try { return new Intl.DateTimeFormat(l === 'ar' ? 'ar-u-nu-latn' : l, { month: 'long' }).format(new Date(y, m - 1, 15)); } catch { return String(m); } }
+/** Ordner auf dem PC: Jahr / „11_November“ / Belegart (immer deutsche Namen, damit der Steuerberater sie versteht) */
+function accDirs(d) {
+  const iso = accDateOf(d), mm = iso.slice(5, 7);
+  return [iso.slice(0, 4), `${mm}_${monthLabel(iso, 'de').replace(/[^\wäöüÄÖÜß]/g, '')}`, ACC_DIR[accTypeOf(d) || 'rechnung']];
+}
+function accPathText(d) {
+  const iso = accDateOf(d);
+  return [t('acc.folderTitle'), iso.slice(0, 4), monthLabel(iso, lang), t('acc.type_' + (accTypeOf(d) || 'rechnung'))].join(' › ');
+}
+function accFileName(d, ext) {
+  const parts = [accDateOf(d)];
+  if (d.sender) parts.push(safeName(String(d.sender).split(/\n/)[0]).slice(0, 40));
+  const no = d.invoice_number || d.document_number;
+  if (no) parts.push(safeName(no).slice(0, 30));
+  if (typeof d.amount_gross === 'number' && isFinite(d.amount_gross)) parts.push(d.amount_gross.toFixed(2).replace('.', ',') + (d.currency && d.currency !== 'EUR' ? d.currency : 'EUR'));
+  if (parts.length === 1) parts.push(safeName(d.title).slice(0, 40));
+  return parts.join('_') + '.' + (ext || (d.file_kind === 'xml' ? 'xml' : 'pdf'));
+}
+const isTransferred = (d) => !!(d && d.transfers && d.transfers.length);
+const lastTransfer = (d) => (isTransferred(d) ? d.transfers[d.transfers.length - 1] : null);
+const accProfile = () => (S.profile && S.profile.acc) || {};
+function progName(P, to) {
+  const k = to || P.program;
+  if (k === 'other' || (k && !ACC_PROGS.includes(k))) return (P && P.name) || (k !== 'other' ? k : t('acc.prog_other'));
+  return k ? t('acc.prog_' + k) : '';
+}
+const accDocs = () => S.docs.filter((d) => d.folder === 'buchhaltung');
+async function docFile(d) {
+  const pages = (await store.where('pages', 'docId', d.id)).sort((a, b) => a.idx - b.idx);
+  if (d.file_kind === 'xml') return new File([(pages[0] && pages[0].xml) || ''], accFileName(d, 'xml'), { type: 'application/xml' });
+  return new File([pagesToPdf(pages)], accFileName(d, 'pdf'), { type: 'application/pdf' });
+}
+/** Rechnungen nehmen ihre verknüpften Lieferscheine mit */
+function withLinked(ids) {
+  const out = [];
+  for (const id of ids) {
+    if (!out.includes(id)) out.push(id);
+    const d = getDoc(id);
+    if (d && accTypeOf(d) === 'rechnung') for (const l of d.linked_ids || []) { const x = getDoc(l); if (x && accTypeOf(x) === 'lieferschein' && !out.includes(l)) out.push(l); }
+  }
+  return out.filter((id) => getDoc(id));
+}
+
+/* ---------- Karte im Beleg: Ablage-Vorschlag, zwei Möglichkeiten, Verknüpfung ---------- */
+function accCards(d, st) {
+  if (!d || d.archived || (st && st.analyzing)) return linkInfo(d);
+  return fileCard(d) + linkCard(d) + linkInfo(d);
+}
+function folderChips(d, exclude) {
+  return `<div class="chips">${FOLDERS.filter((f) => f !== 'buchhaltung' && f !== exclude).map((f) => chip(t('docs.folder_' + f), false, `data-a="fileFolder" data-v="${f}"`)).join('')}</div>`;
+}
+function typeChips(d) {
+  return `<div class="chips">${ACC_TYPES.map((k) => chip(t('acc.type_' + k), accTypeOf(d) === k, `data-a="accSetType" data-v="${k}"`)).join('')}</div>`;
+}
+function fileCard(d) {
+  const type = accTypeOf(d), P = accProfile(), lt = lastTransfer(d);
+  const actions = (filed) => `${lt ? '' : `<button class="btn" data-a="accTransfer">${ico('box')}${esc(t('acc.fileTransfer'))}${P.program ? ` · ${esc(progName(P))}` : ''}</button>`}
+      ${filed ? '' : `<button class="btn ${lt ? '' : 'sec'}" data-a="accFile">${ico('folder')}${esc(t('acc.fileToFolder'))}</button>`}
+      ${filed && pcSupported() && !d.pc_saved_at ? `<button class="btn ghost" data-a="accPc">${ico('folder')}${esc(t('acc.pcSave'))}</button>` : ''}`;
+  if (d.filed_at && d.folder === 'buchhaltung' && type) {
+    return `<div class="card acc-card ${lt ? '' : 'acc-open'}"><p class="small"><b>✓ ${esc(t('acc.filedIn', { path: accPathText(d) }))}</b></p>
+      ${lt ? `<p class="small">✓ ${esc(t('acc.transferredTo', { to: progName(P, lt.to), date: fmtDate(lt.at) }))}</p>` : ''}
+      ${d.advisor_sent_at ? `<p class="small muted">✓ ${esc(t('acc.advisorSent'))} · ${esc(fmtDate(d.advisor_sent_at))}</p>` : ''}
+      ${d.pc_saved_at ? `<p class="small muted">✓ ${esc(t('acc.pcSaved'))}</p>` : ''}
+      ${actions(true)}</div>`;
+  }
+  if (d.filed_at) return '';
+  if (type) {
+    return `<div class="card acc-card acc-open"><h2>${esc(t('acc.fileTitleAcc', { type: t('acc.type_' + type) }))}</h2>
+      <p class="small muted">${esc(t('acc.fileTarget'))}: ${esc(accPathText(d))}</p>
+      ${actions(false)}
+      <details class="small"><summary style="cursor:pointer;font-weight:700">${esc(t('acc.fileOther'))}</summary>${typeChips(d)}${folderChips(d)}</details></div>`;
+  }
+  if (d.analyzed_at && d.folder && d.folder !== 'sonstiges') {
+    const f = t('docs.folder_' + d.folder);
+    return `<div class="card acc-card"><h2>${esc(t('acc.fileSuggest', { folder: f }))}</h2>
+      <button class="btn" data-a="fileFolder" data-v="${esc(d.folder)}">${ico('folder')}${esc(t('acc.fileYes', { folder: f }))}</button>
+      <details class="small"><summary style="cursor:pointer;font-weight:700">${esc(t('acc.otherFolders'))}</summary>
+        <p class="muted small" style="margin-top:8px">${esc(t('acc.accGroup'))}</p>${typeChips(d)}<p class="muted small" style="margin-top:8px">${esc(t('acc.otherFolders'))}</p>${folderChips(d, d.folder)}</details></div>`;
+  }
+  return `<div class="card acc-card"><h2>${esc(t('acc.fileAsk'))}</h2><p class="small muted">${esc(t('acc.fileAskH'))}</p>
+    <p class="small" style="font-weight:700">${esc(t('acc.accGroup'))}</p>${typeChips(d)}
+    <p class="small" style="font-weight:700">${esc(t('acc.otherFolders'))}</p>${folderChips(d)}</div>`;
+}
+/** Lieferschein ↔ Rechnung: gleicher Absender, Nummer genannt oder zeitlich nah */
+function linkCandidate(d) {
+  const type = accTypeOf(d);
+  if (type !== 'rechnung' && type !== 'lieferschein') return null;
+  const other = type === 'rechnung' ? 'lieferschein' : 'rechnung';
+  const no = new Set((d.link_no || []).concat(d.linked_ids || []));
+  const nrm = (v) => String(v || '').replace(/[\s.\-/]/g, '').toLowerCase();
+  const myNums = new Set([d.invoice_number, d.document_number].filter(Boolean).map(nrm));
+  const myRefs = new Set((d.reference_numbers || []).map(nrm).filter((x) => x.length >= 3));
+  const sn = normName((d.sender || '').split(/[\n,]/)[0]);
+  let best = null;
+  for (const x of S.docs) {
+    if (x.id === d.id || x.archived || no.has(x.id) || accTypeOf(x) !== other) continue;
+    if ((x.link_no || []).includes(d.id)) continue;
+    if (other === 'lieferschein' && (x.linked_ids || []).some((l) => l !== d.id && accTypeOf(getDoc(l)) === 'rechnung')) continue;
+    const xs = normName((x.sender || '').split(/[\n,]/)[0]);
+    const sameSender = sn.length >= 4 && xs.length >= 4 && (sn.includes(xs) || xs.includes(sn));
+    const xNums = [x.invoice_number, x.document_number].filter(Boolean).map(nrm), xRefs = (x.reference_numbers || []).map(nrm);
+    const numHit = xNums.some((n) => myRefs.has(n)) || xRefs.some((n) => myNums.has(n) || myRefs.has(n));
+    const gap = Math.abs((fromISO(accDateOf(d)) - fromISO(accDateOf(x))) / 86400000);
+    const score = (numHit ? 3 : 0) + (sameSender && gap <= 60 ? 1 : 0);
+    if (score >= 1 && (sameSender || numHit) && (!best || score > best.score || (score === best.score && gap < best.gap))) best = { x, score, gap };
+  }
+  return best ? best.x : null;
+}
+function linkCard(d) {
+  const x = linkCandidate(d); if (!x) return '';
+  return `<div class="card acc-card"><p><b>${esc(t('acc.linkAsk', { kind: t('acc.type_' + accTypeOf(x)), title: x.title, date: fmtDate(accDateOf(x)) }))}</b></p>
+    <div class="grid2"><button class="btn sm" data-a="accLink" data-v="${x.id}">${esc(t('acc.linkYes'))}</button><button class="btn sm ghost" data-a="accLinkNo" data-v="${x.id}">${esc(t('acc.linkNo'))}</button></div></div>`;
+}
+function linkInfo(d) {
+  const list = ((d && d.linked_ids) || []).map(getDoc).filter(Boolean);
+  if (!list.length) return '';
+  return `<div class="card"><p class="small"><b>🔗 ${esc(t('acc.linked', { list: '' }))}</b></p>
+    ${group(list.map((x) => cell({ icon: 'doc', ic: 'g', title: x.title, sub: t('acc.type_' + (accTypeOf(x) || 'rechnung')) + ' · ' + fmtDate(accDateOf(x)), attrs: `data-go="doc" data-id="${x.id}"` })))}
+    ${accTypeOf(d) === 'rechnung' ? `<p class="muted small">${esc(t('acc.linkedNote'))}</p>` : ''}
+    ${list.map((x) => `<button class="btn sm ghost" data-a="accUnlink" data-v="${x.id}">${esc(t('acc.unlink'))}: ${esc(x.title)}</button>`).join('')}</div>`;
+}
+
+/* ---------- Ablegen ---------- */
+async function accFile(d, type) {
+  const patch = { folder: 'buchhaltung', acc_type: type || accTypeOf(d) || 'rechnung', filed_at: nowIso() };
+  if (d.status === 'saved') Object.assign(patch, { status: 'reviewed', reviewed_at: nowIso() });
+  const saved = await persistDoc(d, patch, t('acc.fileDone', { path: accPathText(Object.assign({}, d, patch)) }));
+  toast(t('acc.fileDone', { path: accPathText(saved) }));
+  await ensureAdvisorTask();
+  if (pcSupported() && (await idbGet('accDir').catch(() => null))) await pcWrite([saved.id], false);
+  return saved;
+}
+async function fileFolder(d, folder) {
+  const patch = { folder, filed_at: nowIso(), acc_type: 'none' };
+  if (d.status === 'saved') Object.assign(patch, { status: 'reviewed', reviewed_at: nowIso() });
+  await persistDoc(d, patch, t('docs.folder_' + folder));
+  toast(t('acc.fileDone', { path: t('docs.folder_' + folder) }));
+}
+
+/* ---------- PC-Ordner (Chrome/Edge am PC: File System Access) ---------- */
+const pcSupported = () => typeof window.showDirectoryPicker === 'function';
+function idb() {
+  return new Promise((res, rej) => { const r = indexedDB.open('eoffis-fs', 1); r.onupgradeneeded = () => r.result.createObjectStore('h'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+}
+async function idbGet(k) { const db = await idb(); return new Promise((res) => { const q = db.transaction('h').objectStore('h').get(k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); }
+async function idbSet(k, v) { const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction('h', 'readwrite'); tx.objectStore('h').put(v, k); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); }); }
+async function pcPick() {
+  const h = await window.showDirectoryPicker({ id: 'eoffis-buchhaltung', mode: 'readwrite' });
+  await idbSet('accDir', h); S.pcName = h.name; return h;
+}
+async function pcHandle(interactive) {
+  let h = await idbGet('accDir').catch(() => null);
+  if (!h) { if (!interactive) return null; h = await pcPick(); }
+  S.pcName = h.name;
+  let p = await h.queryPermission({ mode: 'readwrite' });
+  if (p !== 'granted' && interactive) p = await h.requestPermission({ mode: 'readwrite' });
+  return p === 'granted' ? h : null;
+}
+async function pcWrite(ids, interactive) {
+  let h;
+  try { h = await pcHandle(interactive); } catch (e) { if (e && e.name === 'AbortError') return 0; throw e; }
+  if (!h) { if (interactive) toast(t('acc.pcDenied')); return 0; }
+  let n = 0;
+  for (const id of ids) {
+    const d = getDoc(id); if (!d) continue;
+    let dir = h;
+    for (const part of accDirs(d)) dir = await dir.getDirectoryHandle(part, { create: true });
+    const file = await docFile(d);
+    const fh = await dir.getFileHandle(file.name, { create: true });
+    const w = await fh.createWritable(); await w.write(file); await w.close();
+    await persistDoc(getDoc(id), { pc_saved_at: nowIso() }, t('acc.pcSaved'));
+    n++;
+  }
+  if (n) toast(t('acc.pcDone', { count: n }));
+  return n;
+}
+
+/* ---------- Übertragen an das Buchhaltungsprogramm / an den Steuerberater ---------- */
+let ACC_SECRET = null;
+async function accSecret() {
+  if (ACC_SECRET) return ACC_SECRET;
+  try { ACC_SECRET = (await store.one('meta', 'accsecret')) || { id: 'accsecret' }; } catch { ACC_SECRET = { id: 'accsecret' }; }
+  return ACC_SECRET;
+}
+async function saveAccProfile(patch) {
+  S.profile = Object.assign({}, S.profile, { acc: Object.assign({}, accProfile(), patch) });
+  await store.setProfile(S.profile);
+}
+const accMethod = (P, M) => (M && M.forceShare ? (P.program === 'lexware' && !P.email ? 'app' : 'mail') : P.program === 'lexware' ? (P.xl ? (M && M.forceMail ? 'mail' : 'api') : 'app') : 'mail');
+async function accNextStep(M) {
+  const P = accProfile();
+  if (M.mode === 'advisor') return (S.profile && S.profile.tax_advisor_email) ? 'send' : 'addr';
+  if (!P.program) return 'program';
+  if (P.program === 'lexware' && P.xl === undefined) return 'xl';
+  const m = accMethod(P, M);
+  if (m === 'api' && !(await accSecret()).lexKey) return 'key';
+  if (m === 'mail' && !P.email) return 'addr';
+  return 'send';
+}
+async function accOpen(mode, ids) {
+  ids = mode === 'transfer' ? withLinked(ids) : [...new Set(ids)].filter((id) => getDoc(id));
+  if (!ids.length) return;
+  const list = ids.map(getDoc);
+  const done = list.filter((d) => (mode === 'advisor' ? !!d.advisor_sent_at : isTransferred(d)));
+  if (done.length && !(await ask(t('acc.again', { list: done.slice(0, 3).map((d) => d.title).join(', ') + (done.length > 3 ? ' …' : '') }), t('acc.againBtn')))) return;
+  S.accM = { mode, ids, files: null };
+  S.accM.step = await accNextStep(S.accM);
+  accModal(); accPrepare();
+}
+async function accPrepare() {
+  const M = S.accM; if (!M || M.files || M.preparing) return;
+  M.preparing = true;
+  try {
+    const docs = M.ids.map(getDoc).filter(Boolean);
+    if (M.mode === 'advisor' && docs.length > 1) M.files = [await advisorZip(docs)];
+    else { M.files = []; for (const d of docs) M.files.push(await docFile(d)); }
+  } catch (e) { console.error(e); M.err = t('web.saveFailed', { msg: errText(e) }); }
+  M.preparing = false;
+  if (S.accM === M) accModal();
+}
+async function advisorZip(docs) {
+  const zip = new JSZip();
+  const cellv = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const nf = (n) => (n == null ? '' : Number(n).toFixed(2).replace('.', ','));
+  const rows = [['Nr', 'Belegart', 'Datum', 'Absender', 'Belegnummer', 'Netto', 'USt', 'Brutto', 'Datei', 'Übertragen an', 'SHA-256'].map(cellv).join(';')];
+  const sorted = docs.slice().sort((a, b) => accDateOf(a).localeCompare(accDateOf(b)));
+  for (const [i, d] of sorted.entries()) {
+    const f = await docFile(d); const p = accDirs(d).join('/') + '/' + f.name;
+    zip.file(p, f);
+    const lt = lastTransfer(d);
+    rows.push([i + 1, ACC_DIR[accTypeOf(d) || 'rechnung'], fmtDate(accDateOf(d)), d.sender, d.invoice_number || d.document_number, nf(d.amount_net), nf(d.vat_amount), nf(d.amount_gross), p, lt ? progName(accProfile(), lt.to) : '', d.sha256].map(cellv).join(';'));
+  }
+  zip.file('Uebersicht.csv', '﻿' + rows.join('\r\n'));
+  const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+  const name = (S.profile && S.profile.company_name ? safeName(S.profile.company_name) + '_' : '') + `Belege_${todayISO()}.zip`;
+  return new File([blob], name, { type: 'application/zip' });
+}
+const canShareFiles = (files) => { try { return !!(navigator.share && navigator.canShare && files && files.length && navigator.canShare({ files })); } catch { return false; } };
+function accAddress(M) {
+  if (M.mode === 'advisor') return (S.profile && S.profile.tax_advisor_email) || '';
+  return accProfile().email || '';
+}
+function accModal() {
+  const M = S.accM, layer = $('#layer');
+  if (!M) { layer.innerHTML = ''; return; }
+  const P = accProfile(), n = M.ids.length;
+  const title = M.mode === 'advisor' ? t('acc.advisorTitle') : P.program ? t('acc.transferTitle', { to: progName(P) }) : t('acc.fileTransfer');
+  let body = '';
+  if (M.step === 'program') {
+    body = `<p><b>${esc(t('acc.pickProgram'))}</b></p>${group(ACC_PROGS.map((k) => cell({ icon: 'box', ic: 'g', title: t('acc.prog_' + k), attrs: `data-a="accProg" data-v="${k}"` })))}`;
+  } else if (M.step === 'xl') {
+    body = `<p><b>${esc(t('acc.lexXl'))}</b></p><p class="small muted">${esc(t('acc.lexXlH'))}</p>
+      <div class="grid2"><button class="btn" data-a="accXl" data-v="1">${esc(t('acc.yes'))}</button><button class="btn sec" data-a="accXl" data-v="0">${esc(t('acc.no'))}</button></div>`;
+  } else if (M.step === 'key') {
+    body = `${field('acc_key', t('acc.lexKey'), '', 'type="password" autocomplete="off" spellcheck="false"')}
+      <p class="small muted">${esc(t('acc.lexKeyH'))}</p>
+      <a class="btn sm ghost" href="${LEX_KEY_URL}" target="_blank" rel="noopener">${esc(t('acc.lexKeyOpen'))} ↗</a>
+      <button class="btn" data-a="accKeySave">${esc(t('acc.saveContinue'))}</button>
+      <button class="btn sm ghost" data-a="accUseMail">${esc(t('acc.lexUseMail'))}</button>`;
+  } else if (M.step === 'addr') {
+    const isAdv = M.mode === 'advisor', prog = P.program;
+    const label = isAdv ? t('acc.advisorMail') : prog === 'datev' ? t('acc.addrDatev') : prog === 'sevdesk' ? t('acc.addrSev') : prog === 'lexware' ? t('acc.addrLex') : t('acc.addrOther');
+    const help = isAdv ? '' : prog === 'datev' ? t('acc.addrDatevH') : prog === 'sevdesk' ? t('acc.addrSevH') : prog === 'lexware' ? t('acc.addrLexH') : t('acc.addrOtherH');
+    const pre = isAdv ? (S.profile && S.profile.tax_advisor_email) || '' : P.email || (prog === 'sevdesk' ? SEVDESK_MAIL : '');
+    body = `${!isAdv && prog === 'other' ? field('acc_name', t('acc.otherName'), P.name || '') : ''}
+      ${field('acc_addr', label, pre, 'type="email" autocomplete="off" inputmode="email"')}
+      ${help ? `<p class="small muted">${esc(help)}</p>` : ''}
+      <button class="btn" data-a="accAddrSave">${esc(t('acc.saveContinue'))}</button>`;
+  } else {
+    const method = M.mode === 'advisor' ? 'mail' : accMethod(P, M);
+    const files = M.files, ready = !!(files && files.length), share = ready && canShareFiles(files), addr = accAddress(M);
+    const list = ready ? `<p class="small">✓ ${esc(t('acc.nFiles', { count: files.length }))}</p><ul class="small muted" style="margin:0;padding-inline-start:20px;overflow-wrap:anywhere">${files.slice(0, 6).map((f) => `<li>${esc(f.name)}</li>`).join('')}${files.length > 6 ? '<li>…</li>' : ''}</ul>`
+      : `<div class="row"><div class="spin" style="width:22px;height:22px;margin:0"></div><span class="small muted">${esc(t('acc.preparing'))}</span></div>`;
+    const subject = M.mode === 'advisor' ? `Belege ${(S.profile && S.profile.company_name) || ''}`.trim() : n === 1 ? (getDoc(M.ids[0]) || {}).title || 'Beleg' : `${n} Belege`;
+    const mailto = `mailto:${encodeURIComponent(addr).replace(/%40/g, '@')}?subject=${encodeURIComponent(subject)}`;
+    if (method === 'api') {
+      body = `${list}${M.busy ? busyCard(M.busy) : `<button class="btn" data-a="accApi" ${ready ? '' : 'disabled'}>${ico('box')}${esc(t('acc.directNow'))}</button>`}
+        <button class="btn sm ghost" data-a="accForceShare">${esc(t('acc.useShare'))}</button>`;
+    } else if (method === 'app') {
+      body = `${list}<p class="small">${esc(t('acc.lexApp'))}</p>
+        ${share ? `<p class="small"><b>${esc(t('acc.stepApp'))}</b></p><button class="btn" data-a="accShare">${ico('box')}${esc(t('acc.share'))}</button>`
+          : ready ? `<p class="small muted">${esc(t('acc.noShareApp'))}</p><button class="btn sec" data-a="accDl">${esc(t('acc.download'))}</button><button class="btn ghost" data-a="accMark">${esc(t('acc.markSent'))}</button>` : ''}`;
+    } else {
+      body = `${list}<p class="small"><b>${esc(t('acc.step1Copy'))}</b></p>
+        <div class="row" style="flex-wrap:nowrap"><span class="mono grow" style="overflow-wrap:anywhere;background:var(--paper);padding:8px;border-radius:8px">${esc(addr)}</span><button class="btn sm sec" data-a="accCopyAddr">${esc(t('acc.copyAddr'))}</button></div>
+        ${share ? `<p class="small"><b>${esc(t('acc.step2Share'))}</b></p><button class="btn" data-a="accShare">${ico('box')}${esc(t('acc.share'))}</button>`
+          : ready ? `<p class="small muted">${esc(t('acc.noShare'))}</p><div class="grid2"><button class="btn sec" data-a="accDl">${esc(t('acc.download'))}</button><a class="btn ghost" href="${esc(mailto)}">${esc(t('acc.openMail'))}</a></div>
+            <button class="btn ghost" data-a="accMark">${esc(t('acc.markSent'))}</button>` : ''}`;
+    }
+  }
+  if (M.mode !== 'advisor' && M.step !== 'program') body += `<button class="btn sm ghost" data-a="accChange">${esc(t('acc.changeProgram'))}</button>`;
+  layer.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="accMT"><div class="card">
+    <h2 id="accMT">${esc(title)}</h2>${M.mode === 'advisor' && M.step === 'send' && n > 1 ? `<p class="small muted">${esc(t('acc.advisorZip', { count: n }))}</p>` : ''}
+    ${M.err ? `<div class="banner warn">${esc(M.err)}</div>` : ''}${body}
+    <button class="btn ghost" data-a="accClose">${esc(t('common.close'))}</button></div></div>`;
+}
+async function accMarkSent(via) {
+  const M = S.accM, P = accProfile();
+  for (const id of M.ids) {
+    const d = getDoc(id); if (!d) continue;
+    const patch = M.mode === 'advisor' ? { advisor_sent_at: nowIso() }
+      : { transfers: (d.transfers || []).concat([{ to: P.program === 'other' ? P.name || 'other' : P.program, via, at: nowIso() }]) };
+    if (d.folder !== 'buchhaltung' || !d.filed_at) Object.assign(patch, { folder: 'buchhaltung', acc_type: accTypeOf(d) || 'rechnung', filed_at: d.filed_at || nowIso() });
+    if (d.status === 'saved') Object.assign(patch, { status: 'reviewed', reviewed_at: nowIso() });
+    await persistDoc(d, patch, M.mode === 'advisor' ? t('acc.advisorSent') : t('acc.transferredTo', { to: progName(P), date: fmtDate(todayISO()) }));
+  }
+  const count = M.ids.length;
+  S.accM = null; S.accSel = new Set(); accModal();
+  await ensureAdvisorTask();
+  toast(M.mode === 'advisor' ? t('acc.advisorOk') : via === 'api' ? t('acc.apiOk', { count }) : t('acc.sentOk'));
+  render();
+}
+const blobToB64 = (blob) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
+async function accApi() {
+  const M = S.accM; if (!M || !M.files) return;
+  const host = window.EOFFIS_HOST;
+  if (!host || !host.fn) { M.err = t('acc.apiMissing'); return accModal(); }
+  M.busy = t('acc.apiBusy'); M.err = null; accModal();
+  try {
+    const key = (await accSecret()).lexKey;
+    for (const f of M.files) {
+      const r = await host.fn('eoffis-api', { action: 'lexware_upload', key, filename: f.name, mime: f.type, data: await blobToB64(f) });
+      if (!r || !r.id) throw Object.assign(new Error((r && r.error) || '–'), { code: r && r.code });
+    }
+    M.busy = null;
+    await accMarkSent('api');
+  } catch (e) {
+    console.warn(e); M.busy = null;
+    M.err = e.code === 'bad_key' ? t('acc.apiKeyBad') : e.code === 'not_configured' ? t('acc.apiMissing') : t('acc.apiFail', { msg: errText(e) });
+    accModal();
+  }
+}
+
+/* ---------- Monatliche Erinnerung: Belege an den Steuerberater ---------- */
+function next5th() { const n = new Date(); const d = new Date(n.getFullYear(), n.getMonth() + (n.getDate() > 5 ? 1 : 0), 5); return toISO(d); }
+async function ensureAdvisorTask() {
+  if (!accDocs().length) return;
+  if (S.tasks.some((x) => x.template_key === 'acc-advisor' && x.status !== 'done')) return;
+  const rec = { id: uid(), title: t('acc.advisorTask'), kind: 'tax', due_date: next5th(), status: 'open', priority: 'normal', notes: '', recur: 'monthly', template_key: 'acc-advisor', created_at: nowIso(), version: 0 };
+  try { const saved = await saveVersioned('tasks', rec); S.tasks.push(saved); } catch (e) { console.warn(e); }
+}
+
+/* ---------- Ordner „Buchhaltung“: Jahr → Monat → Belegart, Auswahl, Sammelaktionen ---------- */
+VIEWS.acc = {
+  title: () => t('acc.folderTitle'),
+  render() {
+    const P = accProfile(), docs = accDocs().filter((d) => !d.archived || S.filters.f === 'archived');
+    const sel = S.accSel || (S.accSel = new Set());
+    for (const id of [...sel]) if (!getDoc(id)) sel.delete(id);
+    const open = docs.filter((d) => !isTransferred(d)), adv = docs.filter((d) => !d.advisor_sent_at);
+    const head = `${open.length ? `<div class="card acc-open"><p><b>${esc(P.program ? t('acc.folderOpenN', { count: open.length, to: progName(P) }) : t('acc.folderOpenNoProg', { count: open.length }))}</b></p>
+        <button class="btn" data-a="accTransferAll">${ico('box')}${esc(t('acc.transferAll'))}</button></div>` : ''}
+      ${adv.length ? `<div class="row between"><span class="small muted">${esc(t('acc.advisorOpenN', { count: adv.length }))}</span><button class="btn sm ghost" data-a="accAdvAll">${esc(t('acc.advisorAll'))}</button></div>` : ''}
+      ${pcSupported() ? `<div class="row between"><span class="small muted">${esc(S.pcName ? t('acc.pcFolder', { name: S.pcName }) : t('acc.pcPickH'))}</span><button class="btn sm ghost" data-a="accPcPick">${esc(t('acc.pcPick'))}</button></div>` : ''}`;
+    const bar = sel.size ? `<div class="card acc-bar"><p class="small"><b>${esc(t('acc.selected', { count: sel.size }))}</b></p>
+      <div class="grid2"><button class="btn sm" data-a="accSelTransfer">${esc(t('acc.selTransfer'))}</button><button class="btn sm sec" data-a="accSelAdv">${esc(t('acc.selAdvisor'))}</button></div>
+      <div class="grid2">${pcSupported() ? `<button class="btn sm ghost" data-a="accSelPc">${esc(t('acc.selPc'))}</button>` : '<span></span>'}<button class="btn sm ghost" data-a="accSelClear">${esc(t('acc.selClear'))}</button></div></div>` : '';
+    if (!docs.length) return `<div class="empty">${ico('invoice')}<p class="muted">${esc(t('acc.empty'))}</p><button class="btn" data-go="scan">${ico('camera')}${esc(t('web.uiScanHero'))}</button></div>`;
+    const tree = {};
+    for (const d of docs) { const iso = accDateOf(d), y = iso.slice(0, 4), m = iso.slice(0, 7); ((tree[y] = tree[y] || {})[m] = tree[y][m] || []).push(d); }
+    const years = Object.keys(tree).sort().reverse();
+    const row = (d) => { const lt = lastTransfer(d);
+      return `<div class="cell acc-row ${lt ? '' : 'acc-open'}" style="padding-inline-start:8px"><input type="checkbox" data-a="accSel" data-v="${d.id}" ${sel.has(d.id) ? 'checked' : ''} aria-label="${esc(d.title)}" style="width:22px;height:22px;accent-color:var(--accent);flex:none">
+        <button class="cx" data-go="doc" data-id="${d.id}" style="border:0;background:none;text-align:start;cursor:pointer;padding:0"><span class="ct">${esc(d.title)}</span>
+        <span class="cs" style="display:block">${esc([fmtDate(accDateOf(d)), lt ? '✓ ' + progName(P, lt.to) : '● ' + t('acc.notTransferred'), d.advisor_sent_at ? '✓ ' + t('acc.selAdvisor') : '', (d.linked_ids || []).length ? '🔗' : ''].filter(Boolean).join(' · '))}</span></button>
+        <span class="cr">${d.amount_gross != null ? esc(money(d.amount_gross, d.currency)) : ''}</span></div>`; };
+    const body = years.map((y, yi) => `<details class="acc-y" ${yi === 0 ? 'open' : ''}><summary class="sec-h" style="cursor:pointer">${esc(y)} · ${tree[y] ? Object.values(tree[y]).reduce((s, l) => s + l.length, 0) : 0}</summary>
+      ${Object.keys(tree[y]).sort().reverse().map((m, mi) => { const list = tree[y][m]; const nOpen = list.filter((d) => !isTransferred(d)).length;
+        return `<details class="card acc-m" ${yi === 0 && mi === 0 ? 'open' : ''}><summary style="cursor:pointer;font-weight:700" class="row between"><span>${esc(monthLabel(m + '-15', lang))} ${esc(y)}</span><span class="small ${nOpen ? '' : 'muted'}" style="${nOpen ? 'color:var(--warn)' : ''}">${nOpen ? '● ' + nOpen : '✓'} / ${list.length}</span></summary>
+          <button class="btn sm ghost" data-a="accSelMonth" data-v="${m}">${esc(t('acc.selMonth'))}</button>
+          ${ACC_TYPES.map((ty) => { const l2 = list.filter((d) => (accTypeOf(d) || 'rechnung') === ty).sort((a, b) => accDateOf(b).localeCompare(accDateOf(a)));
+            return l2.length ? `<div class="sec-h">${esc(t('acc.type_' + ty))} · ${l2.length}</div><div class="group">${l2.map(row).join('')}</div>` : ''; }).join('')}</details>`; }).join('')}</details>`).join('');
+    return head + bar + body;
+  },
+  after() { if (pcSupported() && !S.pcName) idbGet('accDir').then((h) => { if (h && S.view === 'acc') { S.pcName = h.name; render(); } }).catch(() => {}); },
+};
+
+/* ---------- Einstellungen: Buchhaltungsprogramm ---------- */
+function accSettingsHtml() {
+  const P = accProfile(), sec = ACC_SECRET || {};
+  const desc = !P.program ? t('acc.settingsNone') : [progName(P), P.program === 'lexware' ? (P.xl ? 'XL' : t('acc.no') + ' XL') : '', P.email || '', P.program === 'lexware' && P.xl && sec.lexKey ? '✓ ' + t('acc.keySaved') : ''].filter(Boolean).join(' · ');
+  return `<div class="sec-h">${esc(t('acc.settingsTitle'))}</div><div class="card">
+    <p class="small">${esc(desc)}</p>
+    <div class="chips">${ACC_PROGS.map((k) => chip(t('acc.prog_' + k), P.program === k, `data-a="accSetProg" data-v="${k}"`)).join('')}</div>
+    ${P.program === 'lexware' ? `<div class="chips">${chip('XL: ' + t('acc.yes'), P.xl === true, 'data-a="accSetXl" data-v="1"')}${chip('XL: ' + t('acc.no'), P.xl === false, 'data-a="accSetXl" data-v="0"')}</div>` : ''}
+    ${P.program && P.program !== 'lexware' || (P.program === 'lexware' && P.xl) ? `${P.program === 'other' ? field('acc_s_name', t('acc.otherName'), P.name || '') : ''}${field('acc_s_addr', P.program === 'datev' ? t('acc.addrDatev') : P.program === 'sevdesk' ? t('acc.addrSev') : P.program === 'lexware' ? t('acc.addrLex') : t('acc.addrOther'), P.email || (P.program === 'sevdesk' ? SEVDESK_MAIL : ''), 'type="email" inputmode="email"')}` : ''}
+    ${P.program === 'lexware' && P.xl ? `${field('acc_s_key', t('acc.lexKey') + (sec.lexKey ? ' (✓)' : ''), '', 'type="password" autocomplete="off" placeholder="••••••"')}${sec.lexKey ? `<button class="btn sm ghost" data-a="accKeyDel">${esc(t('acc.keyDel'))}</button>` : ''}` : ''}
+    ${P.program ? `<button class="btn sec" data-a="accSettingsSave">${esc(t('common.save'))}</button>` : ''}
+    ${pcSupported() ? `<p class="small muted">${esc(S.pcName ? t('acc.pcFolder', { name: S.pcName }) : t('acc.pcPickH'))}</p><button class="btn sm ghost" data-a="accPcPick">${esc(t('acc.pcPick'))}</button>` : ''}</div>`;
+}
+const validMail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || '').trim());
+
+/* ---------- Aktionen ---------- */
+document.addEventListener('click', async (e) => {
+  const a = e.target.closest('[data-a]');
+  if (!a || a.disabled || !/^(acc|file)/.test(a.dataset.a)) return;
+  const A = a.dataset.a, v = a.dataset.v, d = getDoc(S.params.id), M = S.accM;
+  switch (A) {
+    case 'accTransfer': return guard(() => accOpen('transfer', [d.id]));
+    case 'accFile': return guard(async () => { await accFile(d); render(); });
+    case 'accSetType': return guard(async () => { await persistDoc(d, { acc_type: v, folder: 'buchhaltung' }, t('acc.type_' + v)); render(); });
+    case 'fileFolder': return guard(async () => { await fileFolder(d, v); render(); });
+    case 'accPc': return guard(async () => { await pcWrite([d.id], true); render(); });
+    case 'accPcPick': return guard(async () => { try { await pcPick(); render(); } catch (err) { if (!err || err.name !== 'AbortError') throw err; } });
+    case 'accLink': return guard(async () => { const x = getDoc(v); await persistDoc(d, { linked_ids: [...new Set((d.linked_ids || []).concat([v]))] }); await persistDoc(x, { linked_ids: [...new Set((x.linked_ids || []).concat([d.id]))] }); render(); });
+    case 'accLinkNo': return guard(async () => { await persistDoc(d, { link_no: [...new Set((d.link_no || []).concat([v]))] }); render(); });
+    case 'accUnlink': return guard(async () => { const x = getDoc(v); await persistDoc(d, { linked_ids: (d.linked_ids || []).filter((k) => k !== v), link_no: [...new Set((d.link_no || []).concat([v]))] }); if (x) await persistDoc(x, { linked_ids: (x.linked_ids || []).filter((k) => k !== d.id), link_no: [...new Set((x.link_no || []).concat([d.id]))] }); render(); });
+    case 'accSel': { const s = S.accSel || (S.accSel = new Set()); a.checked ? s.add(v) : s.delete(v); return render(); }
+    case 'accSelMonth': { const s = S.accSel || (S.accSel = new Set()); accDocs().filter((x) => accDateOf(x).slice(0, 7) === v && !x.archived).forEach((x) => s.add(x.id)); return render(); }
+    case 'accSelClear': S.accSel = new Set(); return render();
+    case 'accSelTransfer': return guard(() => accOpen('transfer', [...S.accSel]));
+    case 'accSelAdv': return guard(() => accOpen('advisor', [...S.accSel]));
+    case 'accSelPc': return guard(async () => { await pcWrite([...S.accSel], true); render(); });
+    case 'accTransferAll': return guard(() => accOpen('transfer', accDocs().filter((x) => !x.archived && !isTransferred(x)).map((x) => x.id)));
+    case 'accAdvAll': return guard(() => accOpen('advisor', accDocs().filter((x) => !x.archived && !x.advisor_sent_at).map((x) => x.id)));
+    case 'accClose': S.accM = null; return accModal();
+    case 'accProg': return guard(async () => { const keep = accProfile(); await saveAccProfile(v === 'lexware' ? { program: v, xl: undefined, email: keep.program === v ? keep.email || '' : '', name: '' } : v === keep.program ? {} : { program: v, email: '', xl: undefined, name: '' }); M.forceMail = false; M.forceShare = false; M.step = await accNextStep(M); accModal(); });
+    case 'accXl': return guard(async () => { await saveAccProfile({ xl: v === '1' }); M.step = await accNextStep(M); accModal(); });
+    case 'accUseMail': M.forceMail = true; M.step = await accNextStep(M); return accModal();
+    case 'accForceShare': M.forceShare = true; M.err = null; M.step = await accNextStep(M); return accModal();
+    case 'accKeySave': { const k = val('acc_key').trim(); if (k.length < 10) { $('#acc_key').focus(); return toast(t('acc.lexKey')); }
+      return guard(async () => { const sec = await accSecret(); sec.lexKey = k; await store.put('meta', sec); M.step = await accNextStep(M); accModal(); }); }
+    case 'accAddrSave': { const addr = val('acc_addr').trim(); if (!validMail(addr)) { toast(t('acc.addrBad')); $('#acc_addr').focus(); return; }
+      return guard(async () => {
+        if (M.mode === 'advisor') { S.profile = Object.assign({}, S.profile, { tax_advisor_email: addr }); await store.setProfile(S.profile); }
+        else await saveAccProfile(Object.assign({ email: addr }, accProfile().program === 'other' ? { name: val('acc_name').trim() } : {}));
+        M.step = await accNextStep(M); accModal();
+      }); }
+    case 'accChange': M.step = 'program'; M.err = null; return accModal();
+    case 'accCopyAddr': return copy(accAddress(M));
+    case 'accShare': {
+      if (!M || !M.files) return;
+      const P = accProfile();
+      try {
+        await navigator.share({ files: M.files, title: M.files.length === 1 ? M.files[0].name : `${M.files.length} Belege`, text: M.mode === 'advisor' ? `Belege ${(S.profile && S.profile.company_name) || ''}` : '' });
+        return guard(() => accMarkSent(M.mode === 'advisor' ? 'mail' : accMethod(P, M)));
+      } catch (err) { if (err && err.name === 'AbortError') return; M.err = errText(err); return accModal(); }
+    }
+    case 'accDl': if (!M || !M.files) return; for (const f of M.files) await saveFile(f.name, f); return;
+    case 'accMark': return guard(() => accMarkSent(M.mode === 'advisor' ? 'mail' : accMethod(accProfile(), M)));
+    case 'accApi': return accApi();
+    case 'accSetProg': return guard(async () => { const P = accProfile(); if (P.program !== v) await saveAccProfile({ program: v, email: '', xl: v === 'lexware' ? P.xl : undefined, name: '' }); render(); });
+    case 'accSetXl': return guard(async () => { await saveAccProfile({ xl: v === '1' }); render(); });
+    case 'accSettingsSave': return guard(async () => {
+      const P = accProfile(), patch = {};
+      if ($('#acc_s_addr')) { const addr = val('acc_s_addr').trim(); if (addr && !validMail(addr)) return toast(t('acc.addrBad')); patch.email = addr; }
+      if ($('#acc_s_name')) patch.name = val('acc_s_name').trim();
+      await saveAccProfile(patch);
+      const k = $('#acc_s_key') ? val('acc_s_key').trim() : '';
+      if (k) { const sec = await accSecret(); sec.lexKey = k; await store.put('meta', sec); }
+      toast(t('web.toastSaved')); render(); void P;
+    });
+    case 'accKeyDel': return guard(async () => { const sec = await accSecret(); delete sec.lexKey; await store.put('meta', sec); render(); });
   }
 });
 
