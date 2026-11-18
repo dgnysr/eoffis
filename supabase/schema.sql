@@ -326,3 +326,98 @@ grant select, insert, update, delete on public.subscriptions, public.secrets, pu
 --   select net.http_post(url := 'https://PROJEKT.supabase.co/functions/v1/eoffis-api',
 --     headers := jsonb_build_object('content-type', 'application/json', 'x-cron-secret', 'GEHEIM'),
 --     body := '{"action":"daily"}'::jsonb, timeout_milliseconds := 300000) $$);
+
+-- ===== Betriebs-Akte (18.11.2026): Branchen und Pflichtenlisten =====
+-- Kundendaten der neuen Module liegen wie alles andere in kv (eigene Sammlungen, keine neue Tabelle nötig):
+--   …/<Bereich>/assets/<ID>  Inventar (aus Rechnungen)   …/<Bereich>/duties/<ID>  Pflichten des Betriebs (aus Vorlage oder eigene)
+--   …/<Bereich>/offers/<ID>  Angebote/Vergleiche         weitere Sammlungen jederzeit ohne Datenbank-Änderung möglich
+-- Die Vorlagen unten sind für alle Konten lesbar; ändern kann sie nur der Betreiber (SQL Editor / Service-Schlüssel).
+create table if not exists public.industries (
+  key text primary key check (key ~ '^[a-z0-9_]{2,40}$'),
+  parent text references public.industries(key) on delete set null, -- z. B. juwelier → einzelhandel: erbt dessen Pflichten
+  names jsonb not null default '{}'::jsonb,   -- {"de":"Juwelier","tr":"Kuyumcu",…}; fehlende Sprache → de
+  aliases text[] not null default '{}',       -- Suchwörter („Goldschmied“, „Uhren“)
+  sort int not null default 100,
+  active boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+create table if not exists public.duty_templates (
+  id text primary key check (id ~ '^[a-z0-9_.-]{2,80}$'),
+  industry text not null references public.industries(key) on delete cascade, -- 'alle' = gilt für jeden Betrieb
+  title jsonb not null,                        -- {"de":"…", …}
+  description jsonb not null default '{}'::jsonb,
+  category text not null default 'sonstiges',  -- frei wählbar (hygiene, personal, steuer, geraete, versicherung …)
+  recur text not null default 'yearly' check (recur in ('once', 'monthly', 'quarterly', 'halfyearly', 'yearly', 'every_n_months', 'event')),
+  every_months int check (every_months is null or every_months between 1 and 240),
+  due_rule jsonb not null default '{}'::jsonb, -- z. B. {"month":3,"day":31} oder {"after":"hire","days":14}; App wertet aus
+  proof text,                                  -- welcher Nachweis gescannt werden soll
+  legal_ref text, source_url text,
+  conditions jsonb not null default '{}'::jsonb, -- {"min_employees":1,"facts":{"has_vehicle":true}}; leer = immer
+  priority int not null default 2 check (priority between 1 and 3),
+  version int not null default 1,              -- erhöhen bei inhaltlicher Änderung → App kann Kunden auf Neuerung hinweisen
+  active boolean not null default true,
+  sort int not null default 100,
+  updated_at timestamptz not null default now()
+);
+create index if not exists duty_templates_industry on public.duty_templates (industry) where active;
+alter table public.industries enable row level security;
+alter table public.duty_templates enable row level security;
+drop policy if exists "Branchen lesen" on public.industries;
+create policy "Branchen lesen" on public.industries for select to anon, authenticated using (active);
+drop policy if exists "Pflichtvorlagen lesen" on public.duty_templates;
+create policy "Pflichtvorlagen lesen" on public.duty_templates for select to authenticated using (active);
+revoke insert, update, delete on public.industries, public.duty_templates from anon, authenticated;
+grant select on public.industries to anon, authenticated;
+grant select on public.duty_templates to authenticated;
+grant select, insert, update, delete on public.industries, public.duty_templates to service_role;
+
+-- Passende Pflichtenliste: allgemeine Pflichten + gewählte Branchen + deren Oberbranchen.
+-- p_facts = Angaben des Betriebs (z. B. {"employees":3,"has_vehicle":true}); „applies“ = Bedingungen erfüllt
+-- (die App zeigt nicht zutreffende als „trifft evtl. zu“, damit nichts unbemerkt wegfällt). Unbekannte Branchen → nur allgemeine.
+create or replace function public.duty_list(p_industries text[], p_facts jsonb default '{}'::jsonb)
+returns table (id text, industry text, title jsonb, description jsonb, category text, recur text, every_months int,
+  due_rule jsonb, proof text, legal_ref text, source_url text, priority int, version int, applies boolean)
+language sql stable security invoker set search_path = public as $$
+  with recursive chain(key, depth) as (
+    select i.key, 0 from public.industries i where i.key = any(coalesce(p_industries, '{}')) or i.key = 'alle'
+    union
+    select i.parent, c.depth + 1 from chain c join public.industries i on i.key = c.key where i.parent is not null and c.depth < 10
+  )
+  select t.id, t.industry, t.title, t.description, t.category, t.recur, t.every_months, t.due_rule, t.proof, t.legal_ref,
+    t.source_url, t.priority, t.version,
+    (coalesce((t.conditions->>'min_employees')::int, 0) <= coalesce((p_facts->>'employees')::numeric, 0)
+      and coalesce(p_facts, '{}'::jsonb) @> coalesce(t.conditions->'facts', '{}'::jsonb)) as applies
+  from public.duty_templates t
+  where t.active and t.industry in (select key from chain)
+  order by t.priority, t.sort, t.id
+$$;
+revoke all on function public.duty_list(text[], jsonb) from public, anon;
+grant execute on function public.duty_list(text[], jsonb) to authenticated;
+
+-- Branche fehlt? Kunde kann sie vorschlagen (nur eigene Vorschläge sichtbar; Betreiber sieht alle im Dashboard)
+create table if not exists public.industry_requests (
+  id bigint generated always as identity primary key,
+  owner uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  name text not null check (char_length(name) between 2 and 120),
+  note text check (note is null or char_length(note) <= 2000),
+  created_at timestamptz not null default now()
+);
+alter table public.industry_requests enable row level security;
+drop policy if exists "eigene Vorschläge" on public.industry_requests;
+create policy "eigene Vorschläge" on public.industry_requests for all to authenticated
+  using (owner = (select auth.uid())) with check (owner = (select auth.uid()));
+revoke update on public.industry_requests from anon, authenticated;
+grant select, insert, delete on public.industry_requests to authenticated;
+
+-- Grundbestand Branchen (Inhalte der Pflichtenlisten folgen mit Modul B; Namen ergänzbar)
+insert into public.industries (key, parent, names, aliases, sort) values
+  ('alle', null, '{"de":"Alle Betriebe"}', '{}', 0),
+  ('einzelhandel', null, '{"de":"Einzelhandel"}', '{Laden,Geschäft,Shop}', 10),
+  ('juwelier', 'einzelhandel', '{"de":"Juwelier"}', '{Goldschmied,Uhren,Schmuck,Edelmetall}', 11),
+  ('immobilienmakler', null, '{"de":"Immobilienmakler"}', '{Makler,Immobilien,Hausverwaltung}', 20),
+  ('friseur', null, '{"de":"Friseur"}', '{Friseurin,Barbier,Barber,Salon,Kosmetik}', 30),
+  ('gastro', null, '{"de":"Gastronomie"}', '{Restaurant,Café,Imbiss,Bar,Kiosk}', 40),
+  ('handwerk', null, '{"de":"Handwerk"}', '{Handwerker,Werkstatt,Bau}', 50),
+  ('reinigung', null, '{"de":"Reinigung"}', '{Gebäudereinigung,Putzdienst}', 60),
+  ('sonstiges', null, '{"de":"Sonstiges"}', '{}', 999)
+on conflict (key) do nothing;

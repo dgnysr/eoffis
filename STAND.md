@@ -1,6 +1,6 @@
 # Entwicklungsstand eOffis Web-App
 
-**Aktueller Stand:** Stand 08.11.2026 – Paket 1–3, Design 2026, Sicherheit (Paket A) und Probezeit (Paket B) (Branch `main`) – live unter https://dgnysr.github.io/eoffis/
+**Aktueller Stand:** Stand 18.11.2026 – Paket 1–3, Design 2026, Sicherheit (A), Probezeit (B), Server-Einrichtung per Knopfdruck + Datenbank für die Betriebs-Akte (Branch `main`) – live unter https://dgnysr.github.io/eoffis/
 
 ## Weiterentwickeln (Ausgangspunkt für jede neue Sitzung)
 1. Repository `dgnysr/eoffis` klonen – **immer auf dem neuesten Stand von `main` aufbauen**.
@@ -14,9 +14,14 @@ Backend: Supabase-Projekt `lqohxlxemawzrtdqjnci` (`supabase/schema.sql`), KI-Fun
 
 ## Nächste Sitzung (ab 09.11.2026, am PC)
 Ergebnisse vom 08.11.2026 (Plattformen, Kosten, Personal, offene Schritte): `material/Auswertung_2026-11-08.md`.
-Als Erstes: Einrichtung in Supabase/Cloudflare/Brevo laut `README.md` → „Einrichtung Sicherheit & Probezeit“ (schema.sql und KI-Funktion direkt nacheinander).
+Server: GitHub → Actions → „Server einrichten“ → *Run workflow* (ersetzt die Handarbeit aus `README.md`; offen bleiben nur Brevo-SMTP, Turnstile, Apple/Google).
 
 ## Änderungsverlauf
+### 18.11.2026 – Server-Einrichtung per Knopfdruck, Datenbank für die Betriebs-Akte
+- **Workflow „Server einrichten“** (`.github/workflows/server.yml` → `scripts/supabase_setup.mjs`): weckt das Supabase-Projekt auf, spielt `schema.sql` ein, setzt fehlende Geheimschlüssel (EOFFIS_ENC_KEY nur einmal, Push-Schlüsselpaar, CRON_SECRET bei jedem Lauf neu, SITE_URL), stellt KI-Funktion (`aiFunction` aus `config.js`) und `eoffis-api` ohne „Verify JWT“ bereit, stellt die Anmeldung ein (anonym testen, Konto sichern, Rücksprung-Adresse), plant den täglichen Lauf (06:00 UTC, `daily`), aktiviert Push und Freigabe-Links in `config.js` und prüft danach alles wie ein Kunde (anonym anmelden, speichern, Branchen, Pflichtenliste, Probezeit, beide Funktionen, Datentrennung, Zeitplan; Testkonto wird gelöscht). Beliebig oft ausführbar; läuft bei Änderungen unter `supabase/` automatisch.
+  Einmalig nötig: Repository-Secret `SUPABASE_ACCESS_TOKEN`. Optional: Secrets `ANTHROPIC_API_KEY`, `BREVO_API_KEY`, `MAIL_FROM`, Variable `OPERATOR_EMAIL` (eigenes Konto dauerhaft frei).
+- **Betriebs-Akte in der Datenbank:** Inventar, Pflichten und Angebote als kv-Sammlungen `assets/`, `duties/`, `offers/` (keine Tabellenänderung nötig, weitere Sammlungen jederzeit). Neue Tabellen `industries` (offen erweiterbar, Oberbranche wird geerbt, z. B. Juwelier → Einzelhandel, Suchwörter, Namen je Sprache), `duty_templates` (Pflichtvorlagen je Branche oder `alle`, Wiederholung, Fälligkeitsregel, Nachweis, Rechtsgrundlage, Bedingungen wie Mitarbeiterzahl/Merkmale, Version), Funktion `duty_list(Branchen[], Angaben)` (mehrere Branchen gleichzeitig, unbekannte Branche → nur allgemeine Pflichten, `applies` statt Weglassen), `industry_requests` (Kunde schlägt fehlende Branche vor). Vorlagen nur für den Betreiber änderbar.
+- Tests: `tests/db/test.sql` +15, neu `tests/setup_test.js` (19, Einrichtung gegen nachgebildete Supabase). Gesamtlauf: 248 Prüfungen, 0 Fehler.
 ### 08.11.2026 – Paket A (Sicherheit) und Paket B (Probezeit)
 - **KI-Zähler** nur noch über den Service-Schlüssel (`ai_take(p_owner, …)`, `ai_give_back(p_owner)`); Nutzer können ihn nicht mehr zurücksetzen.
 - **KI-Anfragen begrenzt:** höchstens 20 Seiten, 100.000 Zeichen, 1,5 MB je Seitenbild, nur JPEG/PNG, Antwort ≤ 6.000 Token; nach Ablauf der Probezeit keine KI.

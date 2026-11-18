@@ -176,4 +176,46 @@ reset role;
 
 do $$ begin perform t_ok('Konto A unverändert', (select count(*) from kv where owner = '11111111-1111-1111-1111-111111111111') = 2 and (select data->>'company_name' from kv where path = 'data/users/11111111-1111-1111-1111-111111111111/main') = 'Firma A'); end $$;
 \pset tuples_only on
+
+-- ===== Betriebs-Akte: Branchen und Pflichtenlisten =====
+reset role;
+insert into public.duty_templates (id, industry, title, conditions) values
+  ('t.alle', 'alle', '{"de":"Allgemein"}', '{}'),
+  ('t.ehandel', 'einzelhandel', '{"de":"Handel"}', '{}'),
+  ('t.juwel', 'juwelier', '{"de":"Juwelier"}', '{"min_employees":1}'),
+  ('t.friseur', 'friseur', '{"de":"Friseur"}', '{"facts":{"has_vehicle":true}}'),
+  ('t.aus', 'alle', '{"de":"Inaktiv"}', '{}');
+update public.duty_templates set active = false where id = 't.aus';
+set role authenticated; set request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+do $$ begin
+  perform t_ok('Branchenliste lesbar', (select count(*) from industries) >= 9);
+  perform t_ok('Juwelier erbt Einzelhandel + Allgemein', (select array_agg(id order by id) from duty_list(array['juwelier'])) = array['t.alle','t.ehandel','t.juwel']);
+  perform t_ok('Unbekannte Branche → nur Allgemein', (select array_agg(id) from duty_list(array['raumfahrt_x'])) = array['t.alle']);
+  perform t_ok('Leere Auswahl → nur Allgemein', (select array_agg(id) from duty_list(null)) = array['t.alle']);
+  perform t_ok('Mehrere Branchen gleichzeitig', (select count(*) from duty_list(array['juwelier','friseur','juwelier'])) = 4);
+  perform t_ok('Bedingung Mitarbeiter nicht erfüllt', not (select applies from duty_list(array['juwelier']) where id = 't.juwel'));
+  perform t_ok('Bedingung Mitarbeiter erfüllt', (select applies from duty_list(array['juwelier'], '{"employees":2}') where id = 't.juwel'));
+  perform t_ok('Bedingung Merkmal', (select applies from duty_list(array['friseur'], '{"has_vehicle":true}') where id = 't.friseur')
+    and not (select applies from duty_list(array['friseur'], '{"has_vehicle":false}') where id = 't.friseur'));
+  perform t_ok('Inaktive Vorlage unsichtbar', not exists (select 1 from duty_templates where id = 't.aus'));
+end $$;
+do $$ begin insert into duty_templates (id, industry, title) values ('t.hack', 'alle', '{"de":"x"}'); perform t_ok('Nutzer schreibt Pflichtvorlage', false, 'kein Fehler');
+exception when others then perform t_ok('Nutzer schreibt Pflichtvorlage', sqlerrm ~ 'permission denied', sqlerrm); end $$;
+do $$ declare n int; begin update industries set names = '{}'; get diagnostics n = row_count; perform t_ok('Nutzer ändert Branche', n = 0, n::text);
+exception when others then perform t_ok('Nutzer ändert Branche', true, sqlerrm); end $$;
+do $$ begin
+  insert into industry_requests (name) values ('Tätowierstudio');
+  perform t_ok('Branche vorschlagen', (select count(*) from industry_requests) = 1);
+end $$;
+set request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+do $$ begin perform t_ok('Fremde Vorschläge unsichtbar', (select count(*) from industry_requests) = 0);
+  insert into kv (path, data) values ('data/users/11111111-1111-1111-1111-111111111111/main/assets/a1', '{"name":"Kasse","template_id":null}');
+  insert into kv (path, data) values ('data/users/11111111-1111-1111-1111-111111111111/main/duties/d1', '{"template_id":"t.alle","template_version":1}');
+  insert into kv (path, data) values ('data/users/11111111-1111-1111-1111-111111111111/main/offers/o1', '{"title":"Strom"}');
+  perform t_ok('Inventar/Pflichten/Angebote in kv', (select count(*) from kv where parent like '%/main/assets' or parent like '%/main/duties' or parent like '%/main/offers') = 3);
+end $$;
+set role anon; set request.jwt.claim.sub = '';
+do $$ begin perform duty_list(array['alle']); perform t_ok('Ohne Anmeldung keine Pflichtenliste', false, 'kein Fehler');
+exception when others then perform t_ok('Ohne Anmeldung keine Pflichtenliste', sqlerrm ~ 'permission denied', sqlerrm); end $$;
+reset role;
 select (case when ok then 'PASS ' else 'FAIL ' end) || name || case when ok then '' else ' – ' || coalesce(info, '') end from public.t_results order by n;
