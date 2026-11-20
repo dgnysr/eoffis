@@ -218,4 +218,9 @@ set role anon; set request.jwt.claim.sub = '';
 do $$ begin perform duty_list(array['alle']); perform t_ok('Ohne Anmeldung keine Pflichtenliste', false, 'kein Fehler');
 exception when others then perform t_ok('Ohne Anmeldung keine Pflichtenliste', sqlerrm ~ 'permission denied', sqlerrm); end $$;
 reset role;
+-- Konto löschen (täglicher Lauf / Selbsttest): Unterlagen werden mitgelöscht, kein Fremdschlüssel-Fehler im Speicherzähler
+reset role;
+do $$ begin delete from auth.users where id = '11111111-1111-1111-1111-111111111111';
+  perform t_ok('Konto mit Unterlagen löschen', not exists (select 1 from kv where owner = '11111111-1111-1111-1111-111111111111') and not exists (select 1 from kv_usage where owner = '11111111-1111-1111-1111-111111111111'));
+exception when others then perform t_ok('Konto mit Unterlagen löschen', false, sqlerrm); end $$;
 select (case when ok then 'PASS ' else 'FAIL ' end) || name || case when ok then '' else ' – ' || coalesce(info, '') end from public.t_results order by n;

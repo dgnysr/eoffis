@@ -261,8 +261,12 @@ create or replace function public.kv_account_bytes() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare o uuid; delta bigint; total bigint; lim bigint;
 begin
-  if tg_op = 'DELETE' then o := old.owner; delta := -(octet_length(old.path) + octet_length(old.data::text));
-  elsif tg_op = 'INSERT' then o := new.owner; delta := octet_length(new.path) + octet_length(new.data::text);
+  if tg_op = 'DELETE' then
+    -- nur abziehen, nie neu anlegen: beim Löschen eines Kontos ist der Nutzer schon weg (sonst Fremdschlüssel-Fehler)
+    update public.kv_usage set bytes = greatest(bytes - (octet_length(old.path) + octet_length(old.data::text)), 0) where owner = old.owner;
+    return null;
+  end if;
+  if tg_op = 'INSERT' then o := new.owner; delta := octet_length(new.path) + octet_length(new.data::text);
   else o := new.owner; delta := (octet_length(new.path) + octet_length(new.data::text)) - (octet_length(old.path) + octet_length(old.data::text));
   end if;
   if delta = 0 then return null; end if;
