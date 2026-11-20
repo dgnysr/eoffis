@@ -84,10 +84,13 @@ const wd = fs.mkdtempSync(path.join(os.tmpdir(), 'eoffis-fn-'));
 const fns = { [aiName]: 'ai', 'eoffis-api': 'eoffis-api' };
 fs.mkdirSync(path.join(wd, 'supabase'), { recursive: true });
 fs.writeFileSync(path.join(wd, 'supabase/config.toml'), `project_id = "eoffis"\n` + Object.keys(fns).map((n) => `[functions.${n}]\nverify_jwt = false\n`).join(''));
+const cliBin = env.SUPABASE_CLI || 'supabase';
+let cliHelp = ''; try { cliHelp = execFileSync(cliBin, ['functions', 'deploy', '--help'], { encoding: 'utf8' }); } catch (e) { cliHelp = String(e.stdout || ''); }
+const yes = /--yes\b/.test(cliHelp) ? ['--yes'] : []; // neuere CLI-Versionen fragen sonst nach und brechen ab
 for (const [name, src] of Object.entries(fns)) {
   fs.mkdirSync(path.join(wd, 'supabase/functions', name), { recursive: true });
   fs.copyFileSync(path.join(root, 'supabase/functions', src, 'index.ts'), path.join(wd, 'supabase/functions', name, 'index.ts'));
-  execFileSync(env.SUPABASE_CLI || 'supabase', ['functions', 'deploy', name, '--project-ref', ref, '--no-verify-jwt', '--use-api', '--workdir', wd], { stdio: 'inherit', env: { ...env, SUPABASE_ACCESS_TOKEN: TOKEN } });
+  execFileSync(cliBin, ['functions', 'deploy', name, '--project-ref', ref, '--no-verify-jwt', '--use-api', '--workdir', wd, ...yes], { stdio: 'inherit', env: { ...env, SUPABASE_ACCESS_TOKEN: TOKEN } });
   log('Funktion bereitgestellt: ' + name);
 }
 

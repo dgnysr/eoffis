@@ -43,7 +43,7 @@ async function run(name, opts, check) {
     .replace(/supabaseUrl:\s*'[^']*'/, "supabaseUrl: 'https://ref.supabase.co'").replace(/supabaseAnonKey:\s*'[^']*'/, "supabaseAnonKey: 'ANON'")
     .replace(/vapidPublicKey:\s*'[^']*'/, `vapidPublicKey: '${opts.vapid || ''}'`));
   const cli = path.join(dir, 'cli.sh'), cliLog = path.join(dir, 'cli.log');
-  fs.writeFileSync(cli, `#!/bin/sh\necho "$@" >> ${cliLog}\nwd=$(echo "$@" | sed 's/.*--workdir //')\ncat "$wd/supabase/config.toml" > ${dir}/toml\nls "$wd/supabase/functions/$3/index.ts" >/dev/null || exit 3\n`);
+  fs.writeFileSync(cli, `#!/bin/sh\n[ "$3" = "--help" ] && { echo "  -y, --yes  confirm"; exit 0; }\necho "$@" >> ${cliLog}\nwd=$(echo "$@" | sed 's/.*--workdir \\([^ ]*\\).*/\\1/')\ncat "$wd/supabase/config.toml" > ${dir}/toml\nls "$wd/supabase/functions/$3/index.ts" >/dev/null || exit 3\n`);
   fs.chmodSync(cli, 0o755);
   const env = { ...process.env, SUPABASE_ACCESS_TOKEN: opts.token || 'good', SUPABASE_API: m.url, PROJECT_URL: m.url, CONFIG_PATH: cfg, SUPABASE_CLI: cli, SETUP_WAIT_MS: '10', ...(opts.env || {}) };
   delete env.GITHUB_STEP_SUMMARY;
@@ -70,7 +70,7 @@ async function run(name, opts, check) {
     const cs = r.st.sql.find((q) => q.startsWith('create extension if not exists pg_cron')) || '';
     ok('Täglicher Lauf mit passendem Kennwort und Adresse', cron && cs.includes(cron.value) && cs.includes('/functions/v1/eoffis-api') && cs.includes('"action":"daily"'));
     ok('Täglicher Lauf wird ersetzt, nicht verdoppelt', /cron\.unschedule[\s\S]*cron\.schedule/.test(cs));
-    ok('Beide Funktionen ohne „Verify JWT“ bereitgestellt', /deploy smooth-processor --project-ref ref --no-verify-jwt/.test(r.cli) && /deploy eoffis-api --project-ref ref --no-verify-jwt/.test(r.cli) && /\[functions\.smooth-processor\]\nverify_jwt = false/.test(r.toml));
+    ok('Beide Funktionen ohne „Verify JWT“ bereitgestellt (ohne Rückfrage)', /--yes/.test(r.cli) && /deploy smooth-processor --project-ref ref --no-verify-jwt/.test(r.cli) && /deploy eoffis-api --project-ref ref --no-verify-jwt/.test(r.cli) && /\[functions\.smooth-processor\]\nverify_jwt = false/.test(r.toml));
     ok('Anmeldung: Testen ohne E-Mail, Konto sichern, Rücksprung', r.st.auth && r.st.auth.external_anonymous_users_enabled && r.st.auth.security_manual_linking_enabled && r.st.auth.site_url === 'https://dgnysr.github.io/eoffis/');
     ok('Kundenprüfung bestanden und Testkonto gelöscht', /Prüfung: 9\/9/.test(r.o) && r.st.sql.some((q) => q.includes(`delete from auth.users where id = '${UID}'`)), r.o);
     ok('Fehlende optionale Schlüssel werden genannt', /Noch offen.*BREVO_API_KEY/.test(r.o));
