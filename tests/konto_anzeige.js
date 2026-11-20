@@ -16,7 +16,7 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     const modal = async () => ((await p.textContent('#layer')) || '').replace(/\s+/g, ' ');
     await loadApp(p, null, { stayOnLogin: true }); await p.click('#eoA-demo');
     await p.waitForFunction(() => typeof S !== 'undefined' && S.loaded && S.view === 'setup');
-    await check('Einrichtung: noch keine Kontoanzeige (nichts lenkt ab)', async () => assert(!(await p.$('#top .accbtn')), 'Knopf schon da'));
+    await check('Schon bei der Einrichtung sichtbar: Testzugang', async () => { await p.waitForSelector('#top .accbtn.anon'); });
     await p.fill('#s_name', 'Friseur Test'); await p.click('[data-a=setupSave]'); await p.waitForFunction(() => S.view === 'home' && S.acct);
     await check('Testzugang oben rechts deutlich als „Testzugang“ erkennbar', async () => {
       await p.waitForSelector('#top .accbtn.anon'); assert(/Testzugang/.test(await p.textContent('#top .accbtn')), 'Beschriftung');
@@ -27,7 +27,7 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     });
     await check('Tipp darauf: Erklärung, „Konto sichern“ und Anmelden mit bestehendem Konto', async () => {
       await p.click('#top .accbtn'); const m = await modal();
-      assert(/ohne Konto/.test(m) && /Testzugang bis/.test(m), m.slice(0, 160));
+      assert(/ohne Konto/.test(m) && /Probezeit bis/.test(m), m.slice(0, 160));
       assert(await p.$('#layer [data-a=ktoSecure]') && /schon ein Konto/.test(m), 'Knöpfe fehlen');
     });
     await check('„Konto sichern“ öffnet die E-Mail-Eingabe', async () => {
@@ -57,7 +57,7 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     });
     await check('Tipp darauf: „Angemeldet als …“ und Abmelden ohne Warnung', async () => {
       await p.click('#top .accbtn'); const m = ((await p.textContent('#layer')) || '');
-      assert(/Angemeldet als test@example.com/.test(m) && !(await p.$('#layer [data-a=ktoSecure]')), m.slice(0, 160));
+      assert(/Angemeldet als test@example.com/.test(m) && /Konto gesichert/.test(m) && !(await p.$('#layer [data-a=ktoSecure]')), m.slice(0, 160));
       await p.click('#layer [data-a=logout]'); await p.waitForSelector('#eoA-login', { timeout: 15000 });
     });
     await check('Keine Fehler im Browser (eigenes Konto)', async () => assert(!errors.length, errors.join(' | ').slice(0, 200)));

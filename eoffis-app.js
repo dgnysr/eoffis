@@ -3879,7 +3879,7 @@ const KTO_TEXT = {
     aboF1: 'Post scannen, verstehen und ablegen (200 MB Speicher)', aboF2: 'KI-Auswertung von Briefen, Rechnungen und Fristen', aboF3: 'Erinnerungen per Push und E-Mail',
     aboReq: 'Abo anfragen', aboSoon: 'Die Online-Bezahlung wird gerade eingerichtet. Tippe auf „Abo anfragen“ – wir schalten dein Konto frei und melden uns.',
     aboDone: 'Danke! Deine Anfrage ist eingegangen. Wir melden uns in Kürze.', aboActive: 'Dein Abo ist aktiv. Danke!', aboNeedMail: 'Damit wir dich erreichen können, sichere bitte zuerst dein Konto mit deiner E-Mail-Adresse.',
-    stTrial: 'Testzugang bis {{date}}', stRo: 'Nur lesen bis {{date}} – danach werden die Unterlagen gelöscht', stActive: 'Abo aktiv',
+    stTrial: 'Kostenlose Probezeit bis {{date}}', stRo: 'Nur lesen bis {{date}} – danach werden die Unterlagen gelöscht', stActive: 'Abo aktiv',
     storage: 'Speicher: {{used}} von {{max}} MB', anonAccount: 'Testzugang ohne E-Mail', pending: 'Bestätigung ausstehend: {{mail}}',
     roTitle: 'Nur noch lesen', roText: 'Dein Testzeitraum ist abgelaufen. Ansehen und Herunterladen geht weiter bis {{date}}. Neues scannen und auswerten kannst du mit einem Abo.',
     roAi: 'Dein Testzeitraum ist abgelaufen. KI-Auswertungen gibt es wieder mit einem Abo.',
@@ -4194,12 +4194,12 @@ document.addEventListener('click', async (e) => {
 
 /* ---------- Kontoanzeige oben rechts (20.11.2026): Testzugang oder eigenes Konto auf einen Blick, Abmelden mit Schutz ---------- */
 const KTO_ACC = {
-  de: { accTest: 'Testzugang', accTitle: 'Dein Konto', accAnon: 'Du nutzt eOffis ohne Konto (Testzugang nur auf diesem Gerät). Sichere dein Konto mit deiner E-Mail-Adresse, damit deine Unterlagen nicht verloren gehen.', accMail: 'Angemeldet als {{mail}}', accWarn: 'Achtung: Dein Testzugang ist nicht gesichert. Nach dem Abmelden kommst du nicht mehr an deine Unterlagen. Wirklich abmelden?', accYes: 'Trotzdem abmelden', accLogin: 'Ich habe schon ein Konto – anmelden' },
-  tr: { accTest: 'Deneme', accTitle: 'Hesabın', accAnon: 'eOffis’i hesapsız kullanıyorsun (deneme yalnızca bu cihazda). Belgelerin kaybolmasın diye hesabını e-posta adresinle güvenceye al.', accMail: '{{mail}} olarak giriş yapıldı', accWarn: 'Dikkat: Deneme erişimin güvencede değil. Çıkış yaptıktan sonra belgelerine ulaşamazsın. Gerçekten çıkış yapılsın mı?', accYes: 'Yine de çıkış yap', accLogin: 'Zaten hesabım var – giriş yap' },
-  pl: { accTest: 'Test', accTitle: 'Twoje konto', accAnon: 'Korzystasz z eOffis bez konta (test tylko na tym urządzeniu). Zabezpiecz konto adresem e-mail, aby nie stracić dokumentów.', accMail: 'Zalogowano jako {{mail}}', accWarn: 'Uwaga: Twój dostęp testowy nie jest zabezpieczony. Po wylogowaniu stracisz dostęp do dokumentów. Na pewno wylogować?', accYes: 'Mimo to wyloguj', accLogin: 'Mam już konto – zaloguj' },
-  ru: { accTest: 'Тест', accTitle: 'Ваш аккаунт', accAnon: 'Вы пользуетесь eOffis без аккаунта (тест только на этом устройстве). Сохраните аккаунт с e-mail, чтобы не потерять документы.', accMail: 'Вход выполнен: {{mail}}', accWarn: 'Внимание: тестовый доступ не сохранён. После выхода документы будут недоступны. Всё равно выйти?', accYes: 'Всё равно выйти', accLogin: 'У меня уже есть аккаунт – войти' },
-  ar: { accTest: 'تجربة', accTitle: 'حسابك', accAnon: 'أنت تستخدم eOffis بدون حساب (تجربة على هذا الجهاز فقط). احفظ حسابك ببريدك الإلكتروني حتى لا تضيع مستنداتك.', accMail: 'تم تسجيل الدخول باسم {{mail}}', accWarn: 'تنبيه: وصولك التجريبي غير محفوظ. بعد تسجيل الخروج لن تصل إلى مستنداتك. هل تريد الخروج فعلًا؟', accYes: 'الخروج رغم ذلك', accLogin: 'لدي حساب بالفعل – تسجيل الدخول' },
-  ro: { accTest: 'Test', accTitle: 'Contul tău', accAnon: 'Folosești eOffis fără cont (test doar pe acest dispozitiv). Asigură-ți contul cu adresa de e-mail ca să nu pierzi documentele.', accMail: 'Conectat ca {{mail}}', accWarn: 'Atenție: accesul de test nu este asigurat. După deconectare nu mai ajungi la documente. Sigur te deconectezi?', accYes: 'Deconectează oricum', accLogin: 'Am deja cont – conectare' },
+  de: { accTest: 'Testzugang', accTitle: 'Dein Konto', accAnon: 'Du nutzt eOffis ohne Konto (Testzugang nur auf diesem Gerät). Sichere dein Konto mit deiner E-Mail-Adresse, damit deine Unterlagen nicht verloren gehen.', accMail: 'Angemeldet als {{mail}}', accWarn: 'Achtung: Dein Testzugang ist nicht gesichert. Nach dem Abmelden kommst du nicht mehr an deine Unterlagen. Wirklich abmelden?', accYes: 'Trotzdem abmelden', accLogin: 'Ich habe schon ein Konto – anmelden', accSafe: '✓ Konto gesichert – deine Unterlagen sind mit deiner E-Mail-Adresse verbunden.' },
+  tr: { accTest: 'Deneme', accTitle: 'Hesabın', accAnon: 'eOffis’i hesapsız kullanıyorsun (deneme yalnızca bu cihazda). Belgelerin kaybolmasın diye hesabını e-posta adresinle güvenceye al.', accMail: '{{mail}} olarak giriş yapıldı', accWarn: 'Dikkat: Deneme erişimin güvencede değil. Çıkış yaptıktan sonra belgelerine ulaşamazsın. Gerçekten çıkış yapılsın mı?', accYes: 'Yine de çıkış yap', accLogin: 'Zaten hesabım var – giriş yap', accSafe: '✓ Hesap güvende – belgelerin e-posta adresine bağlı.' },
+  pl: { accTest: 'Test', accTitle: 'Twoje konto', accAnon: 'Korzystasz z eOffis bez konta (test tylko na tym urządzeniu). Zabezpiecz konto adresem e-mail, aby nie stracić dokumentów.', accMail: 'Zalogowano jako {{mail}}', accWarn: 'Uwaga: Twój dostęp testowy nie jest zabezpieczony. Po wylogowaniu stracisz dostęp do dokumentów. Na pewno wylogować?', accYes: 'Mimo to wyloguj', accLogin: 'Mam już konto – zaloguj', accSafe: '✓ Konto zabezpieczone – dokumenty są powiązane z Twoim adresem e-mail.' },
+  ru: { accTest: 'Тест', accTitle: 'Ваш аккаунт', accAnon: 'Вы пользуетесь eOffis без аккаунта (тест только на этом устройстве). Сохраните аккаунт с e-mail, чтобы не потерять документы.', accMail: 'Вход выполнен: {{mail}}', accWarn: 'Внимание: тестовый доступ не сохранён. После выхода документы будут недоступны. Всё равно выйти?', accYes: 'Всё равно выйти', accLogin: 'У меня уже есть аккаунт – войти', accSafe: '✓ Аккаунт сохранён – документы привязаны к вашему e-mail.' },
+  ar: { accTest: 'تجربة', accTitle: 'حسابك', accAnon: 'أنت تستخدم eOffis بدون حساب (تجربة على هذا الجهاز فقط). احفظ حسابك ببريدك الإلكتروني حتى لا تضيع مستنداتك.', accMail: 'تم تسجيل الدخول باسم {{mail}}', accWarn: 'تنبيه: وصولك التجريبي غير محفوظ. بعد تسجيل الخروج لن تصل إلى مستنداتك. هل تريد الخروج فعلًا؟', accYes: 'الخروج رغم ذلك', accLogin: 'لدي حساب بالفعل – تسجيل الدخول', accSafe: '✓ الحساب محفوظ – مستنداتك مرتبطة ببريدك الإلكتروني.' },
+  ro: { accTest: 'Test', accTitle: 'Contul tău', accAnon: 'Folosești eOffis fără cont (test doar pe acest dispozitiv). Asigură-ți contul cu adresa de e-mail ca să nu pierzi documentele.', accMail: 'Conectat ca {{mail}}', accWarn: 'Atenție: accesul de test nu este asigurat. După deconectare nu mai ajungi la documente. Sigur te deconectezi?', accYes: 'Deconectează oricum', accLogin: 'Am deja cont – conectare', accSafe: '✓ Cont asigurat – documentele sunt legate de adresa ta de e-mail.' },
 };
 for (const l of Object.keys(KTO_ACC)) { I18N[l] = I18N[l] || {}; I18N[l].kto = Object.assign({}, I18N[l].kto || {}, KTO_ACC[l]); }
 const KTO_USER_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>';
@@ -4208,7 +4208,7 @@ const KTO_USER_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidde
   renderTop = function () {
     const r = origTop.apply(this, arguments);
     const H = KH(), top = $('#top');
-    if (!H || !top || !S.loaded || S.view === 'setup') return r;
+    if (!H || !top || !S.loaded) return r;
     const anon = ktoAnon(), mail = H.email() || '';
     const label = anon ? t('kto.accTest') : (mail.split('@')[0] || t('web.account'));
     const btn = `<button class="accbtn ${anon ? 'anon' : 'ok'}" data-a="ktoAccount" aria-label="${esc(t('kto.accTitle'))}: ${esc(anon ? t('kto.accTest') : mail)}">${KTO_USER_SVG}<span class="an">${esc(label)}</span></button>`;
@@ -4223,6 +4223,7 @@ function ktoAccount() {
   const st = A.state === 'active' ? t('kto.stActive') : A.state === 'readonly' || A.state === 'expired' ? t('kto.stRo', { date: fmtDate(A.delete_at) }) : A.trial_end ? t('kto.stTrial', { date: fmtDate(A.trial_end) }) : '';
   showModal(`<h2>${esc(t('kto.accTitle'))}</h2>
     <p>${esc(anon ? t('kto.accAnon') : t('kto.accMail', { mail: H.email() || '' }))}</p>
+    ${!anon ? `<p class="small">${esc(t('kto.accSafe'))}</p>` : ''}
     ${pend ? `<p class="small">${esc(t('kto.pending', { mail: pend }))}</p>` : ''}
     ${st ? `<p class="small muted">${esc(st)}</p>` : ''}
     ${anon ? `<button class="btn" data-a="ktoSecure">${esc(t('kto.secure'))}</button>` : ''}

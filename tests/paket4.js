@@ -101,7 +101,7 @@ const OHNE_FRIST = Object.assign({}, BRIEF, { title: 'Info-Schreiben', dates: []
     db.account.day = 30; await ev(() => kontoRefresh()); await home();
     assert(/Dein Testzugang endet in 5 Tagen/.test(await text()), 'Hinweis fehlt: ' + (await text()).slice(0, 160));
     await p.click('.kto-b [data-go=abo]'); await p.waitForFunction(() => S.view === 'abo');
-    const tx = await text(); assert(/eOffis Abo/.test(await p.textContent('#top')) && /Abo anfragen/.test(tx) && /Testzugang bis/.test(tx), 'Abo-Seite: ' + tx.slice(0, 400));
+    const tx = await text(); assert(/eOffis Abo/.test(await p.textContent('#top')) && /Abo anfragen/.test(tx) && /Probezeit bis/.test(tx), 'Abo-Seite: ' + tx.slice(0, 400));
     await p.click('[data-a=ktoAbo]'); await p.waitForSelector('#kto_mail');
     assert(/zuerst dein Konto/.test(await modal()) && db.aboRequests === 0, 'ohne E-Mail keine Abo-Anfrage erwartet');
     await closeLayer(); db.account.day = undefined; await ev(() => kontoRefresh());
