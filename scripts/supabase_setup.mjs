@@ -55,9 +55,10 @@ for (let i = 0; proj.status !== 'ACTIVE_HEALTHY'; i++) {
 await sql(fs.readFileSync(path.join(root, 'supabase/schema.sql'), 'utf8'));
 log('Datenbank: schema.sql eingespielt');
 if (env.OPERATOR_EMAIL) {
+  await sql(`insert into public.operators (email) values (lower(${lit(env.OPERATOR_EMAIL)})) on conflict do nothing`);
   const r = await sql(`insert into public.subscriptions (owner, status) select id, 'active' from auth.users where lower(email) = lower(${lit(env.OPERATOR_EMAIL)})
     on conflict (owner) do update set status = 'active' returning owner`);
-  log(Array.isArray(r) && r.length ? 'Betreiber-Konto dauerhaft freigeschaltet' : 'Hinweis: zu OPERATOR_EMAIL gibt es noch kein Konto – nach der ersten Anmeldung erneut ausführen');
+  log(Array.isArray(r) && r.length ? 'Betreiber-Konto dauerhaft freigeschaltet' : 'Betreiber-Adresse vorgemerkt: wird beim Anlegen des Kontos automatisch freigeschaltet');
 }
 function lit(s) { return "'" + String(s).replace(/'/g, "''") + "'"; }
 

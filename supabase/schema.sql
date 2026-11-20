@@ -425,3 +425,23 @@ insert into public.industries (key, parent, names, aliases, sort) values
   ('reinigung', null, '{"de":"Reinigung"}', '{Gebäudereinigung,Putzdienst}', 60),
   ('sonstiges', null, '{"de":"Sonstiges"}', '{}', 999)
 on conflict (key) do nothing;
+
+-- ===== Betreiber-Konten (20.11.2026): dauerhaft frei, auch wenn das Konto erst später angelegt wird =====
+-- E-Mail in public.operators eintragen (macht der Workflow aus der Variable OPERATOR_EMAIL); kein Zugriff für Nutzer.
+create table if not exists public.operators (email text primary key check (email = lower(email)));
+alter table public.operators enable row level security;
+revoke all on public.operators from anon, authenticated;
+grant select, insert, update, delete on public.operators to service_role;
+create or replace function public.operator_activate() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.email is not null and exists (select 1 from public.operators where email = lower(new.email)) then
+    insert into public.subscriptions (owner, status) values (new.id, 'active')
+    on conflict (owner) do update set status = 'active', updated_at = now();
+  end if;
+  return new;
+end $$;
+revoke all on function public.operator_activate() from public, anon, authenticated;
+drop trigger if exists eoffis_operator_activate on auth.users;
+create trigger eoffis_operator_activate after insert or update of email on auth.users
+  for each row execute function public.operator_activate();

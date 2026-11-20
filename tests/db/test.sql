@@ -223,4 +223,17 @@ reset role;
 do $$ begin delete from auth.users where id = '11111111-1111-1111-1111-111111111111';
   perform t_ok('Konto mit Unterlagen löschen', not exists (select 1 from kv where owner = '11111111-1111-1111-1111-111111111111') and not exists (select 1 from kv_usage where owner = '11111111-1111-1111-1111-111111111111'));
 exception when others then perform t_ok('Konto mit Unterlagen löschen', false, sqlerrm); end $$;
+-- Betreiber-Konto: wird freigeschaltet, sobald es angelegt wird oder die E-Mail bestätigt
+reset role;
+insert into public.operators values ('chef@test.de');
+insert into auth.users (id, email, created_at) values ('aaaaaaaa-0000-0000-0000-000000000001', 'Chef@Test.de', now() - interval '400 days');
+insert into auth.users (id, is_anonymous, created_at) values ('aaaaaaaa-0000-0000-0000-000000000002', true, now() - interval '400 days');
+update auth.users set email = 'chef@test.de', is_anonymous = false where id = 'aaaaaaaa-0000-0000-0000-000000000002';
+do $$ begin perform t_ok('Betreiber neu angelegt → dauerhaft frei', public.eoffis_account('aaaaaaaa-0000-0000-0000-000000000001')->>'state' = 'active');
+  perform t_ok('Betreiber sichert Testkonto mit E-Mail → dauerhaft frei', public.eoffis_account('aaaaaaaa-0000-0000-0000-000000000002')->>'state' = 'active');
+  perform t_ok('Andere Konten bleiben in der Probezeit-Regel', public.eoffis_account('33333333-3333-3333-3333-333333333333')->>'state' <> 'active'); end $$;
+set role authenticated; set request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+do $$ begin perform count(*) from operators; perform t_ok('Betreiberliste für Nutzer unsichtbar', false, 'lesbar');
+exception when others then perform t_ok('Betreiberliste für Nutzer unsichtbar', sqlerrm ~ 'permission denied', sqlerrm); end $$;
+reset role;
 select (case when ok then 'PASS ' else 'FAIL ' end) || name || case when ok then '' else ' – ' || coalesce(info, '') end from public.t_results order by n;
