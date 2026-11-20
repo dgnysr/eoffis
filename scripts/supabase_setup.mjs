@@ -111,6 +111,8 @@ cfg = cfg.replace(/vapidPublicKey:\s*'[^']*'/, `vapidPublicKey: '${vapidPub}'`).
 fs.writeFileSync(CONFIG, cfg);
 
 // 8) Prüfung wie ein echter Kunde: anonym anmelden, Daten speichern, Pflichtenliste, Server-Funktionen; danach Testkonto löschen
+// Reste abgebrochener Selbsttests entfernen (nur Konten, deren einzige Kennung der Selbsttest-Eintrag ist)
+await sql(`delete from auth.users u where coalesce(u.is_anonymous, false) and exists (select 1 from public.kv where owner = u.id and path like '%/main/assets/selftest')`);
 const pu = projUrl.replace(/\/$/, '');
 const call = async (p, init = {}, tok) => { const r = await fetch(pu + p, { ...init, headers: { apikey: anonKey, 'content-type': 'application/json', ...(tok ? { authorization: 'Bearer ' + tok } : {}), ...(init.headers || {}) } }); let b = null; try { b = await r.json(); } catch { /* leer */ } return { s: r.status, b }; };
 const checks = [];
