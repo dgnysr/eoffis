@@ -17,6 +17,10 @@ Ergebnisse vom 08.11.2026 (Plattformen, Kosten, Personal, offene Schritte): `mat
 Server: GitHub → Actions → „Server einrichten“ → *Run workflow* (ersetzt die Handarbeit aus `README.md`; offen bleiben nur Brevo-SMTP, Turnstile, Apple/Google).
 
 ## Änderungsverlauf
+### 20.11.2026 – Kontoanzeige oben rechts
+- Auf jeder Seite (außer der Einrichtung) neben der Sprachwahl: orange „Testzugang“ bzw. grün der Name der E-Mail-Adresse. Antippen zeigt „Dein Konto“: Testzugang erklärt + „Konto sichern“ + „Ich habe schon ein Konto – anmelden“, bzw. „Angemeldet als …“ + „Abmelden“; dazu Testzeitraum/Abo-Status.
+- Abmelden aus einem ungesicherten Testzugang (auch über Einstellungen) warnt zuerst, dass die Unterlagen sonst verloren sind.
+- 6 Sprachen; Test `tests/konto_anzeige.js` (11). Gesamtlauf: 264 Prüfungen, 0 Fehler.
 ### 18.11.2026 – Server-Einrichtung per Knopfdruck, Datenbank für die Betriebs-Akte
 - **Workflow „Server einrichten“** (`.github/workflows/server.yml` → `scripts/supabase_setup.mjs`): weckt das Supabase-Projekt auf, spielt `schema.sql` ein, setzt fehlende Geheimschlüssel (EOFFIS_ENC_KEY nur einmal, Push-Schlüsselpaar, CRON_SECRET bei jedem Lauf neu, SITE_URL), stellt KI-Funktion (`aiFunction` aus `config.js`) und `eoffis-api` ohne „Verify JWT“ bereit, stellt die Anmeldung ein (anonym testen, Konto sichern, Rücksprung-Adresse), plant den täglichen Lauf (06:00 UTC, `daily`), aktiviert Push und Freigabe-Links in `config.js` und prüft danach alles wie ein Kunde (anonym anmelden, speichern, Branchen, Pflichtenliste, Probezeit, beide Funktionen, Datentrennung, Zeitplan; Testkonto wird gelöscht). Beliebig oft ausführbar; läuft bei Änderungen unter `supabase/` automatisch.
   Einmalig nötig: Repository-Secret `SUPABASE_ACCESS_TOKEN`. Optional: Secrets `ANTHROPIC_API_KEY`, `BREVO_API_KEY`, `MAIL_FROM`, Secret `OPERATOR_EMAIL` (eigenes Konto dauerhaft frei).

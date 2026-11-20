@@ -452,6 +452,12 @@ input.in:focus, textarea.in:focus, select.in:focus { outline: none; box-shadow: 
 
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .scanhero { --accent: #0a6b5b; color: #fff; } :root:not([data-theme="light"]) .scanhero b, .scanhero small { color: #fff; } :root:not([data-theme="light"]) .tab.scan .sb { color: #00241d; } }
 :root[data-theme="dark"] .scanhero { --accent: #0a6b5b; color: #fff; } :root[data-theme="dark"] .scanhero b, .scanhero small { color: #fff; } :root[data-theme="dark"] .tab.scan .sb { color: #00241d; }
+/* Kontoanzeige oben (Testzugang orange, eigenes Konto grün) */
+.accbtn { border: 0; background: var(--fill); color: var(--ink); border-radius: 999px; min-height: 32px; max-width: 150px; padding: 3px 10px 3px 7px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-weight: 600; font-size: .78rem; flex: none; }
+.accbtn .an { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.accbtn.anon { background: #fff3dc; color: #8a5300; } .accbtn.ok svg { color: var(--accent); }
+@media (prefers-color-scheme: dark) { .accbtn.anon { background: #4a3510; color: #ffd38a; } }
+@media (max-width: 380px) { .accbtn .an { max-width: 64px; } }
 </style>
 <header class="top"><div class="top-in" id="top"></div></header>
 <main><div class="wrap" id="main"></div></main>
