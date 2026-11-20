@@ -1,6 +1,6 @@
 # Richtet das Supabase-Projekt ein bzw. bringt es auf den Stand des Repos (Datenbank, Funktionen, Schlüssel, Anmeldung, täglicher Lauf)
 # und prüft danach alles wie ein echter Kunde. Läuft bei Änderungen unter supabase/ und per Knopf „Run workflow“.
-# Einmalig nötig: Repository-Secret SUPABASE_ACCESS_TOKEN. Optional: ANTHROPIC_API_KEY, BREVO_API_KEY, MAIL_FROM (Secrets), OPERATOR_EMAIL (Variable).
+# Einmalig nötig: Repository-Secret SUPABASE_ACCESS_TOKEN. Optional: ANTHROPIC_API_KEY, BREVO_API_KEY, MAIL_FROM (Secrets), OPERATOR_EMAIL (Secret oder Variable).
 name: Server einrichten
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           MAIL_FROM: ${{ secrets.MAIL_FROM }}
-          OPERATOR_EMAIL: ${{ vars.OPERATOR_EMAIL }}
+          OPERATOR_EMAIL: ${{ secrets.OPERATOR_EMAIL || vars.OPERATOR_EMAIL }}
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ] && [ "$GITHUB_EVENT_NAME" = push ]; then
             echo "::warning::SUPABASE_ACCESS_TOKEN fehlt noch – Server-Einrichtung übersprungen"; exit 0; fi
