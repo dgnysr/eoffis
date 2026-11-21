@@ -1,18 +1,18 @@
 /* =================== Paket 3 (08.11.2026): Verfahrensdokumentation, Verträge & Versicherungen, Firmenunterlagen-Paket, Freigabe-Link =================== */
 const UNT_TEXT = {
   de: {
-    vdTitle: 'Verfahrensdokumentation (GoBD)', vdH: 'Pflicht für jeden Betrieb: beschreibt, wie Belege bei dir ankommen, geprüft, digitalisiert und aufbewahrt werden. eOffis erstellt sie aus deinen Antworten.',
+    vdTitle: 'Verfahrensdokumentation (GoBD)', vdH: 'Pflicht für jeden Betrieb: beschreibt, wie Belege bei Ihnen ankommen, geprüft, digitalisiert und aufbewahrt werden. eOffis erstellt sie aus Ihren Antworten.',
     vdBasic: 'Einfach (2–3 Seiten)', vdBasicH: 'Für Einzelunternehmen und kleine Betriebe', vdFull: 'Vollständig (4 Teile)', vdFullH: 'Mit Organisation, Technik, Kontrollen und Betrieb',
     vdStep: 'Frage {{n}} von {{count}}', vdBack: 'Zurück', vdNext: 'Weiter', vdMake: 'Verfahrensdokumentation erstellen', vdDone: 'Verfahrensdokumentation erstellt und unter „Firma & Stammdaten“ abgelegt.',
-    vdNote: 'Muster auf Grundlage deiner Angaben – bitte mit deinem Steuerberater abstimmen. Keine Rechts- oder Steuerberatung.', vdOpen: 'Verfahrensdokumentation öffnen', vdRedo: 'Neu erstellen / aktualisieren',
+    vdNote: 'Muster auf Grundlage Ihrer Angaben – bitte mit Ihrem Steuerberater abstimmen. Keine Rechts- oder Steuerberatung.', vdOpen: 'Verfahrensdokumentation öffnen', vdRedo: 'Neu erstellen / aktualisieren',
     vdTask: 'Verfahrensdokumentation prüfen und aktualisieren', vdHave: 'Erstellt am {{date}} ({{kind}})', vdMissing: 'fehlt – jetzt erstellen', vdOther: 'Sonstiges (eintragen)',
     q_owner: 'Rechtsform und verantwortliche Person', q_ownerH: 'z. B. Einzelunternehmen, Inhaber Max Muster', q_staff: 'Wer legt die Belege ab und prüft sie?', q_staffH: 'Name(n) und Aufgabe',
-    q_software: 'Buchhaltungsprogramm und Steuerberater', q_softwareH: 'z. B. Lexware Office; Steuerkanzlei Muster, Köln', q_inbound: 'Wie kommen Belege bei dir an?',
+    q_software: 'Buchhaltungsprogramm und Steuerberater', q_softwareH: 'z. B. Lexware Office; Steuerkanzlei Muster, Köln', q_inbound: 'Wie kommen Belege bei Ihnen an?',
     q_scan: 'Werden Papierbelege mit eOffis gescannt?', q_original: 'Was passiert danach mit dem Papier-Original?', q_when: 'Wann wird gescannt?', q_check: 'Wer prüft die Scans auf Lesbarkeit und Vollständigkeit?',
     q_cash: 'Bargeld und Kasse', q_bank: 'Geschäftskonto (Bank) und Kontoauszüge', q_bankH: 'z. B. Sparkasse, Kontoauszüge als PDF', q_backup: 'Zusätzliche Datensicherung', q_access: 'Wer hat Zugriff auf das eOffis-Konto?',
     q_org: 'Mitarbeiter und Zuständigkeiten', q_orgH: 'z. B. Frau A: Eingangspost; Herr B: Kasse', q_hw: 'Eingesetzte Geräte', q_hwH: 'z. B. iPhone 15, Büro-PC Windows 11, Drucker', q_ics: 'Interne Kontrollen',
     q_change: 'Wie werden Änderungen an den Abläufen festgehalten?',
-    ctrTitle: 'Verträge & Versicherungen', ctrYear: 'Kosten im Jahr: {{sum}}', ctrNone: 'Noch keine Verträge. Scanne einen Vertrag oder eine Versicherungspolice – eOffis liest Laufzeit, Kündigungsfrist und Kosten.',
+    ctrTitle: 'Verträge & Versicherungen', ctrYear: 'Kosten im Jahr: {{sum}}', ctrNone: 'Noch keine Verträge. Scannen Sie einen Vertrag oder eine Versicherungspolice – eOffis liest Laufzeit, Kündigungsfrist und Kosten.',
     ctrCancelBy: 'kündbar bis {{date}}', ctrEnds: 'endet {{date}}', ctrAuto: 'verlängert sich automatisch', ctrEdit: 'Vertragsdaten bearbeiten', ctrCancel: 'Kündigung schreiben',
     ctrParty: 'Vertragspartner', ctrNo: 'Vertrags-/Policennummer', ctrStart: 'Beginn', ctrEnd: 'Ende', ctrCancelDate: 'Kündigung muss zugehen bis', ctrNotice: 'Kündigungsfrist',
     ctrNoticeH: 'z. B. 3 Monate zum Ende der Laufzeit', ctrRenew: 'Verlängert sich automatisch', ctrCost: 'Kosten', ctrInterval: 'Zahlweise', ctrCoverage: 'Leistung / Versicherungsschutz (kurz)',

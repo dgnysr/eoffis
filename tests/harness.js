@@ -92,7 +92,7 @@ const INIT = (cfg) => {
       invoice_number: 'SW-2026-77', amount_gross: 119, amount_net: 100, vat_amount: 19, currency: 'EUR', payment_required: true, payment_due_date: '2026-11-20', iban: 'DE89 3704 0044 0532 0130 00', bic: 'COBADEFFXXX',
       payment_reference: 'SW-2026-77', is_contract: true, is_incoming_invoice: true, folder: 'rechnungen', explanation: 'Stromrechnung über 119 €, zahlbar bis 20.11.2026.', next_steps: ['Rechnung prüfen', 'Bis 20.11. überweisen'],
       dates: [{ kind: 'payment', date: '2026-11-20', description: 'Zahlungsziel' }, { kind: 'reply', date: null, description: 'Rückmeldung' }], document_date: '2026-11-01',
-      suggested_action: { type: 'cancellation', question: 'Soll ich die Kündigung für dich schreiben?' }, action_needed: true, suggested_task: 'Stromrechnung bezahlen',
+      suggested_action: { type: 'cancellation', question: 'Soll ich die Kündigung für Sie schreiben?' }, action_needed: true, suggested_task: 'Stromrechnung bezahlen',
       response_recipient: 'Stadtwerke Muster GmbH', response_address: 'Postfach 1\n12345 Muster', response_reference: 'Kd-Nr. 4711', response_subject: 'Kündigung Stromvertrag', recipient_email: 'service@stadtwerke.example',
       contract_end: '2027-03-31', cancellation_date: '2026-12-31', contract_number: 'V-123', contract_terms: '12 Monate, Verlängerung um 12 Monate, Kündigung 3 Monate vorher in Textform',
       discount_date: '2026-11-10', discount_percent: 2, discount_terms: '2 % bei Zahlung binnen 10 Tagen',

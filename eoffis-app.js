@@ -6,13 +6,13 @@ const EXTRA = {
   tasks: { kind_hygiene: 'Hygiene', kind_personnel: 'Personal', kind_permit: 'Genehmigung', recur: 'Wiederholen', recur_none: 'Nie', recur_monthly: 'Monatlich', recur_quarterly: 'Vierteljährlich', recur_yearly: 'Jährlich', nextCreated: 'Nächster Termin angelegt: {{date}}', tapStatus: 'Status wechseln' },
   web: {
     setupTitle: 'Betrieb einrichten',
-    setupIntro: 'Lege einmal deine Betriebsdaten an. Alles, was du speicherst, liegt privat in deinem Claude-Konto – nur du siehst es.',
+    setupIntro: 'Legen Sie einmal Ihre Betriebsdaten an. Alles, was Sie speichern, liegt privat in Ihrem Claude-Konto – nur Sie sehen es.',
     start: 'Los geht’s',
-    demoOn: 'Demo-Modus: getrennte Beispieldaten. Deine echten Daten bleiben unberührt.',
+    demoOn: 'Demo-Modus: getrennte Beispieldaten. Ihre echten Daten bleiben unberührt.',
     demoLeave: 'Demo verlassen', demoReset: 'Alle Testdaten löschen', demoResetDone: 'Testdaten gelöscht.',
     localMode: 'Diese Ansicht kann nicht im Konto speichern. Daten bleiben nur in diesem Browser.',
-    noAi: 'Die KI ist in dieser Ansicht nicht verfügbar. Öffne den Link angemeldet in claude.ai.',
-    aiDeclined: 'Die KI-Nutzung wurde nicht erlaubt. Beim nächsten Öffnen der Seite kannst du sie erlauben.',
+    noAi: 'Die KI ist in dieser Ansicht nicht verfügbar. Öffnen Sie den Link angemeldet in claude.ai.',
+    aiDeclined: 'Die KI-Nutzung wurde nicht erlaubt. Beim nächsten Öffnen der Seite können Sie sie erlauben.',
     aiRate: 'Gerade zu viele KI-Anfragen. Bitte in einer Minute erneut tippen.',
     aiFail: 'Die KI konnte nicht antworten. Bitte erneut versuchen.',
     aiJson: 'Die KI-Antwort war unvollständig. Bitte erneut versuchen.',
@@ -20,15 +20,15 @@ const EXTRA = {
     cropTitle: 'Zuschnitt auf A4', cropHint: 'Gelben Rahmen auf das Blatt schieben, Größe mit dem Regler anpassen.',
     frameSize: 'Rahmengröße', useCrop: 'Zuschnitt übernehmen', useFull: 'Ganzes Foto verwenden',
     downloadPdf: 'PDF herunterladen', downloadXml: 'XML herunterladen', copyText: 'Text kopieren', copied: 'In die Zwischenablage kopiert.',
-    mailApp: 'In Mail-App öffnen', mailNote: 'Falls sich keine Mail-App öffnet: „Text kopieren“ und in deine Mail einfügen.',
+    mailApp: 'In Mail-App öffnen', mailNote: 'Falls sich keine Mail-App öffnet: „Text kopieren“ und in Ihre Mail einfügen.',
     pagesSent: 'Die KI liest die ersten {{count}} Seiten.', saveFailed: 'Speichern fehlgeschlagen: {{msg}}',
     downloadDeclined: 'Download abgebrochen.', downloadUnavailable: 'Downloads sind in dieser Ansicht nicht möglich.',
     pageOf: 'Seite {{n}} von {{count}}', example: 'Beispiel', loadingStore: 'Daten werden geladen …',
     storeSlow: 'Die Daten lassen sich gerade nicht laden. Bitte Verbindung prüfen.',
     pdfRender: 'PDF wird gelesen …', pdfFail: 'Diese PDF-Datei konnte nicht gelesen werden.',
     history: 'Änderungsprotokoll', created: 'angelegt', changed: 'geändert',
-    pages: 'Seiten', advisorMailHint: 'Lade das ZIP herunter und hänge es an eine Mail an {{mail}}.',
-    zipDone: 'ZIP erstellt.', demoTitle: 'Demo ausprobieren', demoIntro: 'Schau dir eOffis mit Beispieldaten an, bevor du eigene Belege erfasst.',
+    pages: 'Seiten', advisorMailHint: 'Laden Sie das ZIP herunter und hängen Sie es an eine Mail an {{mail}}.',
+    zipDone: 'ZIP erstellt.', demoTitle: 'Demo ausprobieren', demoIntro: 'Sehen Sie sich eOffis mit Beispieldaten an, bevor Sie eigene Belege erfassen.',
     toTasks: 'Zu den Fristen', toastSaved: 'Gespeichert.', toastTaken: 'Als Frist übernommen.',
     finalized: 'Finalisiert am {{date}}', invoiceNo: 'Rechnungsnummer', exportCount: '{{count}} Belege ausgewählt',
     xmlNote: 'E-Rechnung (XML) – Inhalt wird als Text an die KI gegeben.',
@@ -38,7 +38,7 @@ const EXTRA = {
     open: 'Offen', done: 'Erledigt', more: 'Mehr',
     step1: 'Zusammenfassung', step2: 'Das ist zu tun', step3: 'Reaktion', step4: 'Ablegen',
     next: 'Weiter', makeTask: 'Als Aufgabe', taskMade: 'Aufgabe angelegt', noTodo: 'Kein Handlungsbedarf erkannt.',
-    suggestNone: 'Eine Antwort ist nicht nötig. Du kannst trotzdem ein Schreiben erstellen.',
+    suggestNone: 'Eine Antwort ist nicht nötig. Sie können trotzdem ein Schreiben erstellen.',
     yesWrite: 'Ja, Entwurf schreiben', noNeed: 'Nein, nicht nötig', otherKind: 'Andere Art von Schreiben',
     checked: 'Angaben geprüft', editFields: 'Angaben bearbeiten', fileDone: 'Erledigt & ablegen', filed: 'Abgelegt.',
     erech: 'E-Rechnung', erechIntro: 'XRechnung (XML) oder ZUGFeRD/Factur-X (PDF mit eingebetteter XML) hochladen. eOffis liest die Rechnungsdaten direkt aus der Datei – ohne KI und ohne Abtippen.',
@@ -46,9 +46,9 @@ const EXTRA = {
     erechTake: 'Ins Archiv übernehmen', erechTaken: 'E-Rechnung übernommen.', positions: 'Positionen', seller: 'Rechnungssteller', buyer: 'Rechnungsempfänger',
     format: 'Format', issueDate: 'Rechnungsdatum', dueDate: 'Fällig am',
     remTitle: 'Erinnerungen', remInApp: 'Erinnerungen auf der Startseite zeigen', remContract: 'Verträge & Kündigungen (Tage vorher)', remSkonto: 'Skonto (Tage vorher)', remOther: 'Andere Fristen (Tage vorher)',
-    icsExport: 'Fristen in Handy-Kalender übernehmen', icsHint: 'Lädt eine Kalenderdatei (.ics) mit allen offenen Fristen. Öffne sie auf dem Handy – dein Kalender erinnert dich dann zu den eingestellten Zeitpunkten, auch wenn eOffis geschlossen ist.',
+    icsExport: 'Fristen in Handy-Kalender übernehmen', icsHint: 'Lädt eine Kalenderdatei (.ics) mit allen offenen Fristen. Öffnen Sie sie auf dem Handy – Ihr Kalender erinnert Sie dann zu den eingestellten Zeitpunkten, auch wenn eOffis geschlossen ist.',
     tabPrebook: 'Vorbuchhaltung', tabDeadline: 'Fristschreiben', forward: 'Weiterleiten', forwardText: 'Mailtext kopieren',
-    forwardHint: 'PDF herunterladen und mit dem kopierten Text an deinen Steuerberater senden.',
+    forwardHint: 'PDF herunterladen und mit dem kopierten Text an Ihren Steuerberater senden.',
     infoTitle: 'Gesetzliche Hinweise',
     info_mindest_t: 'Mindestlohn', info_mindest: 'Seit 01.01.2026 gilt ein gesetzlicher Mindestlohn von 13,90 € je Stunde, ab 01.01.2027 sind es 14,60 €. Die Minijob-Grenze steigt jeweils mit.',
     info_erech_t: 'E-Rechnungspflicht', info_erech: 'Seit 01.01.2025 müssen alle Betriebe E-Rechnungen empfangen können. Ausstellen wird Pflicht ab 2027 (Vorjahresumsatz über 800.000 €) und ab 2028 für alle.',
@@ -63,16 +63,16 @@ const EXTRA = {
     eNotReady: 'XRechnung/ZUGFeRD nicht verfügbar: Bei Finalisierung fehlten Pflichtangaben (z. B. E-Mail, Ansprechpartner, Käuferreferenz).',
     dun1: 'Zahlungserinnerung', dunN: '{{n}}. Mahnung', dunUntil: 'Zahlungsfrist bis', dunCreate: 'Mahnschreiben erstellen', dunNotDue: 'Noch nicht fällig – Mahnung erst nach Fälligkeit möglich.',
     contact: 'Ansprechpartner', phone: 'Telefon', companyMail: 'E-Mail für Rechnungen',
-    datevIntro: 'Erzeugt einen DATEV-Buchungsstapel (EXTF, Format 700) deiner finalisierten Ausgangsrechnungen. Die Kontenzuordnung stimmst du mit deinem Steuerberater ab.',
+    datevIntro: 'Erzeugt einen DATEV-Buchungsstapel (EXTF, Format 700) Ihrer finalisierten Ausgangsrechnungen. Die Kontenzuordnung stimmen Sie mit Ihrem Steuerberater ab.',
     datevProfile: 'Berater- und Kontendaten', datevAdvisorL: 'Beraternummer', datevClientL: 'Mandantennummer', datevYear: 'Wirtschaftsjahr', datevLen: 'Sachkontenlänge', datevR7: 'Erlöskonto 7 %', datevR19: 'Erlöskonto 19 %',
     datevSaveP: 'Kontenzuordnung speichern', datevBatch: 'Stapel erstellen', from: 'Von', to: 'Bis', datevApply: 'Zeitraum übernehmen', datevDebtorL: 'Debitorenkonto', datevTaxDate: 'Steuerperiode (Datum)',
     datevNoInv: 'Keine finalisierten Rechnungen in diesem Zeitraum.', datevExport: 'Buchungsstapel herunterladen', datevHistory: 'Exportverlauf',
-    datevNote: 'Zeichensatz Windows-1252, ein Stapel je Wirtschaftsjahr. Den Import prüft dein Steuerberater in DATEV.',
+    datevNote: 'Zeichensatz Windows-1252, ein Stapel je Wirtschaftsjahr. Den Import prüft Ihr Steuerberater in DATEV.',
     datevAdvisor: 'Beraternummer: 4–7 Ziffern (ab 1001)', datevClient: 'Mandantennummer: 1–5 Ziffern', datevAccounts: 'Erlöskonten müssen genau die Sachkontenlänge haben', datevRange: 'Zeitraum muss im Wirtschaftsjahr liegen',
     datevDebtor: 'Debitor braucht {{n}} Stellen', datevNumber: 'Rechnungsnummer enthält Zeichen, die DATEV nicht annimmt', datevNone: 'Keine Buchungen', datevChar: 'Zeichen „{{ch}}“ ist im DATEV-Zeichensatz nicht erlaubt.',
     assign: 'Selbst zuordnen', assignDo: 'Zuordnung übernehmen', uploadMissing: 'Fehlenden Beleg scannen', pastStatements: 'Gespeicherte Kontoauszüge',
     sortedPdf: 'Alle als ein PDF (sortiert)', sortedHint: 'Ein PDF mit allen ausgewählten Belegen, sortiert nach Ordner und Datum – zum Ausdrucken oder Mailen.',
-    photoOrFile: 'Foto aus Galerie oder Kamera', cameraHint: 'Öffnet sich die Kamera nicht, nimm „Foto aus Galerie oder Kamera“ – dort kannst du ebenfalls „Foto aufnehmen“ wählen.', imageFail: 'Dieses Bild konnte nicht geöffnet werden. Bitte als JPG/PNG oder neu fotografieren.',
+    photoOrFile: 'Foto aus Galerie oder Kamera', cameraHint: 'Öffnet sich die Kamera nicht, nehmen Sie „Foto aus Galerie oder Kamera“ – dort können Sie ebenfalls „Foto aufnehmen“ wählen.', imageFail: 'Dieses Bild konnte nicht geöffnet werden. Bitte als JPG/PNG oder neu fotografieren.',
     numberBusy: 'Rechnungsnummer wird gerade auf einem anderen Gerät vergeben. Bitte gleich noch einmal tippen.', numberTaken: 'Nummer {{number}} ist bereits vergeben – bitte erneut finalisieren.',
     ruleTitle: 'Eigene Steuerregel', ruleHint: 'Für Termine, die oben fehlen – z. B. vierteljährliche Voranmeldung oder kommunale Abgaben.',
     ruleFirst: 'Erster Monat (1–12)', ruleDay: 'Tag im Monat', ruleOffset: 'Fällig Monate danach', ruleWeekend: 'Wochenende/Feiertag → nächster Werktag', ruleHolidays: 'Eigene Feiertage (z. B. Landesfeiertage)', rulePreview: 'Termine anzeigen',
@@ -87,8 +87,8 @@ const EXTRA = {
     hubContracts: 'Verträge', hubContractsH: 'Laufzeiten und Kündigungsfristen', hubDates: 'Fristen & Aufgaben', hubDatesH: 'Alle Termine im Blick', hubTax: 'Steuertermine', hubTaxH: 'Wiederkehrende Steuerfristen',
     hubExport: 'Steuerberater', hubExportH: 'ZIP, Sammel-PDF, Fristschreiben', hubDatev: 'DATEV-Export', hubDatevH: 'Buchungsstapel eigener Rechnungen', hubErech: 'E-Rechnung lesen', hubErechH: 'XRechnung und ZUGFeRD öffnen',
     hubRem: 'Erinnerungen', hubRemH: 'Vorlaufzeiten und Kalender', hubSettings: 'Einstellungen', hubSettingsH: 'Betrieb, Sprache, Bankdaten',
-    gobdTitle: 'GoBD & Aufbewahrung', gobd: 'Belege unverändert aufbewahren: eOffis speichert das Original mit Prüfsumme und Änderungsprotokoll. Ob deine Ablage insgesamt GoBD-konform ist, klärst du mit deinem Steuerberater (Verfahrensdokumentation).',
-    privacyTitle: 'Datenschutz', privacy: 'Deine Daten liegen privat in deinem Claude-Konto. Für die KI-Auswertung werden Belegbilder an Claude übertragen. Belege mit Gesundheits- oder Personaldaten nur scannen, wenn das nötig ist.',
+    gobdTitle: 'GoBD & Aufbewahrung', gobd: 'Belege unverändert aufbewahren: eOffis speichert das Original mit Prüfsumme und Änderungsprotokoll. Ob Ihre Ablage insgesamt GoBD-konform ist, klären Sie mit Ihrem Steuerberater (Verfahrensdokumentation).',
+    privacyTitle: 'Datenschutz', privacy: 'Ihre Daten liegen privat in Ihrem Claude-Konto. Für die KI-Auswertung werden Belegbilder an Claude übertragen. Belege mit Gesundheits- oder Personaldaten nur scannen, wenn das nötig ist.',
     homeScreen: 'Auf den Home-Bildschirm', homeScreenH: 'iPhone: in Safari auf „Teilen“ tippen, dann „Zum Home-Bildschirm“. Android: im Chrome-Menü „Zum Startbildschirm hinzufügen“.',
   },
 };
@@ -98,7 +98,7 @@ const LANG_NAMES = { de: 'Deutsch', tr: 'Türkisch', pl: 'Polnisch', ru: 'Russis
 let lang = 'de';
 /* Mehrseitiger Scan, Fristen → Kalender (alle Sprachen) */
 const NEW_TEXT = {
-  de: { pagesDone: '{{count}} Seite(n) erfasst', morePage: 'Weitere Seite scannen', finishAi: 'Fertig – mit KI analysieren ({{count}} S.)', saveOnly: 'Nur speichern, ohne KI', moreHint: 'Mehrseitiges Schreiben? Einfach jede Seite nacheinander fotografieren – erst danach auf „Fertig“ tippen.', otherSources: 'Andere Quelle hinzufügen', calTitle: '{{count}} Frist(en) erkannt', calAuto: 'Sie stehen jetzt unter „Fristen“.', calAsk: 'Auch in den Kalender deines Handys eintragen? Erinnerung 1 Woche und 1 Tag vorher.', calYes: 'In Handy-Kalender eintragen', calNo: 'Nein, danke', calHow: 'Es wird eine Kalenderdatei (.ics) geöffnet bzw. heruntergeladen. Antippen → „Hinzufügen“ bzw. mit deiner Kalender-App öffnen. iPhone übernimmt beide Erinnerungen automatisch.', calGoogle: 'Einzeln in Google Kalender', calGoogleHint: 'Android mit Google Kalender: falls die Datei nicht aufgeht, hier je Frist eintragen (Erinnerungen dann im Kalender auf 1 Woche und 1 Tag stellen).', calDone: 'Kalenderdatei erstellt', calOne: 'In Kalender' },
+  de: { pagesDone: '{{count}} Seite(n) erfasst', morePage: 'Weitere Seite scannen', finishAi: 'Fertig – mit KI analysieren ({{count}} S.)', saveOnly: 'Nur speichern, ohne KI', moreHint: 'Mehrseitiges Schreiben? Einfach jede Seite nacheinander fotografieren – erst danach auf „Fertig“ tippen.', otherSources: 'Andere Quelle hinzufügen', calTitle: '{{count}} Frist(en) erkannt', calAuto: 'Sie stehen jetzt unter „Fristen“.', calAsk: 'Auch in den Kalender Ihres Handys eintragen? Erinnerung 1 Woche und 1 Tag vorher.', calYes: 'In Handy-Kalender eintragen', calNo: 'Nein, danke', calHow: 'Es wird eine Kalenderdatei (.ics) geöffnet bzw. heruntergeladen. Antippen → „Hinzufügen“ bzw. mit Ihrer Kalender-App öffnen. iPhone übernimmt beide Erinnerungen automatisch.', calGoogle: 'Einzeln in Google Kalender', calGoogleHint: 'Android mit Google Kalender: falls die Datei nicht aufgeht, hier je Frist eintragen (Erinnerungen dann im Kalender auf 1 Woche und 1 Tag stellen).', calDone: 'Kalenderdatei erstellt', calOne: 'In Kalender' },
   tr: { pagesDone: '{{count}} sayfa alındı', morePage: 'Sonraki sayfayı tara', finishAi: 'Bitti – yapay zekâ ile analiz et ({{count}} s.)', saveOnly: 'Sadece kaydet, analiz yok', moreHint: 'Çok sayfalı mektup mu? Her sayfayı sırayla fotoğraflayın – sonra „Bitti“ye dokunun.', otherSources: 'Başka kaynak ekle', calTitle: '{{count}} süre tespit edildi', calAuto: 'Artık „Süreler“ altında listeleniyor.', calAsk: 'Telefon takvimine de eklensin mi? 1 hafta ve 1 gün önce hatırlatma.', calYes: 'Telefon takvimine ekle', calNo: 'Hayır, teşekkürler', calHow: 'Bir takvim dosyası (.ics) açılır veya indirilir. Dokunun → „Ekle“ ya da takvim uygulamanızla açın.', calGoogle: 'Google Takvim’e tek tek', calGoogleHint: 'Dosya açılmazsa her süreyi buradan ekleyin (hatırlatmaları takvimde 1 hafta ve 1 gün olarak ayarlayın).', calDone: 'Takvim dosyası oluşturuldu', calOne: 'Takvime' },
   pl: { pagesDone: 'Zeskanowano stron: {{count}}', morePage: 'Skanuj kolejną stronę', finishAi: 'Gotowe – analizuj z AI ({{count}} str.)', saveOnly: 'Tylko zapisz, bez AI', moreHint: 'Pismo wielostronicowe? Fotografuj kolejno każdą stronę – dopiero potem dotknij „Gotowe”.', otherSources: 'Dodaj z innego źródła', calTitle: 'Wykryte terminy: {{count}}', calAuto: 'Są teraz na liście „Terminy”.', calAsk: 'Dodać też do kalendarza w telefonie? Przypomnienie tydzień i dzień wcześniej.', calYes: 'Dodaj do kalendarza telefonu', calNo: 'Nie, dziękuję', calHow: 'Otworzy się lub pobierze plik kalendarza (.ics). Dotknij → „Dodaj” lub otwórz aplikacją kalendarza.', calGoogle: 'Pojedynczo w Kalendarzu Google', calGoogleHint: 'Jeśli plik się nie otworzy, dodaj tu każdy termin (przypomnienia ustaw w kalendarzu na tydzień i dzień).', calDone: 'Utworzono plik kalendarza', calOne: 'Do kalendarza' },
   ru: { pagesDone: 'Страниц снято: {{count}}', morePage: 'Сканировать ещё страницу', finishAi: 'Готово – анализ ИИ ({{count}} стр.)', saveOnly: 'Только сохранить, без ИИ', moreHint: 'Многостраничное письмо? Снимите каждую страницу по очереди – затем нажмите «Готово».', otherSources: 'Добавить из другого источника', calTitle: 'Найдено сроков: {{count}}', calAuto: 'Они уже в разделе «Сроки».', calAsk: 'Добавить и в календарь телефона? Напоминание за неделю и за день.', calYes: 'Добавить в календарь телефона', calNo: 'Нет, спасибо', calHow: 'Откроется или скачается файл календаря (.ics). Нажмите → «Добавить» или откройте приложением календаря.', calGoogle: 'По одному в Google Календарь', calGoogleHint: 'Если файл не открывается, добавьте каждый срок здесь (напоминания в календаре: за неделю и за день).', calDone: 'Файл календаря создан', calOne: 'В календарь' },
@@ -112,7 +112,7 @@ for (const l of Object.keys(UI_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].web = O
 const FOLDER_TEXT = {"de": {"folder_firma": "Firma & Stammdaten", "folder_bank": "Bank & Kredite", "folder_versicherungen": "Versicherungen"}, "tr": {"folder_firma": "Firma ve temel bilgiler", "folder_bank": "Banka ve krediler", "folder_versicherungen": "Sigortalar"}, "pl": {"folder_firma": "Firma i dane podstawowe", "folder_bank": "Bank i kredyty", "folder_versicherungen": "Ubezpieczenia"}, "ru": {"folder_firma": "Фирма и основные данные", "folder_bank": "Банк и кредиты", "folder_versicherungen": "Страхование"}, "ar": {"folder_firma": "المنشأة والبيانات الأساسية", "folder_bank": "البنك والقروض", "folder_versicherungen": "التأمينات"}, "ro": {"folder_firma": "Firmă și date de bază", "folder_bank": "Bancă și credite", "folder_versicherungen": "Asigurări"}};
 for (const l of Object.keys(FOLDER_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].docs = Object.assign({}, I18N[l].docs || {}, FOLDER_TEXT[l]); }
 /* Eigenständige Web-App (Supabase): Texte, die sich sonst auf Claude beziehen */
-const HOST_TEXT = {"de": {"setupIntro": "Lege einmal deine Betriebsdaten an. Alles, was du speicherst, liegt geschützt in deinem eOffis-Konto – nur du siehst es.", "privacy": "Deine Daten liegen geschützt in deinem eOffis-Konto (Supabase, Server in der EU). Für die KI-Auswertung werden Belegbilder an Claude (Anthropic) übertragen.", "privacyText": "Testphase: Daten liegen in der Supabase-Datenbank dieses Projekts. Vor der Nutzung mit echten Daten Speicherort, Dienstleister (Supabase, Anthropic) und Auftragsverarbeitung prüfen – bis dahin nur Beispieldaten verwenden.", "storeQuota": "Der Speicher ist voll. Bitte ältere Belege exportieren und löschen.", "pickWhy": "Dieser Browser gibt Kamera und Dateiauswahl nicht frei (oft in Apps eingebaute Browser). In Chrome oder Safari funktioniert es – deine Daten bleiben dieselben.", "pickStep2": "In Chrome oder Safari einfügen und mit deinem eOffis-Konto anmelden", "account": "Konto", "logout": "Abmelden", "demoAccount": "Demo ohne Konto – Daten werden nach einigen Tagen gelöscht."}, "tr": {"setupIntro": "İşletme bilgilerini bir kez gir. Kaydettiğin her şey eOffis hesabında korunur – yalnızca sen görürsün.", "privacy": "Verilerin eOffis hesabında korunur (Supabase, AB sunucuları). Yapay zekâ analizi için belge görüntüleri Claude’a (Anthropic) gönderilir.", "privacyText": "Test aşaması: Veriler bu projenin Supabase veritabanında. Gerçek verilerle kullanmadan önce depolama yerini, hizmet sağlayıcıları (Supabase, Anthropic) ve veri işleme sözleşmesini kontrol et – o zamana kadar yalnızca örnek veriler kullan.", "storeQuota": "Depolama dolu. Lütfen eski belgeleri dışa aktarıp sil.", "pickWhy": "Bu tarayıcı kamerayı ve dosya seçimini açmıyor (genellikle uygulama içi tarayıcılar). Chrome veya Safari’de çalışır – verilerin aynı kalır.", "pickStep2": "Chrome veya Safari’ye yapıştır ve eOffis hesabınla giriş yap", "account": "Hesap", "logout": "Çıkış yap", "demoAccount": "Hesapsız demo – veriler birkaç gün sonra silinir."}, "pl": {"setupIntro": "Podaj raz dane firmy. Wszystko, co zapiszesz, jest chronione na Twoim koncie eOffis – widzisz to tylko Ty.", "privacy": "Twoje dane są chronione na koncie eOffis (Supabase, serwery w UE). Do analizy AI obrazy dokumentów są przesyłane do Claude (Anthropic).", "privacyText": "Faza testów: dane są w bazie Supabase tego projektu. Przed użyciem prawdziwych danych sprawdź miejsce przechowywania, usługodawców (Supabase, Anthropic) i umowę powierzenia – do tego czasu tylko przykładowe dane.", "storeQuota": "Pamięć jest pełna. Wyeksportuj i usuń starsze dokumenty.", "pickWhy": "Ta przeglądarka nie udostępnia aparatu ani wyboru plików (często przeglądarki wbudowane w aplikacje). W Chrome lub Safari działa – dane pozostają te same.", "pickStep2": "Wklej w Chrome lub Safari i zaloguj się kontem eOffis", "account": "Konto", "logout": "Wyloguj", "demoAccount": "Demo bez konta – dane zostaną usunięte po kilku dniach."}, "ru": {"setupIntro": "Один раз укажите данные предприятия. Всё сохранённое защищено в вашем аккаунте eOffis – видите только вы.", "privacy": "Ваши данные защищены в аккаунте eOffis (Supabase, серверы в ЕС). Для анализа ИИ изображения документов передаются в Claude (Anthropic).", "privacyText": "Тестовый этап: данные хранятся в базе Supabase этого проекта. Перед работой с реальными данными проверьте место хранения, поставщиков (Supabase, Anthropic) и договор обработки – до этого только примеры.", "storeQuota": "Хранилище заполнено. Экспортируйте и удалите старые документы.", "pickWhy": "Этот браузер не даёт доступ к камере и выбору файлов (часто встроенные в приложения браузеры). В Chrome или Safari работает – данные остаются теми же.", "pickStep2": "Вставьте в Chrome или Safari и войдите в аккаунт eOffis", "account": "Аккаунт", "logout": "Выйти", "demoAccount": "Демо без аккаунта – данные удаляются через несколько дней."}, "ar": {"setupIntro": "أدخل بيانات منشأتك مرة واحدة. كل ما تحفظه محمي في حساب eOffis الخاص بك – لا يراه غيرك.", "privacy": "بياناتك محمية في حساب eOffis (Supabase، خوادم في الاتحاد الأوروبي). لتحليل الذكاء الاصطناعي تُرسل صور المستندات إلى Claude (Anthropic).", "privacyText": "مرحلة الاختبار: البيانات في قاعدة بيانات Supabase لهذا المشروع. قبل استخدام بيانات حقيقية تحقّق من مكان التخزين ومقدّمي الخدمة (Supabase وAnthropic) وعقد المعالجة – حتى ذلك الحين بيانات تجريبية فقط.", "storeQuota": "مساحة التخزين ممتلئة. يرجى تصدير المستندات القديمة وحذفها.", "pickWhy": "هذا المتصفح لا يتيح الكاميرا واختيار الملفات (غالبًا المتصفحات المدمجة في التطبيقات). في Chrome أو Safari يعمل – وتبقى بياناتك نفسها.", "pickStep2": "الصقه في Chrome أو Safari وسجّل الدخول بحساب eOffis", "account": "الحساب", "logout": "تسجيل الخروج", "demoAccount": "عرض تجريبي بدون حساب – تُحذف البيانات بعد بضعة أيام."}, "ro": {"setupIntro": "Introdu o singură dată datele firmei. Tot ce salvezi este protejat în contul tău eOffis – doar tu vezi.", "privacy": "Datele tale sunt protejate în contul eOffis (Supabase, servere în UE). Pentru analiza AI, imaginile documentelor sunt trimise la Claude (Anthropic).", "privacyText": "Faza de test: datele sunt în baza Supabase a acestui proiect. Înainte de date reale verifică locul de stocare, furnizorii (Supabase, Anthropic) și contractul de prelucrare – până atunci doar date exemplu.", "storeQuota": "Spațiul este plin. Exportă și șterge documentele mai vechi.", "pickWhy": "Acest browser nu permite camera și alegerea fișierelor (adesea browserele integrate în aplicații). În Chrome sau Safari funcționează – datele rămân aceleași.", "pickStep2": "Lipește în Chrome sau Safari și conectează-te cu contul eOffis", "account": "Cont", "logout": "Deconectare", "demoAccount": "Demo fără cont – datele se șterg după câteva zile."}};
+const HOST_TEXT = {"de": {"setupIntro": "Legen Sie einmal Ihre Betriebsdaten an. Alles, was Sie speichern, liegt geschützt in Ihrem eOffis-Konto – nur Sie sehen es.", "privacy": "Ihre Daten liegen geschützt in Ihrem eOffis-Konto (Supabase, Server in der EU). Für die KI-Auswertung werden Belegbilder an Claude (Anthropic) übertragen.", "privacyText": "Testphase: Daten liegen in der Supabase-Datenbank dieses Projekts. Vor der Nutzung mit echten Daten Speicherort, Dienstleister (Supabase, Anthropic) und Auftragsverarbeitung prüfen – bis dahin nur Beispieldaten verwenden.", "storeQuota": "Der Speicher ist voll. Bitte ältere Belege exportieren und löschen.", "pickWhy": "Dieser Browser gibt Kamera und Dateiauswahl nicht frei (oft in Apps eingebaute Browser). In Chrome oder Safari funktioniert es – Ihre Daten bleiben dieselben.", "pickStep2": "In Chrome oder Safari einfügen und mit Ihrem eOffis-Konto anmelden", "account": "Konto", "logout": "Abmelden", "demoAccount": "Demo ohne Konto – Daten werden nach einigen Tagen gelöscht."}, "tr": {"setupIntro": "İşletme bilgilerini bir kez gir. Kaydettiğin her şey eOffis hesabında korunur – yalnızca sen görürsün.", "privacy": "Verilerin eOffis hesabında korunur (Supabase, AB sunucuları). Yapay zekâ analizi için belge görüntüleri Claude’a (Anthropic) gönderilir.", "privacyText": "Test aşaması: Veriler bu projenin Supabase veritabanında. Gerçek verilerle kullanmadan önce depolama yerini, hizmet sağlayıcıları (Supabase, Anthropic) ve veri işleme sözleşmesini kontrol et – o zamana kadar yalnızca örnek veriler kullan.", "storeQuota": "Depolama dolu. Lütfen eski belgeleri dışa aktarıp sil.", "pickWhy": "Bu tarayıcı kamerayı ve dosya seçimini açmıyor (genellikle uygulama içi tarayıcılar). Chrome veya Safari’de çalışır – verilerin aynı kalır.", "pickStep2": "Chrome veya Safari’ye yapıştır ve eOffis hesabınla giriş yap", "account": "Hesap", "logout": "Çıkış yap", "demoAccount": "Hesapsız demo – veriler birkaç gün sonra silinir."}, "pl": {"setupIntro": "Podaj raz dane firmy. Wszystko, co zapiszesz, jest chronione na Twoim koncie eOffis – widzisz to tylko Ty.", "privacy": "Twoje dane są chronione na koncie eOffis (Supabase, serwery w UE). Do analizy AI obrazy dokumentów są przesyłane do Claude (Anthropic).", "privacyText": "Faza testów: dane są w bazie Supabase tego projektu. Przed użyciem prawdziwych danych sprawdź miejsce przechowywania, usługodawców (Supabase, Anthropic) i umowę powierzenia – do tego czasu tylko przykładowe dane.", "storeQuota": "Pamięć jest pełna. Wyeksportuj i usuń starsze dokumenty.", "pickWhy": "Ta przeglądarka nie udostępnia aparatu ani wyboru plików (często przeglądarki wbudowane w aplikacje). W Chrome lub Safari działa – dane pozostają te same.", "pickStep2": "Wklej w Chrome lub Safari i zaloguj się kontem eOffis", "account": "Konto", "logout": "Wyloguj", "demoAccount": "Demo bez konta – dane zostaną usunięte po kilku dniach."}, "ru": {"setupIntro": "Один раз укажите данные предприятия. Всё сохранённое защищено в вашем аккаунте eOffis – видите только вы.", "privacy": "Ваши данные защищены в аккаунте eOffis (Supabase, серверы в ЕС). Для анализа ИИ изображения документов передаются в Claude (Anthropic).", "privacyText": "Тестовый этап: данные хранятся в базе Supabase этого проекта. Перед работой с реальными данными проверьте место хранения, поставщиков (Supabase, Anthropic) и договор обработки – до этого только примеры.", "storeQuota": "Хранилище заполнено. Экспортируйте и удалите старые документы.", "pickWhy": "Этот браузер не даёт доступ к камере и выбору файлов (часто встроенные в приложения браузеры). В Chrome или Safari работает – данные остаются теми же.", "pickStep2": "Вставьте в Chrome или Safari и войдите в аккаунт eOffis", "account": "Аккаунт", "logout": "Выйти", "demoAccount": "Демо без аккаунта – данные удаляются через несколько дней."}, "ar": {"setupIntro": "أدخل بيانات منشأتك مرة واحدة. كل ما تحفظه محمي في حساب eOffis الخاص بك – لا يراه غيرك.", "privacy": "بياناتك محمية في حساب eOffis (Supabase، خوادم في الاتحاد الأوروبي). لتحليل الذكاء الاصطناعي تُرسل صور المستندات إلى Claude (Anthropic).", "privacyText": "مرحلة الاختبار: البيانات في قاعدة بيانات Supabase لهذا المشروع. قبل استخدام بيانات حقيقية تحقّق من مكان التخزين ومقدّمي الخدمة (Supabase وAnthropic) وعقد المعالجة – حتى ذلك الحين بيانات تجريبية فقط.", "storeQuota": "مساحة التخزين ممتلئة. يرجى تصدير المستندات القديمة وحذفها.", "pickWhy": "هذا المتصفح لا يتيح الكاميرا واختيار الملفات (غالبًا المتصفحات المدمجة في التطبيقات). في Chrome أو Safari يعمل – وتبقى بياناتك نفسها.", "pickStep2": "الصقه في Chrome أو Safari وسجّل الدخول بحساب eOffis", "account": "الحساب", "logout": "تسجيل الخروج", "demoAccount": "عرض تجريبي بدون حساب – تُحذف البيانات بعد بضعة أيام."}, "ro": {"setupIntro": "Introdu o singură dată datele firmei. Tot ce salvezi este protejat în contul tău eOffis – doar tu vezi.", "privacy": "Datele tale sunt protejate în contul eOffis (Supabase, servere în UE). Pentru analiza AI, imaginile documentelor sunt trimise la Claude (Anthropic).", "privacyText": "Faza de test: datele sunt în baza Supabase a acestui proiect. Înainte de date reale verifică locul de stocare, furnizorii (Supabase, Anthropic) și contractul de prelucrare – până atunci doar date exemplu.", "storeQuota": "Spațiul este plin. Exportă și șterge documentele mai vechi.", "pickWhy": "Acest browser nu permite camera și alegerea fișierelor (adesea browserele integrate în aplicații). În Chrome sau Safari funcționează – datele rămân aceleași.", "pickStep2": "Lipește în Chrome sau Safari și conectează-te cu contul eOffis", "account": "Cont", "logout": "Deconectare", "demoAccount": "Demo fără cont – datele se șterg după câteva zile."}};
 if (window.EOFFIS_HOST) for (const l of Object.keys(HOST_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].web = Object.assign({}, I18N[l].web || {}, HOST_TEXT[l]); }
 function t(key, vars) {
   const get = (d) => key.split('.').reduce((o, k) => (o && o[k] !== undefined ? o[k] : undefined), d);
@@ -1112,9 +1112,9 @@ async function analyzeDoc(id) {
     const prompt = `Du bist der Dokumentassistent von eOffis für kleine Betriebe in Deutschland. Heute ist ${todayISO()}. ${companyLine()}
 ${inp.text}
 Lies das Dokument genau. Erfinde nichts: Unbekanntes ist null. Beträge als Zahl mit Punkt als Dezimaltrennzeichen. Datumsangaben als YYYY-MM-DD.
-Schreibe "explanation" (2–5 Sätze, ohne Fachjargon) und "next_steps" (1–5 konkrete Schritte) auf ${LANG_NAMES[lang]}. Namen, Anschriften und Nummern bleiben in Originalschreibweise; Anschriften mehrzeilig mit \\n.
+Schreibe "explanation" (2–5 Sätze, ohne Fachjargon) und "next_steps" (1–5 konkrete Schritte) auf ${LANG_NAMES[lang]}. Auf Deutsch den Leser immer mit „Sie“ ansprechen. Namen, Anschriften und Nummern bleiben in Originalschreibweise; Anschriften mehrzeilig mit \\n.
 "payment_required" ist true, wenn der Empfänger zahlen soll – auch ohne ausdrücklich genannte Zahlungsfrist (z. B. Rechnung, Mahnung, Beitragsbescheid).
-"suggested_action": Schlage vor, ob der Betrieb schriftlich reagieren sollte. "type" ist "reply" (Antwort), "statement" (Stellungnahme/Widerspruch), "cancellation" (Kündigung – nur bei Verträgen, wenn eine Kündigung naheliegt) oder "none". "question" ist eine kurze Ja/Nein-Frage auf ${LANG_NAMES[lang]}, z. B. „Soll ich die Kündigung für dich schreiben?“.
+"suggested_action": Schlage vor, ob der Betrieb schriftlich reagieren sollte. "type" ist "reply" (Antwort), "statement" (Stellungnahme/Widerspruch), "cancellation" (Kündigung – nur bei Verträgen, wenn eine Kündigung naheliegt) oder "none". "question" ist eine kurze Ja/Nein-Frage auf ${LANG_NAMES[lang]}, z. B. „Soll ich die Kündigung für Sie schreiben?“.
 "document_date" ist das Datum des Schreibens (YYYY-MM-DD) oder null.
 "action_needed": true nur bei konkreter Aufgabe für den Betrieb; "suggested_task" ist dann eine kurze konkrete Aufgabe auf ${LANG_NAMES[lang]}, sonst "". Bereits bezahlte Rechnungen nicht erneut zur Zahlung auffordern.
 "response_recipient" und "response_address": zuständige Stelle und vollständige Postanschrift für eine ANTWORT (meist der Absender), "response_reference": Aktenzeichen/Kunden-/Vertrags-/Rechnungsnummer, "response_subject": passender Betreff, "recipient_email": nur eine ausdrücklich genannte E-Mail-Adresse für Antworten. Nichts erfinden.
@@ -2182,23 +2182,23 @@ const ACC_TEXT = {
     type_rechnung: 'Rechnung', type_quittung: 'Quittung / Kassenbon', type_lieferschein: 'Lieferschein', type_kontoauszug: 'Kontoauszug', type_gutschrift: 'Gutschrift',
     fileTitleAcc: 'Buchhaltungsbeleg erkannt: {{type}}', fileTarget: 'Ablage', fileTransfer: 'An Buchhaltungsprogramm übertragen', fileToFolder: 'In Ordner „Buchhaltung“ ablegen',
     fileOther: 'Kein Buchhaltungsbeleg? Anderen Ordner wählen', fileSuggest: 'Vorschlag: im Ordner „{{folder}}“ ablegen?', fileYes: 'Ja, in „{{folder}}“ ablegen',
-    fileAsk: 'Wohin gehört dieses Dokument?', fileAskH: 'Buchhaltungsbelege kommen in den Ordner „Buchhaltung“ und können an dein Buchhaltungsprogramm übertragen werden.',
+    fileAsk: 'Wohin gehört dieses Dokument?', fileAskH: 'Buchhaltungsbelege kommen in den Ordner „Buchhaltung“ und können an Ihr Buchhaltungsprogramm übertragen werden.',
     accGroup: 'Buchhaltungsbeleg', otherFolders: 'Anderer Ordner', filedIn: 'Abgelegt: {{path}}', fileDone: 'Abgelegt in {{path}}',
     transferredTo: 'Übertragen an {{to}} am {{date}}', notTransferred: 'nicht übertragen', advisorSent: 'an Steuerberater gesendet', pcSaved: 'auf PC gespeichert',
     prog_lexware: 'Lexware Office', prog_datev: 'DATEV', prog_sevdesk: 'sevDesk', prog_other: 'Anderes Programm',
-    pickProgram: 'Welches Buchhaltungsprogramm nutzt du?', lexXl: 'Nutzt du Lexware Office im Tarif XL?',
+    pickProgram: 'Welches Buchhaltungsprogramm nutzen Sie?', lexXl: 'Nutzen Sie Lexware Office im Tarif XL?',
     lexXlH: 'Nur im Tarif XL gibt es die Schnittstelle (API) für die direkte Übertragung und den Belegempfang per E-Mail.', yes: 'Ja', no: 'Nein',
-    lexKey: 'API-Schlüssel von Lexware Office', lexKeyH: 'In Lexware Office: Einstellungen → Erweiterungen → Public API → Schlüssel erzeugen (nur Administrator, Tarif XL). Der Schlüssel wird geschützt in deinem eOffis-Konto gespeichert.',
+    lexKey: 'API-Schlüssel von Lexware Office', lexKeyH: 'In Lexware Office: Einstellungen → Erweiterungen → Public API → Schlüssel erzeugen (nur Administrator, Tarif XL). Der Schlüssel wird geschützt in Ihrem eOffis-Konto gespeichert.',
     lexKeyOpen: 'Lexware-Seite öffnen', lexUseMail: 'Ohne Schlüssel: per E-Mail an den Lexware-Belegempfang',
-    lexApp: 'Ohne Tarif XL überträgst du Belege über die Lexware-App: „Teilen“ tippen und „Lexware Office“ wählen. Die App muss auf dem Handy installiert sein.',
-    addrDatev: 'Deine DATEV-Upload-Mail-Adresse', addrDatevH: 'Einrichten in DATEV Unternehmen online: Belege → Einstellungen → Upload Mail → „Jetzt einrichten“. Senden geht nur von der dort hinterlegten Absenderadresse (PDF, bis 20 MB).',
-    addrSev: 'sevDesk-Autobox', addrSevH: 'sevDesk nimmt Belege an autobox@sevdesk.email an – aber nur von der E-Mail-Adresse, mit der du bei sevDesk angemeldet bist.',
-    addrLex: 'Belegempfangs-Adresse von Lexware Office', addrLexH: 'In Lexware Office: Einstellungen → Belegempfang. Deine Absenderadresse muss dort als Belegsender freigegeben sein.',
-    otherName: 'Name des Programms', addrOther: 'E-Mail-Adresse für Belege', addrOtherH: 'Viele Programme haben eine eigene Adresse für Belege. Du findest sie meist in den Einstellungen unter „Belegeingang“ oder „Upload“.',
+    lexApp: 'Ohne Tarif XL übertragen Sie Belege über die Lexware-App: „Teilen“ tippen und „Lexware Office“ wählen. Die App muss auf dem Handy installiert sein.',
+    addrDatev: 'Ihre DATEV-Upload-Mail-Adresse', addrDatevH: 'Einrichten in DATEV Unternehmen online: Belege → Einstellungen → Upload Mail → „Jetzt einrichten“. Senden geht nur von der dort hinterlegten Absenderadresse (PDF, bis 20 MB).',
+    addrSev: 'sevDesk-Autobox', addrSevH: 'sevDesk nimmt Belege an autobox@sevdesk.email an – aber nur von der E-Mail-Adresse, mit der Sie bei sevDesk angemeldet sind.',
+    addrLex: 'Belegempfangs-Adresse von Lexware Office', addrLexH: 'In Lexware Office: Einstellungen → Belegempfang. Ihre Absenderadresse muss dort als Belegsender freigegeben sein.',
+    otherName: 'Name des Programms', addrOther: 'E-Mail-Adresse für Belege', addrOtherH: 'Viele Programme haben eine eigene Adresse für Belege. Sie finden sie meist in den Einstellungen unter „Belegeingang“ oder „Upload“.',
     addrBad: 'Bitte eine gültige E-Mail-Adresse eingeben.', saveContinue: 'Speichern und weiter',
     transferTitle: 'An {{to}} übertragen', nFiles: '{{count}} Datei(en) bereit', preparing: 'Dateien werden vorbereitet …',
     step1Copy: '1. Adresse kopieren', step2Share: '2. „Teilen“ tippen → Mail-App wählen → Adresse bei „An“ einfügen → senden', stepApp: '„Teilen“ tippen → „Lexware Office“ wählen',
-    share: 'Teilen', copyAddr: 'Kopieren', noShare: 'Dieses Gerät kann Dateien nicht direkt teilen. Lade die Datei(en) herunter und hänge sie an eine Mail an.',
+    share: 'Teilen', copyAddr: 'Kopieren', noShare: 'Dieses Gerät kann Dateien nicht direkt teilen. Laden Sie die Datei(en) herunter und hängen Sie sie an eine Mail an.',
     noShareApp: 'Am PC: Datei herunterladen und in Lexware Office unter Belege → „Beleg hochladen“ hochladen.', download: 'Herunterladen', openMail: 'Mail-Programm öffnen',
     markSent: 'Ich habe gesendet – als übertragen markieren', directNow: 'Jetzt direkt übertragen', apiBusy: 'Wird an Lexware Office übertragen …',
     apiOk: '{{count}} Beleg(e) an Lexware Office übertragen.', apiFail: 'Direkte Übertragung fehlgeschlagen: {{msg}}', apiKeyBad: 'Der API-Schlüssel wurde nicht angenommen. Bitte in den Einstellungen prüfen.',
@@ -2207,16 +2207,16 @@ const ACC_TEXT = {
     settingsTitle: 'Buchhaltungsprogramm', settingsNone: 'Noch nicht gewählt – wird beim ersten Übertragen gefragt.', keySaved: 'API-Schlüssel gespeichert', keyDel: 'Schlüssel löschen',
     pcSave: 'Auch auf diesem PC speichern', pcPick: 'PC-Ordner wählen', pcPickH: 'Buchhaltungsbelege werden zusätzlich in diesem Ordner gespeichert: Jahr / Monat / Belegart.',
     pcFolder: 'PC-Ordner: {{name}}', pcDone: '{{count}} Datei(en) im PC-Ordner gespeichert.', pcDenied: 'Kein Zugriff auf den PC-Ordner. Bitte erneut wählen.',
-    folderOpenN: '{{count}} Beleg(e) noch nicht an {{to}} übertragen.', folderOpenNoProg: '{{count}} Beleg(e) noch nicht an dein Buchhaltungsprogramm übertragen.', transferAll: 'Jetzt alle übertragen',
+    folderOpenN: '{{count}} Beleg(e) noch nicht an {{to}} übertragen.', folderOpenNoProg: '{{count}} Beleg(e) noch nicht an Ihr Buchhaltungsprogramm übertragen.', transferAll: 'Jetzt alle übertragen',
     advisorOpenN: '{{count}} Beleg(e) noch nicht an den Steuerberater gesendet.', advisorAll: 'Alle an Steuerberater senden',
     selected: '{{count}} ausgewählt', selTransfer: 'Übertragen', selAdvisor: 'An Steuerberater', selPc: 'Auf PC', selClear: 'Auswahl aufheben', selMonth: 'Monat auswählen',
-    empty: 'Noch keine Buchhaltungsbelege. Scanne eine Rechnung, Quittung oder einen Lieferschein.',
+    empty: 'Noch keine Buchhaltungsbelege. Scannen Sie eine Rechnung, Quittung oder einen Lieferschein.',
     advisorTitle: 'An Steuerberater senden', advisorMail: 'E-Mail des Steuerberaters', advisorZip: 'ZIP mit {{count}} Belegen (Jahr / Monat / Belegart) und Übersicht',
     advisorTask: 'Belege des Vormonats an Steuerberater senden', advisorOk: 'Als an Steuerberater gesendet markiert.',
     linkAsk: 'Gehört zu {{kind}} „{{title}}“ vom {{date}}?', linkYes: 'Ja, verknüpfen', linkNo: 'Nein', linked: 'Verknüpft mit: {{list}}',
     linkedNote: 'Verknüpfte Lieferscheine werden beim Übertragen der Rechnung mitgeschickt.', unlink: 'Verknüpfung lösen',
     oldInvoices: 'Frühere Ausgangsrechnungen', oldInvoicesH: 'Nur noch zum Ansehen und Herunterladen',
-    movedNote: 'Rechnungen schreiben, Mahnungen, Kontoabgleich und DATEV-Export erledigt jetzt dein Buchhaltungsprogramm. eOffis legt Belege ab und überträgt sie dorthin.',
+    movedNote: 'Rechnungen schreiben, Mahnungen, Kontoabgleich und DATEV-Export erledigt jetzt Ihr Buchhaltungsprogramm. eOffis legt Belege ab und überträgt sie dorthin.',
     hubAcc: 'Buchhaltung', hubAccH: 'Belege ablegen und übertragen',
   },
   tr: {
@@ -2937,12 +2937,12 @@ const HEU_TEXT = {
     replyOpen: 'Antwort offen: {{who}}', firmaMissing: '{{count}} Firmenunterlagen fehlen', overdue: 'überfällig',
     voiceBtn: 'Termin per Sprache eintragen', voiceBtnSub: 'Sprechen statt tippen – z. B. „Freitag 10 Uhr Steuerberater“',
     voiceTitle: 'Termin oder Frist per Sprache', voiceStart: 'Jetzt sprechen', voiceListening: 'Ich höre zu … sprich jetzt', voiceStop: 'Fertig',
-    voiceText: 'Gesprochener Text (du kannst ihn korrigieren)', voiceNoMic: 'Spracherkennung ist in diesem Browser nicht verfügbar. Tippe ins Feld und nutze das Mikrofon deiner Tastatur.',
+    voiceText: 'Gesprochener Text (Sie können ihn korrigieren)', voiceNoMic: 'Spracherkennung ist in diesem Browser nicht verfügbar. Tippen Sie ins Feld und nutzen Sie das Mikrofon Ihrer Tastatur.',
     voiceDenied: 'Kein Zugriff auf das Mikrofon. Bitte in den Einstellungen des Browsers erlauben.', voiceExample: 'Beispiele: „Morgen 9 Uhr Termin beim Steuerberater“ · „Bis 20. November dem Finanzamt antworten“',
     voiceUnderstand: 'Übernehmen', voiceThinking: 'Wird verstanden …', fTitle: 'Was?', fDate: 'Datum', fTime: 'Uhrzeit (optional)', fKind: 'Art',
     saveTask: 'Speichern', saved: 'Gespeichert: {{title}} am {{date}}', toCal: 'In Handy-Kalender eintragen', toCalTimed: 'Erinnerung 24 Stunden und 1 Stunde vorher.',
     toCalDay: 'Erinnerung 1 Woche und 1 Tag vorher.', toGoogle: 'In Google Kalender', voiceAgain: 'Noch einen Termin', notUnderstood: 'Datum nicht erkannt – bitte Datum eintragen.',
-    pushTitle: 'Tägliche Erinnerung am Morgen', pushText: 'eOffis meldet sich jeden Morgen mit deinen Fristen, Terminen und offenen Antworten.', pushOn: 'Erinnerungen einschalten',
+    pushTitle: 'Tägliche Erinnerung am Morgen', pushText: 'eOffis meldet sich jeden Morgen mit Ihren Fristen, Terminen und offenen Antworten.', pushOn: 'Erinnerungen einschalten',
     pushIos: 'Auf dem iPhone: in Safari unten auf „Teilen“ → „Zum Home-Bildschirm“ tippen, eOffis über das neue Symbol öffnen und hier einschalten.',
     pushDenied: 'Benachrichtigungen sind blockiert. Bitte in den Einstellungen des Handys für eOffis erlauben.', pushOk: 'Tägliche Erinnerung ist eingeschaltet.', pushOff: 'Ausschalten',
     pushLater: 'Später', pushUnsupported: 'Dieses Gerät oder dieser Browser unterstützt keine Benachrichtigungen.', pushMissing: 'Die Erinnerung ist auf dem Server noch nicht eingerichtet.',
@@ -3284,18 +3284,18 @@ document.addEventListener('click', async (e) => {
 /* =================== Paket 3 (08.11.2026): Verfahrensdokumentation, Verträge & Versicherungen, Firmenunterlagen-Paket, Freigabe-Link =================== */
 const UNT_TEXT = {
   de: {
-    vdTitle: 'Verfahrensdokumentation (GoBD)', vdH: 'Pflicht für jeden Betrieb: beschreibt, wie Belege bei dir ankommen, geprüft, digitalisiert und aufbewahrt werden. eOffis erstellt sie aus deinen Antworten.',
+    vdTitle: 'Verfahrensdokumentation (GoBD)', vdH: 'Pflicht für jeden Betrieb: beschreibt, wie Belege bei Ihnen ankommen, geprüft, digitalisiert und aufbewahrt werden. eOffis erstellt sie aus Ihren Antworten.',
     vdBasic: 'Einfach (2–3 Seiten)', vdBasicH: 'Für Einzelunternehmen und kleine Betriebe', vdFull: 'Vollständig (4 Teile)', vdFullH: 'Mit Organisation, Technik, Kontrollen und Betrieb',
     vdStep: 'Frage {{n}} von {{count}}', vdBack: 'Zurück', vdNext: 'Weiter', vdMake: 'Verfahrensdokumentation erstellen', vdDone: 'Verfahrensdokumentation erstellt und unter „Firma & Stammdaten“ abgelegt.',
-    vdNote: 'Muster auf Grundlage deiner Angaben – bitte mit deinem Steuerberater abstimmen. Keine Rechts- oder Steuerberatung.', vdOpen: 'Verfahrensdokumentation öffnen', vdRedo: 'Neu erstellen / aktualisieren',
+    vdNote: 'Muster auf Grundlage Ihrer Angaben – bitte mit Ihrem Steuerberater abstimmen. Keine Rechts- oder Steuerberatung.', vdOpen: 'Verfahrensdokumentation öffnen', vdRedo: 'Neu erstellen / aktualisieren',
     vdTask: 'Verfahrensdokumentation prüfen und aktualisieren', vdHave: 'Erstellt am {{date}} ({{kind}})', vdMissing: 'fehlt – jetzt erstellen', vdOther: 'Sonstiges (eintragen)',
     q_owner: 'Rechtsform und verantwortliche Person', q_ownerH: 'z. B. Einzelunternehmen, Inhaber Max Muster', q_staff: 'Wer legt die Belege ab und prüft sie?', q_staffH: 'Name(n) und Aufgabe',
-    q_software: 'Buchhaltungsprogramm und Steuerberater', q_softwareH: 'z. B. Lexware Office; Steuerkanzlei Muster, Köln', q_inbound: 'Wie kommen Belege bei dir an?',
+    q_software: 'Buchhaltungsprogramm und Steuerberater', q_softwareH: 'z. B. Lexware Office; Steuerkanzlei Muster, Köln', q_inbound: 'Wie kommen Belege bei Ihnen an?',
     q_scan: 'Werden Papierbelege mit eOffis gescannt?', q_original: 'Was passiert danach mit dem Papier-Original?', q_when: 'Wann wird gescannt?', q_check: 'Wer prüft die Scans auf Lesbarkeit und Vollständigkeit?',
     q_cash: 'Bargeld und Kasse', q_bank: 'Geschäftskonto (Bank) und Kontoauszüge', q_bankH: 'z. B. Sparkasse, Kontoauszüge als PDF', q_backup: 'Zusätzliche Datensicherung', q_access: 'Wer hat Zugriff auf das eOffis-Konto?',
     q_org: 'Mitarbeiter und Zuständigkeiten', q_orgH: 'z. B. Frau A: Eingangspost; Herr B: Kasse', q_hw: 'Eingesetzte Geräte', q_hwH: 'z. B. iPhone 15, Büro-PC Windows 11, Drucker', q_ics: 'Interne Kontrollen',
     q_change: 'Wie werden Änderungen an den Abläufen festgehalten?',
-    ctrTitle: 'Verträge & Versicherungen', ctrYear: 'Kosten im Jahr: {{sum}}', ctrNone: 'Noch keine Verträge. Scanne einen Vertrag oder eine Versicherungspolice – eOffis liest Laufzeit, Kündigungsfrist und Kosten.',
+    ctrTitle: 'Verträge & Versicherungen', ctrYear: 'Kosten im Jahr: {{sum}}', ctrNone: 'Noch keine Verträge. Scannen Sie einen Vertrag oder eine Versicherungspolice – eOffis liest Laufzeit, Kündigungsfrist und Kosten.',
     ctrCancelBy: 'kündbar bis {{date}}', ctrEnds: 'endet {{date}}', ctrAuto: 'verlängert sich automatisch', ctrEdit: 'Vertragsdaten bearbeiten', ctrCancel: 'Kündigung schreiben',
     ctrParty: 'Vertragspartner', ctrNo: 'Vertrags-/Policennummer', ctrStart: 'Beginn', ctrEnd: 'Ende', ctrCancelDate: 'Kündigung muss zugehen bis', ctrNotice: 'Kündigungsfrist',
     ctrNoticeH: 'z. B. 3 Monate zum Ende der Laufzeit', ctrRenew: 'Verlängert sich automatisch', ctrCost: 'Kosten', ctrInterval: 'Zahlweise', ctrCoverage: 'Leistung / Versicherungsschutz (kurz)',
@@ -3805,7 +3805,7 @@ document.addEventListener('click', (e) => {
 
 /* =================== Design 2026 (08.11.2026): Navigationsleiste, große Titel, Start mit Begrüßung und Überblick, Willkommensseite =================== */
 const DS_TEXT = {
-  de: { gM: 'Guten Morgen', gD: 'Guten Tag', gE: 'Guten Abend', sDue: 'Fristen in 7 Tagen', sRev: 'Zu prüfen', sAcc: 'Nicht übertragen', wT: 'Willkommen bei eOffis', wS: 'Dein digitaler Büroassistent – eingerichtet in einer Minute.', w1: 'Post fotografieren – die KI erklärt sie', w2: 'Keine Frist mehr verpassen', w3: 'Belege an Buchhaltung und Steuerberater', allDone: 'Alles erledigt' },
+  de: { gM: 'Guten Morgen', gD: 'Guten Tag', gE: 'Guten Abend', sDue: 'Fristen in 7 Tagen', sRev: 'Zu prüfen', sAcc: 'Nicht übertragen', wT: 'Willkommen bei eOffis', wS: 'Ihr digitaler Büroassistent – eingerichtet in einer Minute.', w1: 'Post fotografieren – die KI erklärt sie', w2: 'Keine Frist mehr verpassen', w3: 'Belege an Buchhaltung und Steuerberater', allDone: 'Alles erledigt' },
   tr: { gM: 'Günaydın', gD: 'İyi günler', gE: 'İyi akşamlar', sDue: '7 gün içinde süreler', sRev: 'Kontrol edilecek', sAcc: 'Aktarılmadı', wT: 'eOffis’e hoş geldin', wS: 'Dijital büro asistanın – bir dakikada hazır.', w1: 'Postayı fotoğrafla – yapay zekâ açıklasın', w2: 'Hiçbir süreyi kaçırma', w3: 'Belgeler muhasebeye ve muhasebeciye', allDone: 'Hepsi tamam' },
   pl: { gM: 'Dzień dobry', gD: 'Dzień dobry', gE: 'Dobry wieczór', sDue: 'Terminy w 7 dni', sRev: 'Do sprawdzenia', sAcc: 'Nieprzekazane', wT: 'Witaj w eOffis', wS: 'Twój cyfrowy asystent biurowy – gotowy w minutę.', w1: 'Zrób zdjęcie poczty – AI ją wyjaśni', w2: 'Nie przegap żadnego terminu', w3: 'Dokumenty do księgowości i doradcy', allDone: 'Wszystko zrobione' },
   ru: { gM: 'Доброе утро', gD: 'Добрый день', gE: 'Добрый вечер', sDue: 'Сроки за 7 дней', sRev: 'На проверку', sAcc: 'Не передано', wT: 'Добро пожаловать в eOffis', wS: 'Ваш цифровой офисный помощник – настройка за минуту.', w1: 'Сфотографируйте почту – ИИ объяснит', w2: 'Ни одного пропущенного срока', w3: 'Документы в бухгалтерию и консультанту', allDone: 'Всё сделано' },
@@ -3872,26 +3872,26 @@ for (const k of LARGE_TITLE) {
 const KTO_TEXT = {
   de: {
     trialLeft: 'Kostenloser Test · noch {{n}} Tage', trialLeft1: 'Kostenloser Test · noch 1 Tag', secure: 'Konto sichern',
-    endsIn: 'Dein Testzugang endet in {{n}} Tagen', endsIn1: 'Dein Testzugang endet morgen', aboBtn: 'Abo abschließen',
+    endsIn: 'Ihr Testzugang endet in {{n}} Tagen', endsIn1: 'Ihr Testzugang endet morgen', aboBtn: 'Abo abschließen',
     roBanner: 'Testzeitraum abgelaufen – ansehen und herunterladen bis {{date}}.',
     quotaWarn: 'Speicher zu {{p}} % belegt ({{used}} von {{max}} MB)', quotaMore: 'Mehr Speicher',
-    secureTitle: 'Unterlagen sichern', secureText: 'Mit deiner E-Mail-Adresse erinnern wir dich an Fristen, deine Unterlagen bleiben gesichert und du kannst eOffis auch auf anderen Geräten nutzen. Alles, was du bisher gescannt hast, bleibt erhalten.',
-    secureFrist: 'eOffis hat eine Frist erkannt. Sollen wir dich per E-Mail daran erinnern?',
-    secureAi: 'Ohne E-Mail sind 5 KI-Auswertungen pro Tag möglich. Mit deiner E-Mail-Adresse nutzt du den vollen Umfang.',
+    secureTitle: 'Unterlagen sichern', secureText: 'Mit Ihrer E-Mail-Adresse erinnern wir Sie an Fristen, Ihre Unterlagen bleiben gesichert und Sie können eOffis auch auf anderen Geräten nutzen. Alles, was Sie bisher gescannt haben, bleibt erhalten.',
+    secureFrist: 'eOffis hat eine Frist erkannt. Sollen wir Sie per E-Mail daran erinnern?',
+    secureAi: 'Ohne E-Mail sind 5 KI-Auswertungen pro Tag möglich. Mit Ihrer E-Mail-Adresse nutzen Sie den vollen Umfang.',
     emailLabel: 'E-Mail-Adresse', sendLink: 'Bestätigungslink senden', or: 'oder',
-    linkSent: 'Fast geschafft: Wir haben einen Link an {{mail}} geschickt. Nach dem Bestätigen ist dein Konto gesichert.',
-    emailBad: 'Bitte eine gültige E-Mail-Adresse eingeben.', emailTaken: 'Für diese E-Mail-Adresse gibt es schon ein Konto. Melde dich dort an oder nimm eine andere Adresse.',
+    linkSent: 'Fast geschafft: Wir haben einen Link an {{mail}} geschickt. Nach dem Bestätigen ist Ihr Konto gesichert.',
+    emailBad: 'Bitte eine gültige E-Mail-Adresse eingeben.', emailTaken: 'Für diese E-Mail-Adresse gibt es schon ein Konto. Melden Sie sich dort an oder nehmen Sie eine andere Adresse.',
     later: 'Später', google: 'Mit Google sichern', apple: 'Mit Apple sichern',
-    aboTitle: 'eOffis Abo', aboText: 'Mit dem Abo nutzt du eOffis ohne Unterbrechung weiter – alle Unterlagen, Fristen und Einstellungen bleiben erhalten.',
+    aboTitle: 'eOffis Abo', aboText: 'Mit dem Abo nutzen Sie eOffis ohne Unterbrechung weiter – alle Unterlagen, Fristen und Einstellungen bleiben erhalten.',
     aboF1: 'Post scannen, verstehen und ablegen (200 MB Speicher)', aboF2: 'KI-Auswertung von Briefen, Rechnungen und Fristen', aboF3: 'Erinnerungen per Push und E-Mail',
-    aboReq: 'Abo anfragen', aboSoon: 'Die Online-Bezahlung wird gerade eingerichtet. Tippe auf „Abo anfragen“ – wir schalten dein Konto frei und melden uns.',
-    aboDone: 'Danke! Deine Anfrage ist eingegangen. Wir melden uns in Kürze.', aboActive: 'Dein Abo ist aktiv. Danke!', aboNeedMail: 'Damit wir dich erreichen können, sichere bitte zuerst dein Konto mit deiner E-Mail-Adresse.',
+    aboReq: 'Abo anfragen', aboSoon: 'Die Online-Bezahlung wird gerade eingerichtet. Tippen Sie auf „Abo anfragen“ – wir schalten Ihr Konto frei und melden uns.',
+    aboDone: 'Danke! Ihre Anfrage ist eingegangen. Wir melden uns in Kürze.', aboActive: 'Ihr Abo ist aktiv. Danke!', aboNeedMail: 'Damit wir Sie erreichen können, sichern Sie bitte zuerst Ihr Konto mit Ihrer E-Mail-Adresse.',
     stTrial: 'Kostenlose Probezeit bis {{date}}', stRo: 'Nur lesen bis {{date}} – danach werden die Unterlagen gelöscht', stActive: 'Abo aktiv',
     storage: 'Speicher: {{used}} von {{max}} MB', anonAccount: 'Testzugang ohne E-Mail', pending: 'Bestätigung ausstehend: {{mail}}',
-    roTitle: 'Nur noch lesen', roText: 'Dein Testzeitraum ist abgelaufen. Ansehen und Herunterladen geht weiter bis {{date}}. Neues scannen und auswerten kannst du mit einem Abo.',
-    roAi: 'Dein Testzeitraum ist abgelaufen. KI-Auswertungen gibt es wieder mit einem Abo.',
-    quotaTitle: 'Speicher voll', quotaText: 'Dein Speicher ({{max}} MB) ist voll. Lösche nicht mehr benötigte Unterlagen oder erweitere deinen Speicher.',
-    quotaAnon: 'Ohne E-Mail stehen 20 MB zur Verfügung. Mit deiner E-Mail-Adresse bekommst du 200 MB.', quotaFree: 'Platz freimachen', quotaSoon: 'Mehr Speicher gibt es bald als Erweiterung zum Abo. Frag uns gern über „Abo anfragen“.',
+    roTitle: 'Nur noch lesen', roText: 'Ihr Testzeitraum ist abgelaufen. Ansehen und Herunterladen geht weiter bis {{date}}. Neues scannen und auswerten können Sie mit einem Abo.',
+    roAi: 'Ihr Testzeitraum ist abgelaufen. KI-Auswertungen gibt es wieder mit einem Abo.',
+    quotaTitle: 'Speicher voll', quotaText: 'Ihr Speicher ({{max}} MB) ist voll. Löschen Sie nicht mehr benötigte Unterlagen oder erweitern Sie Ihren Speicher.',
+    quotaAnon: 'Ohne E-Mail stehen 20 MB zur Verfügung. Mit Ihrer E-Mail-Adresse bekommen Sie 200 MB.', quotaFree: 'Platz freimachen', quotaSoon: 'Mehr Speicher gibt es bald als Erweiterung zum Abo. Fragen Sie uns gern über „Abo anfragen“.',
   },
   tr: {
     trialLeft: 'Ücretsiz deneme · {{n}} gün kaldı', trialLeft1: 'Ücretsiz deneme · 1 gün kaldı', secure: 'Hesabı güvenceye al',
@@ -4201,7 +4201,7 @@ document.addEventListener('click', async (e) => {
 
 /* ---------- Kontoanzeige oben rechts (20.11.2026): Testzugang oder eigenes Konto auf einen Blick, Abmelden mit Schutz ---------- */
 const KTO_ACC = {
-  de: { accTest: 'Testzugang', accTitle: 'Dein Konto', accAnon: 'Du nutzt eOffis ohne Konto (Testzugang nur auf diesem Gerät). Sichere dein Konto mit deiner E-Mail-Adresse, damit deine Unterlagen nicht verloren gehen.', accMail: 'Angemeldet als {{mail}}', accWarn: 'Achtung: Dein Testzugang ist nicht gesichert. Nach dem Abmelden kommst du nicht mehr an deine Unterlagen. Wirklich abmelden?', accYes: 'Trotzdem abmelden', accLogin: 'Ich habe schon ein Konto – anmelden', accSafe: '✓ Konto gesichert – deine Unterlagen sind mit deiner E-Mail-Adresse verbunden.' },
+  de: { accTest: 'Testzugang', accTitle: 'Ihr Konto', accAnon: 'Sie nutzen eOffis ohne Konto (Testzugang nur auf diesem Gerät). Sichern Sie Ihr Konto mit Ihrer E-Mail-Adresse, damit Ihre Unterlagen nicht verloren gehen.', accMail: 'Angemeldet als {{mail}}', accWarn: 'Achtung: Ihr Testzugang ist nicht gesichert. Nach dem Abmelden kommen Sie nicht mehr an Ihre Unterlagen. Wirklich abmelden?', accYes: 'Trotzdem abmelden', accLogin: 'Ich habe schon ein Konto – anmelden', accSafe: '✓ Konto gesichert – Ihre Unterlagen sind mit Ihrer E-Mail-Adresse verbunden.' },
   tr: { accTest: 'Deneme', accTitle: 'Hesabın', accAnon: 'eOffis’i hesapsız kullanıyorsun (deneme yalnızca bu cihazda). Belgelerin kaybolmasın diye hesabını e-posta adresinle güvenceye al.', accMail: '{{mail}} olarak giriş yapıldı', accWarn: 'Dikkat: Deneme erişimin güvencede değil. Çıkış yaptıktan sonra belgelerine ulaşamazsın. Gerçekten çıkış yapılsın mı?', accYes: 'Yine de çıkış yap', accLogin: 'Zaten hesabım var – giriş yap', accSafe: '✓ Hesap güvende – belgelerin e-posta adresine bağlı.' },
   pl: { accTest: 'Test', accTitle: 'Twoje konto', accAnon: 'Korzystasz z eOffis bez konta (test tylko na tym urządzeniu). Zabezpiecz konto adresem e-mail, aby nie stracić dokumentów.', accMail: 'Zalogowano jako {{mail}}', accWarn: 'Uwaga: Twój dostęp testowy nie jest zabezpieczony. Po wylogowaniu stracisz dostęp do dokumentów. Na pewno wylogować?', accYes: 'Mimo to wyloguj', accLogin: 'Mam już konto – zaloguj', accSafe: '✓ Konto zabezpieczone – dokumenty są powiązane z Twoim adresem e-mail.' },
   ru: { accTest: 'Тест', accTitle: 'Ваш аккаунт', accAnon: 'Вы пользуетесь eOffis без аккаунта (тест только на этом устройстве). Сохраните аккаунт с e-mail, чтобы не потерять документы.', accMail: 'Вход выполнен: {{mail}}', accWarn: 'Внимание: тестовый доступ не сохранён. После выхода документы будут недоступны. Всё равно выйти?', accYes: 'Всё равно выйти', accLogin: 'У меня уже есть аккаунт – войти', accSafe: '✓ Аккаунт сохранён – документы привязаны к вашему e-mail.' },
@@ -4253,12 +4253,12 @@ document.addEventListener('click', (e) => { if (e.target.closest('[data-a="ktoAc
 // Name + Lieferant innerhalb 60 Tagen bei Lieferschein↔Rechnung bzw. erneut gescannter Rechnung). Gelöschte kommen nicht wieder.
 const INV_TEXT = {
   de: {
-    hub: 'Betriebs-Akte', invT: 'Inventar', invH: 'Geräte und Anschaffungen – automatisch aus deinen Rechnungen',
-    invNone: 'Noch nichts im Inventar. Scanne eine Rechnung über ein Gerät oder eine Anschaffung – eOffis trägt es hier automatisch ein.',
+    hub: 'Betriebs-Akte', invT: 'Inventar', invH: 'Geräte und Anschaffungen – automatisch aus Ihren Rechnungen',
+    invNone: 'Noch nichts im Inventar. Scannen Sie eine Rechnung über ein Gerät oder eine Anschaffung – eOffis trägt es hier automatisch ein.',
     invSum: '{{count}} Gegenstände · Anschaffungswert {{sum}}', invTaken: 'Ins Inventar übernommen', invOpen: 'Inventar öffnen', invUndo: 'Entfernen',
-    invAsk: 'Möchtest du an dieser Stelle alle früheren Rechnungen, Lieferscheine, Belege … hochladen, damit deine Inventarliste vervollständigt wird?',
+    invAsk: 'Möchten Sie an dieser Stelle alle früheren Rechnungen, Lieferscheine, Belege … hochladen, damit Ihre Inventarliste vervollständigt wird?',
     invAskYes: 'Ja, jetzt hochladen', invAskLater: 'Später', invAskNever: 'Nicht mehr fragen',
-    bulkT: 'Frühere Belege hochladen', bulkH: 'Wähle beliebig viele Dateien (PDF, Fotos, E-Rechnungen). Jede Datei wird ein eigener Beleg, wird ausgewertet und abgelegt; Anschaffungen kommen ins Inventar.',
+    bulkT: 'Frühere Belege hochladen', bulkH: 'Wählen Sie beliebig viele Dateien (PDF, Fotos, E-Rechnungen). Jede Datei wird ein eigener Beleg, wird ausgewertet und abgelegt; Anschaffungen kommen ins Inventar.',
     bulkPick: 'Dateien auswählen', bulkRun: '{{n}} von {{count}} Dateien verarbeitet …', bulkDone: 'Fertig: {{count}} Belege abgelegt, {{assets}} Gegenstände neu im Inventar.',
     bulkDup: '{{count}} Datei(en) waren schon vorhanden und wurden übersprungen.', bulkFail: 'Nicht lesbar: {{names}}',
     bulkLeft: '{{count}} Beleg(e) noch nicht ausgewertet – die KI ist gerade nicht verfügbar oder das Tageslimit ist erreicht. Später einfach „Weiter auswerten“ tippen.',
@@ -4689,28 +4689,29 @@ document.addEventListener('click', async (e) => {
 // Frist unter „Fristen“ (dutySync); dort erledigt → nächster Termin. Nachweise sind normale Belege mit duty_id.
 const DUT_TEXT = {
   de: {
-    dutT: 'Pflichten-Kalender', dutH: 'Pflichten deiner Branche mit Terminen und Nachweisen', allBiz: 'Alle Betriebe',
-    introT: 'Welche Pflichten hat dein Betrieb?', introH: 'eOffis holt die passende Pflichtenliste für deine Branche, legt die Termine unter „Fristen“ an und hebt zu jeder Pflicht den Nachweis auf.', start: 'Jetzt einrichten', homeClose: 'Ausblenden',
-    indT: 'Welche Branche(n) hat dein Betrieb?', indH: 'Mehrere möglich. Passt nichts, gelten die allgemeinen Pflichten aller Betriebe.', search: 'Branche suchen …',
-    missing: 'Meine Branche fehlt', missingH: 'Wie heißt deine Branche? Wir ergänzen sie.', send: 'Vorschlag senden', sent: 'Danke! Dein Vorschlag ist angekommen.',
-    factsT: 'Ein paar Angaben zu deinem Betrieb', emp: 'Mitarbeiter (ohne Inhaber)',
+    dutT: 'Pflichten-Kalender', dutH: 'Pflichten Ihrer Branche mit Terminen und Nachweisen', allBiz: 'Alle Betriebe',
+    introT: 'Welche Pflichten hat Ihr Betrieb?', introH: 'eOffis holt die passende Pflichtenliste für Ihre Branche, legt die Termine unter „Fristen“ an und hebt zu jeder Pflicht den Nachweis auf.', start: 'Jetzt einrichten', homeClose: 'Ausblenden',
+    indT: 'Welche Branche(n) hat Ihr Betrieb?', indH: 'Mehrere möglich. Passt nichts, gelten die allgemeinen Pflichten aller Betriebe.', search: 'Branche suchen …',
+    missing: 'Meine Branche fehlt', missingH: 'Wie heißt Ihre Branche? Wir ergänzen sie.', send: 'Vorschlag senden', sent: 'Danke! Ihr Vorschlag ist angekommen.',
+    factsT: 'Ein paar Angaben zu Ihrem Betrieb', emp: 'Mitarbeiter (ohne Inhaber)',
     f_has_cash_register: 'Elektronische Kasse', f_has_vehicle: 'Firmenfahrzeug(e)', f_kapitalgesellschaft: 'GmbH, UG oder andere Gesellschaft (kein Einzelunternehmen)',
     f_ships_goods: 'Ware mit Verpackung an Kunden (auch Versand)', f_sells_by_weight: 'Verkauf nach Gewicht (Waage)', f_buys_precious_metals: 'Ankauf von Gold, Schmuck oder Uhren',
     f_handles_client_money: 'Nimmt Gelder von Kunden entgegen (z. B. Kautionen)', f_wohnimmobilienverwalter: 'Verwaltung von Wohnungen (WEG oder Miete)', f_has_grease_trap: 'Fettabscheider vorhanden',
     next: 'Weiter', loading: 'Pflichtenliste wird geladen …', fail: 'Die Pflichtenliste ist gerade nicht erreichbar. Bitte später erneut versuchen.',
-    listT: 'Deine Pflichtenliste', listMsg: 'eOffis arbeitet für deinen Betrieb nach dieser Pflichtenliste: {{names}} – {{count}} Punkte.',
-    applies: 'Trifft auf deinen Betrieb zu', maybe: 'Trifft evtl. zu – bitte prüfen und ankreuzen, wenn es passt',
-    moreQ: 'Möchtest du noch weitere Punkte hinzufügen?', yes: 'Ja', no: 'Nein, weiter', customT: 'Eigener Punkt', cTitle: 'Was ist zu tun?', cRecur: 'Wie oft?',
+    listT: 'Ihre Pflichtenliste', listMsg: 'eOffis arbeitet für Ihren Betrieb nach dieser Pflichtenliste: {{names}} – {{count}} Punkte.',
+    applies: 'Trifft auf Ihren Betrieb zu', maybe: 'Trifft evtl. zu – bitte prüfen und ankreuzen, wenn es passt',
+    moreQ: 'Möchten Sie noch weitere Punkte hinzufügen?', yes: 'Ja', no: 'Nein, weiter', customT: 'Eigener Punkt', cTitle: 'Was ist zu tun?', cRecur: 'Wie oft?',
     cDue: 'Nächster Termin (TT.MM.JJJJ, optional)', cProof: 'Welcher Nachweis? (optional)', cAdd: 'Hinzufügen', cAdded: '„{{title}}“ hinzugefügt.', cMiss: 'Bitte beschreiben, was zu tun ist.',
     r_once: 'einmalig', r_monthly: 'monatlich', r_quarterly: 'vierteljährlich', r_halfyearly: 'halbjährlich', r_yearly: 'jährlich', r_every: 'alle {{n}} Monate', r_event: 'bei Anlass',
-    ackT: 'Wichtiger Hinweis', ack: 'eOffis übernimmt keine Haftung für die Vollständigkeit und Richtigkeit der Pflichtenliste. eOffis dient nur zur Hilfe und ersetzt keine Rechtsberatung. Die Pflichten deines Betriebs liegen in deiner Verantwortung.',
+    foot: 'Hinweis: Die Pflichtenlisten sind eine Hilfe von eOffis und nicht rechtlich geprüft. eOffis übernimmt keine Haftung für Vollständigkeit und Richtigkeit. Die Pflichten Ihres Betriebs liegen in Ihrer Verantwortung. Lassen Sie die Liste am besten von Ihrem Steuerberater oder Ihrer Kammer (IHK, Handwerkskammer) prüfen.',
+    ackT: 'Wichtiger Hinweis', ack: 'eOffis übernimmt keine Haftung für die Vollständigkeit und Richtigkeit der Pflichtenliste. eOffis dient nur zur Hilfe und ersetzt keine Rechtsberatung. Die Pflichten Ihres Betriebs liegen in Ihrer Verantwortung.',
     ackOk: 'Verstanden', make: 'Pflichten-Kalender anlegen', made: 'Pflichten-Kalender angelegt: {{count}} Punkte. Die Termine stehen auch unter „Fristen“.',
     based: 'Nach Pflichtenliste: {{names}}', change: 'Branche oder Angaben ändern', addOwn: 'Eigenen Punkt hinzufügen', upcoming: 'Anstehend', event: 'Bei Anlass', doneOnce: 'Erledigt', off: 'Trifft nicht zu',
-    proofs: '{{count}} Nachweis(e)', noProof: 'noch kein Nachweis', upd: '{{count}} neue Punkte in deiner Pflichtenliste', review: 'Prüfen', updated: 'aktualisiert',
+    proofs: '{{count}} Nachweis(e)', noProof: 'noch kein Nachweis', upd: '{{count}} neue Punkte in Ihrer Pflichtenliste', review: 'Prüfen', updated: 'aktualisiert',
     dNext: 'Nächster Termin', dLast: 'Zuletzt erledigt: {{date}}', dProof: 'Nachweis', dLegal: 'Grundlage', dSource: 'Mehr dazu', dDoneQ: 'Erledigt?', dDoneScan: 'Erledigt – Nachweis scannen',
     dDoneNo: 'Erledigt ohne Nachweis', dPick: 'Nachweis aus der Ablage wählen', dPickT: 'Welche Unterlage ist der Nachweis?', dPickNone: 'Noch keine Unterlagen in der Ablage.',
     dDate: 'Termin ändern', dOff: 'Trifft nicht zu', dOn: 'Wieder aufnehmen', dDel: 'Punkt löschen', dDelQ: 'Diesen eigenen Punkt löschen?', dDoneOk: 'Erledigt. Nächster Termin: {{date}}', dDoneOnce: 'Erledigt.',
-    dProofFor: 'Nachweis für: {{title}}', dProofScan: 'Du scannst den Nachweis für: {{title}}', dProofCancel: 'Abbrechen', dProofs: 'Nachweise', dElec: '{{count}} elektrische Geräte im Inventar',
+    dProofFor: 'Nachweis für: {{title}}', dProofScan: 'Sie scannen den Nachweis für: {{title}}', dProofCancel: 'Abbrechen', dProofs: 'Nachweise', dElec: '{{count}} elektrische Geräte im Inventar',
     dDateOk: 'Termin geändert.', dEventHint: 'Kein fester Termin – immer dann erledigen, wenn der Anlass eintritt, und den Nachweis hier ablegen.',
   },
   tr: {
@@ -4728,6 +4729,7 @@ const DUT_TEXT = {
     moreQ: 'Başka madde eklemek ister misin?', yes: 'Evet', no: 'Hayır, devam', customT: 'Kendi maddem', cTitle: 'Ne yapılmalı?', cRecur: 'Ne sıklıkla?',
     cDue: 'Sonraki tarih (GG.AA.YYYY, isteğe bağlı)', cProof: 'Hangi kanıt? (isteğe bağlı)', cAdd: 'Ekle', cAdded: '„{{title}}“ eklendi.', cMiss: 'Lütfen ne yapılması gerektiğini yaz.',
     r_once: 'tek seferlik', r_monthly: 'aylık', r_quarterly: 'üç aylık', r_halfyearly: 'altı aylık', r_yearly: 'yıllık', r_every: 'her {{n}} ayda bir', r_event: 'gerektiğinde',
+    foot: 'Not: Yükümlülük listeleri eOffis’in bir yardımıdır ve hukuken kontrol edilmemiştir. eOffis eksiksizlik ve doğruluk için sorumluluk kabul etmez. İşletmenizin yükümlülükleri sizin sorumluluğunuzdadır. Listeyi en iyisi mali müşavirinize veya odanıza (IHK, Handwerkskammer) kontrol ettirin.',
     ackT: 'Önemli not', ack: 'eOffis yükümlülük listesinin eksiksizliği ve doğruluğu için sorumluluk kabul etmez. eOffis yalnızca yardımcı olur ve hukuki danışmanlığın yerini tutmaz. İşletmenin yükümlülükleri senin sorumluluğundadır.',
     ackOk: 'Anladım', make: 'Yükümlülük takvimini oluştur', made: 'Yükümlülük takvimi oluşturuldu: {{count}} madde. Tarihler „Süreler“de de görünür.',
     based: 'Yükümlülük listesi: {{names}}', change: 'Sektörü veya bilgileri değiştir', addOwn: 'Kendi maddeni ekle', upcoming: 'Yaklaşan', event: 'Gerektiğinde', doneOnce: 'Tamamlandı', off: 'Geçerli değil',
@@ -4753,6 +4755,7 @@ const DUT_TEXT = {
     moreQ: 'Czy chcesz dodać kolejne punkty?', yes: 'Tak', no: 'Nie, dalej', customT: 'Własny punkt', cTitle: 'Co trzeba zrobić?', cRecur: 'Jak często?',
     cDue: 'Następny termin (DD.MM.RRRR, opcjonalnie)', cProof: 'Jaki dowód? (opcjonalnie)', cAdd: 'Dodaj', cAdded: 'Dodano „{{title}}”.', cMiss: 'Opisz, co trzeba zrobić.',
     r_once: 'jednorazowo', r_monthly: 'co miesiąc', r_quarterly: 'co kwartał', r_halfyearly: 'co pół roku', r_yearly: 'co roku', r_every: 'co {{n}} mies.', r_event: 'w razie potrzeby',
+    foot: 'Uwaga: listy obowiązków są pomocą eOffis i nie zostały sprawdzone prawnie. eOffis nie ponosi odpowiedzialności za ich kompletność i poprawność. Za obowiązki firmy odpowiada jej właściciel. Najlepiej zlecić sprawdzenie listy doradcy podatkowemu lub izbie (IHK, Handwerkskammer).',
     ackT: 'Ważna informacja', ack: 'eOffis nie ponosi odpowiedzialności za kompletność i poprawność listy obowiązków. eOffis służy jedynie pomocą i nie zastępuje porady prawnej. Za obowiązki firmy odpowiadasz Ty.',
     ackOk: 'Rozumiem', make: 'Utwórz kalendarz obowiązków', made: 'Utworzono kalendarz obowiązków: {{count}} punktów. Terminy są też w „Terminy”.',
     based: 'Według listy: {{names}}', change: 'Zmień branżę lub dane', addOwn: 'Dodaj własny punkt', upcoming: 'Nadchodzące', event: 'W razie potrzeby', doneOnce: 'Załatwione', off: 'Nie dotyczy',
@@ -4778,6 +4781,7 @@ const DUT_TEXT = {
     moreQ: 'Хотите добавить ещё пункты?', yes: 'Да', no: 'Нет, далее', customT: 'Свой пункт', cTitle: 'Что нужно сделать?', cRecur: 'Как часто?',
     cDue: 'Следующий срок (ДД.ММ.ГГГГ, необязательно)', cProof: 'Какое подтверждение? (необязательно)', cAdd: 'Добавить', cAdded: '«{{title}}» добавлено.', cMiss: 'Опишите, что нужно сделать.',
     r_once: 'однократно', r_monthly: 'ежемесячно', r_quarterly: 'ежеквартально', r_halfyearly: 'раз в полгода', r_yearly: 'ежегодно', r_every: 'каждые {{n}} мес.', r_event: 'по случаю',
+    foot: 'Примечание: списки обязанностей — это помощь eOffis, они не проверены юристами. eOffis не несёт ответственности за их полноту и правильность. Ответственность за обязанности предприятия лежит на вас. Лучше всего попросите налогового консультанта или палату (IHK, Handwerkskammer) проверить список.',
     ackT: 'Важное примечание', ack: 'eOffis не несёт ответственности за полноту и правильность списка обязанностей. eOffis служит только помощью и не заменяет юридическую консультацию. Ответственность за обязанности предприятия лежит на вас.',
     ackOk: 'Понятно', make: 'Создать календарь обязанностей', made: 'Календарь обязанностей создан: {{count}} пунктов. Сроки также в разделе «Сроки».',
     based: 'По списку: {{names}}', change: 'Изменить отрасль или данные', addOwn: 'Добавить свой пункт', upcoming: 'Предстоящие', event: 'По случаю', doneOnce: 'Выполнено', off: 'Не относится',
@@ -4803,6 +4807,7 @@ const DUT_TEXT = {
     moreQ: 'هل تريد إضافة بنود أخرى؟', yes: 'نعم', no: 'لا، تابع', customT: 'بند خاص', cTitle: 'ما المطلوب فعله؟', cRecur: 'كم مرة؟',
     cDue: 'الموعد التالي (يوم.شهر.سنة، اختياري)', cProof: 'ما الإثبات؟ (اختياري)', cAdd: 'إضافة', cAdded: 'تمت إضافة „{{title}}“.', cMiss: 'يرجى وصف ما يجب فعله.',
     r_once: 'مرة واحدة', r_monthly: 'شهريًا', r_quarterly: 'كل ثلاثة أشهر', r_halfyearly: 'كل ستة أشهر', r_yearly: 'سنويًا', r_every: 'كل {{n}} شهرًا', r_event: 'عند الحاجة',
+    foot: 'ملاحظة: قوائم الالتزامات مساعدة من eOffis ولم تُراجَع قانونيًا. لا يتحمّل eOffis أي مسؤولية عن اكتمالها وصحتها. التزامات منشأتك تقع على مسؤوليتك. يُفضَّل أن يراجع القائمة مستشارك الضريبي أو الغرفة المختصة (IHK، Handwerkskammer).',
     ackT: 'ملاحظة مهمة', ack: 'لا يتحمّل eOffis أي مسؤولية عن اكتمال قائمة الالتزامات وصحتها. eOffis للمساعدة فقط ولا يحل محل الاستشارة القانونية. التزامات منشأتك تقع على مسؤوليتك.',
     ackOk: 'فهمت', make: 'إنشاء تقويم الالتزامات', made: 'تم إنشاء تقويم الالتزامات: {{count}} بندًا. المواعيد موجودة أيضًا في „المواعيد“.',
     based: 'وفق القائمة: {{names}}', change: 'تغيير القطاع أو البيانات', addOwn: 'إضافة بند خاص', upcoming: 'قادم', event: 'عند الحاجة', doneOnce: 'منجز', off: 'لا ينطبق',
@@ -4828,6 +4833,7 @@ const DUT_TEXT = {
     moreQ: 'Vrei să adaugi și alte puncte?', yes: 'Da', no: 'Nu, mai departe', customT: 'Punct propriu', cTitle: 'Ce trebuie făcut?', cRecur: 'Cât de des?',
     cDue: 'Termenul următor (ZZ.LL.AAAA, opțional)', cProof: 'Ce dovadă? (opțional)', cAdd: 'Adaugă', cAdded: '„{{title}}” adăugat.', cMiss: 'Descrie ce trebuie făcut.',
     r_once: 'o singură dată', r_monthly: 'lunar', r_quarterly: 'trimestrial', r_halfyearly: 'semestrial', r_yearly: 'anual', r_every: 'la fiecare {{n}} luni', r_event: 'la nevoie',
+    foot: 'Notă: listele de obligații sunt un ajutor oferit de eOffis și nu sunt verificate juridic. eOffis nu își asumă răspunderea pentru completitudinea și corectitudinea lor. Obligațiile firmei sunt responsabilitatea dumneavoastră. Cel mai bine, cereți consultantului fiscal sau camerei (IHK, Handwerkskammer) să verifice lista.',
     ackT: 'Notă importantă', ack: 'eOffis nu își asumă răspunderea pentru completitudinea și corectitudinea listei de obligații. eOffis este doar un ajutor și nu înlocuiește consultanța juridică. Obligațiile firmei tale sunt responsabilitatea ta.',
     ackOk: 'Am înțeles', make: 'Creează calendarul obligațiilor', made: 'Calendarul obligațiilor a fost creat: {{count}} puncte. Termenele apar și la „Termene”.',
     based: 'După lista: {{names}}', change: 'Schimbă domeniul sau datele', addOwn: 'Adaugă un punct propriu', upcoming: 'Urmează', event: 'La nevoie', doneOnce: 'Rezolvat', off: 'Nu se aplică',
@@ -4989,6 +4995,7 @@ function dutCustomRead(prefix) {
   return d;
 }
 const dwRow = (x, W) => `<label class="check" style="align-items:flex-start"><input type="checkbox" data-a="baDwSel" data-v="${esc(x.id)}" ${W.chosen.has(x.id) ? 'checked' : ''}><span><b>${esc(baTx(x.title))}</b><br><span class="small muted">${esc([recurLabel(x), x.legal_ref].filter(Boolean).join(' · '))}</span></span></label>`;
+const dutFoot = () => `<p class="muted small" id="dutFoot" role="note" style="border-top:1px solid var(--line);padding-top:12px;margin-top:20px">${esc(t('dut.foot'))}</p>`;
 VIEWS.dutwiz = {
   title: () => t('dut.dutT'),
   render() {
@@ -5003,7 +5010,7 @@ VIEWS.dutwiz = {
         <details style="margin-top:10px"><summary class="small">${esc(t('dut.missing'))}</summary>${field('dw_new', t('dut.missingH'), '')}<button class="btn sm sec" data-a="baDwSuggest">${esc(t('dut.send'))}</button></details></div>
         <div class="card"><h2>${esc(t('dut.factsT'))}</h2>${field('dw_emp', t('dut.emp'), String(W.facts.employees || 0), 'inputmode="numeric"')}
         ${DUT_FACTS.filter(([, inds]) => !inds || inds.some((i) => chain.includes(i))).map(([k]) => `<label class="check"><input type="checkbox" data-a="baDwFact" data-v="${k}" ${W.facts[k] ? 'checked' : ''}>${esc(t('dut.f_' + k))}</label>`).join('')}</div>
-        <button class="btn" data-a="baDwNext">${esc(t('dut.next'))} ›</button>`;
+        <button class="btn" data-a="baDwNext">${esc(t('dut.next'))} ›</button>${dutFoot()}`;
     }
     if (W.step === 'list') {
       const names = indChain(W.sel).map(indName).join(', ');
@@ -5013,11 +5020,11 @@ VIEWS.dutwiz = {
         ${maybe.length ? `<div class="sec-h">${esc(t('dut.maybe'))}</div><div class="card">${maybe.map((x) => dwRow(x, W)).join('')}</div>` : ''}
         ${W.extra.length ? group(W.extra.map((d) => cell({ icon: 'plus', ic: 'g', title: d.title, sub: recurLabel(d), chevron: false })), t('dut.customT')) : ''}
         ${W.adding ? `${dutCustomForm('dwc_')}<button class="btn sec" data-a="baDwAdd">${ico('plus')}${esc(t('dut.cAdd'))}</button><button class="btn" data-a="baDwNo">${esc(t('dut.next'))} ›</button>`
-          : `<div class="card" id="dwMore"><p><b>${esc(t('dut.moreQ'))}</b></p><div class="grid2"><button class="btn sec" data-a="baDwYes">${esc(t('dut.yes'))}</button><button class="btn" data-a="baDwNo">${esc(t('dut.no'))}</button></div></div>`}`;
+          : `<div class="card" id="dwMore"><p><b>${esc(t('dut.moreQ'))}</b></p><div class="grid2"><button class="btn sec" data-a="baDwYes">${esc(t('dut.yes'))}</button><button class="btn" data-a="baDwNo">${esc(t('dut.no'))}</button></div></div>`}${dutFoot()}`;
     }
     return `<div class="card" id="dwAck"><h2>${esc(t('dut.ackT'))}</h2><p>${esc(t('dut.ack'))}</p>
       <label class="check"><input type="checkbox" id="dw_ack"><b>${esc(t('dut.ackOk'))}</b></label>
-      <button class="btn" data-a="baDwMake" id="dw_make" disabled>${ico('check')}${esc(t('dut.make'))}</button></div>`;
+      <button class="btn" data-a="baDwMake" id="dw_make" disabled>${ico('check')}${esc(t('dut.make'))}</button></div>${dutFoot()}`;
   },
   after() {
     const q = $('#dw_q');
@@ -5066,7 +5073,7 @@ VIEWS.duties = {
   title: () => t('dut.dutT'),
   render() {
     const P = dutSetup();
-    if (!P) return `<div class="card"><h2>${esc(t('dut.introT'))}</h2><p class="small">${esc(t('dut.introH'))}</p><button class="btn" data-a="baDwStart">${ico('check')}${esc(t('dut.start'))}</button></div>`;
+    if (!P) return `<div class="card"><h2>${esc(t('dut.introT'))}</h2><p class="small">${esc(t('dut.introH'))}</p><button class="btn" data-a="baDwStart">${ico('check')}${esc(t('dut.start'))}</button></div>${dutFoot()}`;
     const act = S.duties.filter((d) => d.active !== false);
     const up = act.filter((d) => d.next_due).sort((a, b) => a.next_due.localeCompare(b.next_due) || (a.priority || 2) - (b.priority || 2));
     const ev = act.filter((d) => !d.next_due && d.recur === 'event'), fin = act.filter((d) => !d.next_due && d.recur !== 'event');
@@ -5076,7 +5083,7 @@ VIEWS.duties = {
       <div class="grid2"><button class="btn sm sec" data-a="baDwStart">${esc(t('dut.change'))}</button><button class="btn sm sec" data-go="dutadd">${ico('plus')}${esc(t('dut.addOwn'))}</button></div></div>
       ${up.length ? group(up.map(dutCell), t('dut.upcoming')) : ''}${ev.length ? group(ev.map(dutCell), t('dut.event')) : ''}
       ${fin.length ? group(fin.map(dutCell), t('dut.doneOnce')) : ''}${off.length ? group(off.map(dutCell), t('dut.off')) : ''}
-      <p class="muted small">${esc(t('dut.ack'))}</p>`;
+      ${dutFoot()}`;
   },
   after() {
     const P = dutSetup(); if (!P || S.dutChecked || !DH()) return;
@@ -5112,10 +5119,10 @@ VIEWS.duty = {
         <button class="btn sec" data-a="baDuPick">${ico('folder')}${esc(t('dut.dPick'))}</button><button class="btn ghost" data-a="baDuDone">${esc(t('dut.dDoneNo'))}</button></div>` : ''}
       ${docs.length ? group(docs.map((x) => cell({ icon: 'doc', ic: 'g', title: x.title, sub: fmtDate(x.document_date || x.created_at), attrs: `data-go="doc" data-id="${x.id}"` })), t('dut.dProofs')) : ''}
       <button class="btn ghost" data-a="baDuToggle">${esc(on ? t('dut.dOff') : t('dut.dOn'))}</button>
-      ${d.custom ? `<button class="btn ghost" data-a="baDuDel">${esc(t('dut.dDel'))}</button>` : ''}`;
+      ${d.custom ? `<button class="btn ghost" data-a="baDuDel">${esc(t('dut.dDel'))}</button>` : ''}${dutFoot()}`;
   },
 };
-VIEWS.dutadd = { title: () => t('dut.addOwn'), render: () => `${dutCustomForm('dc_')}<button class="btn" data-a="baDuAdd">${ico('plus')}${esc(t('dut.cAdd'))}</button>` };
+VIEWS.dutadd = { title: () => t('dut.addOwn'), render: () => `${dutCustomForm('dc_')}<button class="btn" data-a="baDuAdd">${ico('plus')}${esc(t('dut.cAdd'))}</button>${dutFoot()}` };
 async function dutDoneToast(d) { const s = S.duties.find((x) => x.id === d.id) || d; toast(s.next_due ? t('dut.dDoneOk', { date: fmtDate(s.next_due) }) : t('dut.dDoneOnce')); }
 
 /* ---------- Nachweis scannen: nächster neuer Beleg gehört zur Pflicht ---------- */

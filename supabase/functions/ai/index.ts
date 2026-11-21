@@ -29,8 +29,8 @@ async function callClaude(prompt: string, images: Img[], wantJson: boolean, maxT
   }));
   content.push({ type: 'text', text: prompt });
   const system = wantJson
-    ? 'Du bist der Büroassistent von eOffis für kleine Betriebe in Deutschland. Antworte ausschließlich mit einem einzigen gültigen JSON-Wert, ohne Erklärtext und ohne Markdown. Erfinde keine Angaben; unbekannte Werte sind null.'
-    : 'Du bist der Büroassistent von eOffis für kleine Betriebe in Deutschland. Antworte sachlich, klar und ohne Markdown-Formatierung.';
+    ? 'Du bist der Büroassistent von eOffis für kleine Betriebe in Deutschland. Antworte ausschließlich mit einem einzigen gültigen JSON-Wert, ohne Erklärtext und ohne Markdown. Erfinde keine Angaben; unbekannte Werte sind null. Deutsche Texte für die Nutzer sprechen sie immer mit „Sie“ an.'
+    : 'Du bist der Büroassistent von eOffis für kleine Betriebe in Deutschland. Antworte sachlich, klar und ohne Markdown-Formatierung. Deutsche Texte für die Nutzer sprechen sie immer mit „Sie“ an.';
   const end = Date.now() + 140000;
   let last = 0;
   for (let attempt = 0; attempt < 5 && Date.now() < end - 5000; attempt++) {
@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
 
   const { data: acc } = await admin.rpc('eoffis_account', { p_owner: u.user.id });
   if (acc && (acc.state === 'readonly' || acc.state === 'expired')) {
-    return json({ error: 'Deine Probezeit ist abgelaufen. Mit einem Abo geht es weiter.', code: 'read_only' }, 403);
+    return json({ error: 'Ihre Probezeit ist abgelaufen. Mit einem Abo geht es weiter.', code: 'read_only' }, 403);
   }
   const { data: quota, error: qErr } = await admin.rpc('ai_take', {
     p_owner: u.user.id,
@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
   if (qErr) return json({ error: 'Kontingent nicht prüfbar: ' + qErr.message }, 503);
   if (!quota?.ok) {
     return json(quota?.anon
-      ? { error: `Ohne E-Mail sind ${quota?.limit} KI-Auswertungen pro Tag möglich. Mit deiner E-Mail-Adresse nutzt du den vollen Umfang.`, code: 'rate_limited', anon: true }
+      ? { error: `Ohne E-Mail sind ${quota?.limit} KI-Auswertungen pro Tag möglich. Mit Ihrer E-Mail-Adresse nutzen Sie den vollen Umfang.`, code: 'rate_limited', anon: true }
       : { error: `Tageslimit für KI-Auswertungen erreicht (${quota?.limit}). Morgen geht es weiter.`, code: 'rate_limited' }, 429);
   }
 

@@ -95,7 +95,7 @@ async function lexwareUpload(admin: ReturnType<typeof createClient>, owner: stri
 
 /* ---------- Morgen-Erinnerung ---------- */
 const PUSH_TEXT: Record<string, { title: string; due: string; overdue: string; week: string; review: string; next: string; none: string }> = {
-  de: { title: 'eOffis – dein Tag', due: 'heute fällig', overdue: 'überfällig', week: 'in den nächsten 7 Tagen', review: 'Belege zu prüfen', next: 'Als Nächstes', none: 'Heute ist nichts fällig. Einen guten Tag!' },
+  de: { title: 'eOffis – Ihr Tag', due: 'heute fällig', overdue: 'überfällig', week: 'in den nächsten 7 Tagen', review: 'Belege zu prüfen', next: 'Als Nächstes', none: 'Heute ist nichts fällig. Einen guten Tag!' },
   tr: { title: 'eOffis – günün', due: 'bugün', overdue: 'gecikmiş', week: 'önümüzdeki 7 gün', review: 'kontrol edilecek belge', next: 'Sıradaki', none: 'Bugün vadesi gelen bir şey yok. İyi günler!' },
   pl: { title: 'eOffis – Twój dzień', due: 'na dziś', overdue: 'po terminie', week: 'w ciągu 7 dni', review: 'dokumenty do sprawdzenia', next: 'Następne', none: 'Dziś nic nie jest pilne. Miłego dnia!' },
   ru: { title: 'eOffis – ваш день', due: 'на сегодня', overdue: 'просрочено', week: 'в ближайшие 7 дней', review: 'документов на проверку', next: 'Далее', none: 'Сегодня ничего срочного. Хорошего дня!' },
@@ -160,9 +160,9 @@ async function pushDaily(admin: ReturnType<typeof createClient>) {
 /* ---------- Probezeit: Nachrichten (Push + E-Mail) und Löschung ---------- */
 type Stage = 'warn' | 'end' | 'delete_warn';
 const TRIAL_TEXT: Record<string, Record<Stage, [string, string]> & { cta: string }> = {
-  de: { warn: ['Dein Testzugang endet in 7 Tagen', 'Möchtest du eOffis weiter nutzen? Schließ jetzt ein Abo ab – deine Unterlagen bleiben vollständig erhalten.'],
-    end: ['Dein Testzugang ist abgelaufen', 'Deine Unterlagen kannst du noch 30 Tage ansehen und herunterladen. Mit einem Abo geht es sofort weiter.'],
-    delete_warn: ['Deine Unterlagen werden in 7 Tagen gelöscht', 'Lade wichtige Unterlagen herunter oder schließ ein Abo ab, damit nichts verloren geht.'], cta: 'Jetzt Abo abschließen' },
+  de: { warn: ['Ihr Testzugang endet in 7 Tagen', 'Möchten Sie eOffis weiter nutzen? Schließen Sie jetzt ein Abo ab – Ihre Unterlagen bleiben vollständig erhalten.'],
+    end: ['Ihr Testzugang ist abgelaufen', 'Ihre Unterlagen können Sie noch 30 Tage ansehen und herunterladen. Mit einem Abo geht es sofort weiter.'],
+    delete_warn: ['Ihre Unterlagen werden in 7 Tagen gelöscht', 'Laden Sie wichtige Unterlagen herunter oder schließen Sie ein Abo ab, damit nichts verloren geht.'], cta: 'Jetzt Abo abschließen' },
   tr: { warn: ['Deneme süreniz 7 gün içinde bitiyor', 'eOffis’i kullanmaya devam etmek ister misiniz? Şimdi abone olun – belgeleriniz eksiksiz korunur.'],
     end: ['Deneme süreniz sona erdi', 'Belgelerinizi 30 gün daha görüntüleyip indirebilirsiniz. Abonelikle hemen devam edersiniz.'],
     delete_warn: ['Belgeleriniz 7 gün içinde silinecek', 'Önemli belgeleri indirin veya abone olun, böylece hiçbir şey kaybolmaz.'], cta: 'Şimdi abone ol' },
@@ -186,7 +186,7 @@ async function sendMail(to: string, subject: string, text: string, cta: string, 
   if (!key || !from) return false;
   const m = from.match(/^(.*)<(.+)>$/);
   const sender = m ? { name: m[1].trim(), email: m[2].trim() } : { name: 'eOffis', email: from.trim() };
-  const html = `<div style="font:16px/1.5 system-ui,sans-serif;max-width:520px;margin:auto;padding:24px;color:#1c1c1e"><h2 style="margin:0 0 12px">${escHtml(subject)}</h2><p>${escHtml(text)}</p><p style="margin:24px 0"><a href="${url}" style="background:#0a66d8;color:#fff;padding:14px 22px;border-radius:12px;text-decoration:none;font-weight:600">${escHtml(cta)}</a></p><p style="color:#6e6e73;font-size:13px">eOffis – dein digitaler Büroassistent</p></div>`;
+  const html = `<div style="font:16px/1.5 system-ui,sans-serif;max-width:520px;margin:auto;padding:24px;color:#1c1c1e"><h2 style="margin:0 0 12px">${escHtml(subject)}</h2><p>${escHtml(text)}</p><p style="margin:24px 0"><a href="${url}" style="background:#0a66d8;color:#fff;padding:14px 22px;border-radius:12px;text-decoration:none;font-weight:600">${escHtml(cta)}</a></p><p style="color:#6e6e73;font-size:13px">eOffis – Ihr digitaler Büroassistent</p></div>`;
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST', headers: { 'api-key': key, 'content-type': 'application/json', accept: 'application/json' },
     body: JSON.stringify({ sender, to: [{ email: to }], subject, htmlContent: html, textContent: `${text}\n\n${cta}: ${url}` }),

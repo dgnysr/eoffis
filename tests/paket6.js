@@ -33,7 +33,7 @@ const addM = (s, n) => { const [y, m, d] = s.split('-').map(Number); const f = n
   await p.waitForFunction(() => S.view === 'home');
 
   await check('P01', 'Startseite schlägt die Einrichtung vor, Menü „Mehr“ führt hin', async () => {
-    assert(/Welche Pflichten hat dein Betrieb\?/.test(await text()), 'Hinweis fehlt');
+    assert(/Welche Pflichten hat Ihr Betrieb\?/.test(await text()), 'Hinweis fehlt');
     await ev(() => go('more')); assert(/Pflichten-Kalender/.test(await text()) && !/dut\.|ba\./.test(await text()), 'Menü');
     await tap('[data-go=duties]'); assert(/Jetzt einrichten/.test(await text()), 'Einstieg');
   });
@@ -53,21 +53,21 @@ const addM = (s, n) => { const [y, m, d] = s.split('-').map(Number); const f = n
     await p.fill('#dw_emp', '0'); await ev(() => { document.querySelector('[data-a=baDwFact][data-v=has_cash_register]').click(); });
     await tap('[data-a=baDwNext]'); await p.waitForFunction(() => S.dw && S.dw.step === 'list');
     const tx = await text();
-    assert(/eOffis arbeitet für deinen Betrieb nach dieser Pflichtenliste: Juwelier, Einzelhandel, Alle Betriebe – 8 Punkte\./.test(tx), tx.slice(0, 200));
+    assert(/eOffis arbeitet für Ihren Betrieb nach dieser Pflichtenliste: Juwelier, Einzelhandel, Alle Betriebe – 8 Punkte\./.test(tx), tx.slice(0, 200));
     const ch = await ev(() => Object.fromEntries([...document.querySelectorAll('[data-a=baDwSel]')].map((c) => [c.dataset.v, c.checked])));
     assert(ch['juwelier.goaml'] && ch['alle.kasse'] && ch['alle.steuer'] && !ch['alle.gbu'] && !ch['einzelhandel.waage'], JSON.stringify(ch));
     await ev(() => document.querySelector('[data-a=baDwSel][data-v="einzelhandel.waage"]').click());
     if (process.env.SHOTS) await p.screenshot({ path: process.env.SHOTS + '/liste.png', fullPage: true });
   });
   await check('P05', 'Frage „weitere Punkte hinzufügen?“ → eigener Punkt (Prüfung der Eingaben)', async () => {
-    assert(/Möchtest du noch weitere Punkte hinzufügen\?/.test(await text()), 'Frage fehlt');
+    assert(/Möchten Sie noch weitere Punkte hinzufügen\?/.test(await text()), 'Frage fehlt');
     await tap('[data-a=baDwYes]'); await tap('[data-a=baDwAdd]'); assert(await ev(() => !S.dw.extra.length), 'ohne Titel angenommen');
     await p.fill('#dwc_title', 'Tresor warten lassen'); await p.fill('#dwc_due', '31.13.2026'); await tap('[data-a=baDwAdd]'); assert(await ev(() => !S.dw.extra.length), 'falsches Datum angenommen');
     await p.fill('#dwc_due', '15.03.2027'); await tap('[data-a=baDwAdd]'); assert(await ev(() => S.dw.extra.length === 1), 'nicht hinzugefügt');
     await tap('[data-a=baDwNo]');
   });
   await check('P06', 'Haftungshinweis: erst nach „Verstanden“ anlegen', async () => {
-    const tx = await text(); assert(/keine Haftung für die Vollständigkeit/.test(tx) && /in deiner Verantwortung/.test(tx), tx.slice(0, 200));
+    const tx = await text(); assert(/keine Haftung für die Vollständigkeit/.test(tx) && /in Ihrer Verantwortung/.test(tx), tx.slice(0, 200));
     assert(await ev(() => document.getElementById('dw_make').disabled), 'Knopf aktiv ohne Haken');
     if (process.env.SHOTS) await p.screenshot({ path: process.env.SHOTS + '/hinweis.png' });
     await ev(() => { const c = document.getElementById('dw_ack'); c.checked = true; c.dispatchEvent(new Event('change')); });
@@ -103,7 +103,7 @@ const addM = (s, n) => { const [y, m, d] = s.split('-').map(Number); const f = n
   await check('P10', 'Erledigt – Nachweis scannen: neuer Beleg wird Nachweis, nächster Termin angelegt', async () => {
     const w = await byTpl('einzelhandel.waage'); await ev((id) => go('duty', { id }), w.id);
     await tap('[data-a=baDuScan]'); await p.waitForSelector('#fileIn', { state: 'attached' });
-    assert(/Du scannst den Nachweis für: Waage eichen/.test(await text()), 'Hinweis beim Scannen fehlt');
+    assert(/Sie scannen den Nachweis für: Waage eichen/.test(await text()), 'Hinweis beim Scannen fehlt');
     await p.setInputFiles('#fileIn', [{ name: 'eichschein.png', mimeType: 'image/png', buffer: await p.screenshot({ clip: { x: 0, y: 0, width: 80, height: 90 } }) }]);
     await p.waitForFunction(() => S.scan && S.scan.items.length === 1 && !S.busy);
     await tap('[data-a=finishScan][data-v=save]'); await p.waitForFunction(() => S.view === 'doc'); await settle();
@@ -176,6 +176,18 @@ const addM = (s, n) => { const [y, m, d] = s.split('-').map(Number); const f = n
     const miss = await ev(() => { const keys = Object.keys(DUT_TEXT.de); return Object.keys(DUT_TEXT).flatMap((l) => keys.filter((k) => !DUT_TEXT[l][k]).map((k) => l + '.' + k)); });
     assert(!miss.length, 'fehlt: ' + miss.join(', '));
     for (const l of ['tr', 'pl', 'ru', 'ar', 'ro', 'de']) { await ev((x) => { setLang(x); go('duties'); }, l); const tx = await text(); assert(!/dut\.\w/.test(tx) && tx.length > 80, l + ': ' + tx.slice(0, 80)); }
+  });
+  await check('P22', 'Fußzeile mit Hinweis in allen Bereichen der Pflichtenlisten', async () => {
+    const foot = () => ev(() => { const f = document.getElementById('dutFoot'); return f ? f.textContent : ''; });
+    await ev(() => go('duties')); assert(/nicht rechtlich geprüft/.test(await foot()) && /keine Haftung/.test(await foot()) && /Steuerberater/.test(await foot()), 'Übersicht: ' + (await foot()));
+    const id = await ev(() => S.duties.find((d) => d.active !== false).id); await ev((x) => go('duty', { id: x }), id); assert(/nicht rechtlich geprüft/.test(await foot()), 'Pflicht');
+    await ev(() => go('dutadd')); assert(/nicht rechtlich geprüft/.test(await foot()), 'eigener Punkt');
+    await ev(() => go('duties')); await tap('[data-a=baDwStart]'); await p.waitForFunction(() => S.view === 'dutwiz' && S.baInd); assert(/nicht rechtlich geprüft/.test(await foot()), 'Einrichtung');
+    await ev(() => go('home')); assert(!(await foot()), 'Fußzeile auch außerhalb');
+  });
+  await check('P23', 'Deutsche Texte sprechen die Kunden mit „Sie“ an', async () => {
+    const bad = await ev(() => { const out = []; const walk = (o, k) => { if (typeof o === 'string') { if (/(^|[^\wäöüß-])(du|dich|dir|dein\w*|möchtest|kannst|hast|bist)(?![\wäöüß-])/i.test(o)) out.push(k + ': ' + o.slice(0, 60)); } else if (o && typeof o === 'object') for (const x of Object.keys(o)) walk(o[x], k + '.' + x); }; walk(I18N.de, 'de'); return out; });
+    assert(!bad.length, bad.slice(0, 5).join(' | '));
   });
   await check('P21', 'Konsole ohne Fehler', async () => { assert(!errors.length, errors.join(' | ').slice(0, 300)); });
   await browser.close();

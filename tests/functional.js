@@ -111,7 +111,7 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     await p.click('[data-a=docService][data-v=yes]'); await p.waitForFunction(() => S.docs[0].service_received === 'yes');
   });
   await check('F12', 'Schritt 3: Kündigung schreiben (Fragen → Entwurf → Autosave)', async () => {
-    await p.click('[data-a=docStep][data-v="3"]'); assert(/Kündigung für dich/.test(await text()), 'Aktionsvorschlag fehlt');
+    await p.click('[data-a=docStep][data-v="3"]'); assert(/Kündigung für Sie/.test(await text()), 'Aktionsvorschlag fehlt');
     await p.click('[data-a=replyGo]'); await p.waitForSelector('#q_0'); await p.fill('#q_0', 'K-4711');
     await p.click('[data-a=replyGenerate]'); await p.waitForSelector('#l_body', { timeout: 15000 });
     assert(await p.inputValue('#l_email') === 'service@stadtwerke.example', 'E-Mail nicht übernommen');

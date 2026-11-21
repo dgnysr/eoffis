@@ -190,8 +190,8 @@ async function newPage(browser, store, cfg) {
     if (cfg.aiFail) return r.fulfill({ status: cfg.aiFail === 'rate_limited' ? 429 : 503, body: JSON.stringify({ error: cfg.aiFail === 'not_configured' ? 'KI ist noch nicht eingerichtet (ANTHROPIC_API_KEY fehlt).' : 'Tageslimit erreicht', code: cfg.aiFail }), contentType: 'application/json' });
     (store.aiLog || (store.aiLog = [])).push({ images: (body.images || []).length, json: body.json, len: body.prompt.length });
     if (body.prompt.length > 100000 || (body.images || []).length > 20 || (body.images || []).some((i) => (i.data || '').length > 1500000)) { (store.aiTooLarge = (store.aiTooLarge || 0) + 1); return r.fulfill({ status: 413, body: JSON.stringify({ error: 'Anfrage zu groß', code: 'too_large' }), contentType: 'application/json' }); }
-    if (cfg.aiAnonLimit || store.aiAnonLimit) return r.fulfill({ status: 429, body: JSON.stringify({ error: 'Ohne E-Mail sind 5 KI-Auswertungen pro Tag möglich. Mit deiner E-Mail-Adresse nutzt du den vollen Umfang.', code: 'rate_limited', anon: true }), contentType: 'application/json' });
-    if (store.account && (store.account.state === 'readonly' || store.account.state === 'expired')) return r.fulfill({ status: 403, body: JSON.stringify({ error: 'Deine Probezeit ist abgelaufen.', code: 'read_only' }), contentType: 'application/json' });
+    if (cfg.aiAnonLimit || store.aiAnonLimit) return r.fulfill({ status: 429, body: JSON.stringify({ error: 'Ohne E-Mail sind 5 KI-Auswertungen pro Tag möglich. Mit Ihrer E-Mail-Adresse nutzen Sie den vollen Umfang.', code: 'rate_limited', anon: true }), contentType: 'application/json' });
+    if (store.account && (store.account.state === 'readonly' || store.account.state === 'expired')) return r.fulfill({ status: 403, body: JSON.stringify({ error: 'Ihre Probezeit ist abgelaufen.', code: 'read_only' }), contentType: 'application/json' });
     const out = body.json ? { value: AI.call({ cfg }, body.prompt) } : { text: 'Übersetzung: Dies ist eine Testübersetzung.' };
     r.fulfill({ body: JSON.stringify(out), contentType: 'application/json' });
   });

@@ -68,7 +68,7 @@ const BRIEF = Object.assign({}, base, { title: 'Info', doc_type: 'Schreiben', ac
     assert(await ev(() => S.view === 'doc' && !!document.querySelector('[data-a=baInvUndo]')), 'Entfernen-Knopf fehlt');
   });
   await check('I02', 'Frage nach früheren Belegen im Wortlaut, „Später“ blendet aus', async () => {
-    const tx = await text(); assert(/an dieser Stelle alle früheren Rechnungen, Lieferscheine, Belege … hochladen, damit deine Inventarliste vervollständigt wird\?/.test(tx), 'Frage fehlt');
+    const tx = await text(); assert(/an dieser Stelle alle früheren Rechnungen, Lieferscheine, Belege … hochladen, damit Ihre Inventarliste vervollständigt wird\?/.test(tx), 'Frage fehlt');
     await p.click('[data-a=baAskLater]'); assert(!(await p.$('#invAsk')), 'Frage noch sichtbar');
   });
   await check('I03', 'Erneute Analyse desselben Belegs → keine Doppelten', async () => {

@@ -15,16 +15,16 @@
   /* ---------- Anmeldung ---------- */
   // Start ohne E-Mail („Kostenlos testen“, 4 Wochen voller Umfang); E-Mail wird erst gefragt, wenn sie dem Kunden etwas bringt.
   const T = {
-    title: 'Willkommen bei eOffis', sub: 'Dein digitaler Büroassistent', email: 'E-Mail', pw: 'Passwort (mind. 8 Zeichen)',
+    title: 'Willkommen bei eOffis', sub: 'Ihr digitaler Büroassistent', email: 'E-Mail', pw: 'Passwort (mind. 8 Zeichen)',
     trial: 'Kostenlos testen', trialHint: '4 Wochen voller Umfang · ohne Anmeldung · endet automatisch',
     or: 'Bereits Kunde?', login: 'Anmelden', signup: 'Neues Konto registrieren', demo: 'Kostenlos testen',
     google: 'Mit Google fortfahren', apple: 'Mit Apple fortfahren',
-    forgot: 'Passwort vergessen?', checkMail: 'Fast geschafft: Bitte bestätige deine E-Mail-Adresse über den Link in der Mail, dann hier anmelden.',
-    resetSent: 'Wir haben dir eine Mail zum Zurücksetzen geschickt.', newPw: 'Neues Passwort festlegen', savePw: 'Passwort speichern',
-    setPw: 'Passwort festlegen', setPwHint: 'Dein Konto ist gesichert. Mit einem Passwort meldest du dich künftig auch auf anderen Geräten an.', later: 'Später',
+    forgot: 'Passwort vergessen?', checkMail: 'Fast geschafft: Bitte bestätigen Sie Ihre E-Mail-Adresse über den Link in der Mail, dann hier anmelden.',
+    resetSent: 'Wir haben Ihnen eine Mail zum Zurücksetzen geschickt.', newPw: 'Neues Passwort festlegen', savePw: 'Passwort speichern',
+    setPw: 'Passwort festlegen', setPwHint: 'Ihr Konto ist gesichert. Mit einem Passwort melden Sie sich künftig auch auf anderen Geräten an.', later: 'Später',
     pwSaved: 'Passwort gespeichert.', notConfigured: 'Die App ist noch nicht mit der Datenbank verbunden (config.js fehlt).',
     errLogin: 'Anmeldung fehlgeschlagen. E-Mail oder Passwort prüfen.', errShort: 'Bitte E-Mail und ein Passwort mit mindestens 8 Zeichen eingeben.',
-    errDemo: 'Der Test konnte nicht gestartet werden. Bitte später erneut versuchen.', captcha: 'Bitte kurz bestätigen, dass du kein Roboter bist.',
+    errDemo: 'Der Test konnte nicht gestartet werden. Bitte später erneut versuchen.', captcha: 'Bitte kurz bestätigen, dass Sie kein Roboter sind.',
     wait: 'Bitte warten …',
   };
   const OAUTH = (Array.isArray(CFG.oauth) ? CFG.oauth : []).filter((p) => p === 'google' || p === 'apple');

@@ -4,12 +4,12 @@
 // Name + Lieferant innerhalb 60 Tagen bei Lieferschein↔Rechnung bzw. erneut gescannter Rechnung). Gelöschte kommen nicht wieder.
 const INV_TEXT = {
   de: {
-    hub: 'Betriebs-Akte', invT: 'Inventar', invH: 'Geräte und Anschaffungen – automatisch aus deinen Rechnungen',
-    invNone: 'Noch nichts im Inventar. Scanne eine Rechnung über ein Gerät oder eine Anschaffung – eOffis trägt es hier automatisch ein.',
+    hub: 'Betriebs-Akte', invT: 'Inventar', invH: 'Geräte und Anschaffungen – automatisch aus Ihren Rechnungen',
+    invNone: 'Noch nichts im Inventar. Scannen Sie eine Rechnung über ein Gerät oder eine Anschaffung – eOffis trägt es hier automatisch ein.',
     invSum: '{{count}} Gegenstände · Anschaffungswert {{sum}}', invTaken: 'Ins Inventar übernommen', invOpen: 'Inventar öffnen', invUndo: 'Entfernen',
-    invAsk: 'Möchtest du an dieser Stelle alle früheren Rechnungen, Lieferscheine, Belege … hochladen, damit deine Inventarliste vervollständigt wird?',
+    invAsk: 'Möchten Sie an dieser Stelle alle früheren Rechnungen, Lieferscheine, Belege … hochladen, damit Ihre Inventarliste vervollständigt wird?',
     invAskYes: 'Ja, jetzt hochladen', invAskLater: 'Später', invAskNever: 'Nicht mehr fragen',
-    bulkT: 'Frühere Belege hochladen', bulkH: 'Wähle beliebig viele Dateien (PDF, Fotos, E-Rechnungen). Jede Datei wird ein eigener Beleg, wird ausgewertet und abgelegt; Anschaffungen kommen ins Inventar.',
+    bulkT: 'Frühere Belege hochladen', bulkH: 'Wählen Sie beliebig viele Dateien (PDF, Fotos, E-Rechnungen). Jede Datei wird ein eigener Beleg, wird ausgewertet und abgelegt; Anschaffungen kommen ins Inventar.',
     bulkPick: 'Dateien auswählen', bulkRun: '{{n}} von {{count}} Dateien verarbeitet …', bulkDone: 'Fertig: {{count}} Belege abgelegt, {{assets}} Gegenstände neu im Inventar.',
     bulkDup: '{{count}} Datei(en) waren schon vorhanden und wurden übersprungen.', bulkFail: 'Nicht lesbar: {{names}}',
     bulkLeft: '{{count}} Beleg(e) noch nicht ausgewertet – die KI ist gerade nicht verfügbar oder das Tageslimit ist erreicht. Später einfach „Weiter auswerten“ tippen.',
@@ -440,28 +440,29 @@ document.addEventListener('click', async (e) => {
 // Frist unter „Fristen“ (dutySync); dort erledigt → nächster Termin. Nachweise sind normale Belege mit duty_id.
 const DUT_TEXT = {
   de: {
-    dutT: 'Pflichten-Kalender', dutH: 'Pflichten deiner Branche mit Terminen und Nachweisen', allBiz: 'Alle Betriebe',
-    introT: 'Welche Pflichten hat dein Betrieb?', introH: 'eOffis holt die passende Pflichtenliste für deine Branche, legt die Termine unter „Fristen“ an und hebt zu jeder Pflicht den Nachweis auf.', start: 'Jetzt einrichten', homeClose: 'Ausblenden',
-    indT: 'Welche Branche(n) hat dein Betrieb?', indH: 'Mehrere möglich. Passt nichts, gelten die allgemeinen Pflichten aller Betriebe.', search: 'Branche suchen …',
-    missing: 'Meine Branche fehlt', missingH: 'Wie heißt deine Branche? Wir ergänzen sie.', send: 'Vorschlag senden', sent: 'Danke! Dein Vorschlag ist angekommen.',
-    factsT: 'Ein paar Angaben zu deinem Betrieb', emp: 'Mitarbeiter (ohne Inhaber)',
+    dutT: 'Pflichten-Kalender', dutH: 'Pflichten Ihrer Branche mit Terminen und Nachweisen', allBiz: 'Alle Betriebe',
+    introT: 'Welche Pflichten hat Ihr Betrieb?', introH: 'eOffis holt die passende Pflichtenliste für Ihre Branche, legt die Termine unter „Fristen“ an und hebt zu jeder Pflicht den Nachweis auf.', start: 'Jetzt einrichten', homeClose: 'Ausblenden',
+    indT: 'Welche Branche(n) hat Ihr Betrieb?', indH: 'Mehrere möglich. Passt nichts, gelten die allgemeinen Pflichten aller Betriebe.', search: 'Branche suchen …',
+    missing: 'Meine Branche fehlt', missingH: 'Wie heißt Ihre Branche? Wir ergänzen sie.', send: 'Vorschlag senden', sent: 'Danke! Ihr Vorschlag ist angekommen.',
+    factsT: 'Ein paar Angaben zu Ihrem Betrieb', emp: 'Mitarbeiter (ohne Inhaber)',
     f_has_cash_register: 'Elektronische Kasse', f_has_vehicle: 'Firmenfahrzeug(e)', f_kapitalgesellschaft: 'GmbH, UG oder andere Gesellschaft (kein Einzelunternehmen)',
     f_ships_goods: 'Ware mit Verpackung an Kunden (auch Versand)', f_sells_by_weight: 'Verkauf nach Gewicht (Waage)', f_buys_precious_metals: 'Ankauf von Gold, Schmuck oder Uhren',
     f_handles_client_money: 'Nimmt Gelder von Kunden entgegen (z. B. Kautionen)', f_wohnimmobilienverwalter: 'Verwaltung von Wohnungen (WEG oder Miete)', f_has_grease_trap: 'Fettabscheider vorhanden',
     next: 'Weiter', loading: 'Pflichtenliste wird geladen …', fail: 'Die Pflichtenliste ist gerade nicht erreichbar. Bitte später erneut versuchen.',
-    listT: 'Deine Pflichtenliste', listMsg: 'eOffis arbeitet für deinen Betrieb nach dieser Pflichtenliste: {{names}} – {{count}} Punkte.',
-    applies: 'Trifft auf deinen Betrieb zu', maybe: 'Trifft evtl. zu – bitte prüfen und ankreuzen, wenn es passt',
-    moreQ: 'Möchtest du noch weitere Punkte hinzufügen?', yes: 'Ja', no: 'Nein, weiter', customT: 'Eigener Punkt', cTitle: 'Was ist zu tun?', cRecur: 'Wie oft?',
+    listT: 'Ihre Pflichtenliste', listMsg: 'eOffis arbeitet für Ihren Betrieb nach dieser Pflichtenliste: {{names}} – {{count}} Punkte.',
+    applies: 'Trifft auf Ihren Betrieb zu', maybe: 'Trifft evtl. zu – bitte prüfen und ankreuzen, wenn es passt',
+    moreQ: 'Möchten Sie noch weitere Punkte hinzufügen?', yes: 'Ja', no: 'Nein, weiter', customT: 'Eigener Punkt', cTitle: 'Was ist zu tun?', cRecur: 'Wie oft?',
     cDue: 'Nächster Termin (TT.MM.JJJJ, optional)', cProof: 'Welcher Nachweis? (optional)', cAdd: 'Hinzufügen', cAdded: '„{{title}}“ hinzugefügt.', cMiss: 'Bitte beschreiben, was zu tun ist.',
     r_once: 'einmalig', r_monthly: 'monatlich', r_quarterly: 'vierteljährlich', r_halfyearly: 'halbjährlich', r_yearly: 'jährlich', r_every: 'alle {{n}} Monate', r_event: 'bei Anlass',
-    ackT: 'Wichtiger Hinweis', ack: 'eOffis übernimmt keine Haftung für die Vollständigkeit und Richtigkeit der Pflichtenliste. eOffis dient nur zur Hilfe und ersetzt keine Rechtsberatung. Die Pflichten deines Betriebs liegen in deiner Verantwortung.',
+    foot: 'Hinweis: Die Pflichtenlisten sind eine Hilfe von eOffis und nicht rechtlich geprüft. eOffis übernimmt keine Haftung für Vollständigkeit und Richtigkeit. Die Pflichten Ihres Betriebs liegen in Ihrer Verantwortung. Lassen Sie die Liste am besten von Ihrem Steuerberater oder Ihrer Kammer (IHK, Handwerkskammer) prüfen.',
+    ackT: 'Wichtiger Hinweis', ack: 'eOffis übernimmt keine Haftung für die Vollständigkeit und Richtigkeit der Pflichtenliste. eOffis dient nur zur Hilfe und ersetzt keine Rechtsberatung. Die Pflichten Ihres Betriebs liegen in Ihrer Verantwortung.',
     ackOk: 'Verstanden', make: 'Pflichten-Kalender anlegen', made: 'Pflichten-Kalender angelegt: {{count}} Punkte. Die Termine stehen auch unter „Fristen“.',
     based: 'Nach Pflichtenliste: {{names}}', change: 'Branche oder Angaben ändern', addOwn: 'Eigenen Punkt hinzufügen', upcoming: 'Anstehend', event: 'Bei Anlass', doneOnce: 'Erledigt', off: 'Trifft nicht zu',
-    proofs: '{{count}} Nachweis(e)', noProof: 'noch kein Nachweis', upd: '{{count}} neue Punkte in deiner Pflichtenliste', review: 'Prüfen', updated: 'aktualisiert',
+    proofs: '{{count}} Nachweis(e)', noProof: 'noch kein Nachweis', upd: '{{count}} neue Punkte in Ihrer Pflichtenliste', review: 'Prüfen', updated: 'aktualisiert',
     dNext: 'Nächster Termin', dLast: 'Zuletzt erledigt: {{date}}', dProof: 'Nachweis', dLegal: 'Grundlage', dSource: 'Mehr dazu', dDoneQ: 'Erledigt?', dDoneScan: 'Erledigt – Nachweis scannen',
     dDoneNo: 'Erledigt ohne Nachweis', dPick: 'Nachweis aus der Ablage wählen', dPickT: 'Welche Unterlage ist der Nachweis?', dPickNone: 'Noch keine Unterlagen in der Ablage.',
     dDate: 'Termin ändern', dOff: 'Trifft nicht zu', dOn: 'Wieder aufnehmen', dDel: 'Punkt löschen', dDelQ: 'Diesen eigenen Punkt löschen?', dDoneOk: 'Erledigt. Nächster Termin: {{date}}', dDoneOnce: 'Erledigt.',
-    dProofFor: 'Nachweis für: {{title}}', dProofScan: 'Du scannst den Nachweis für: {{title}}', dProofCancel: 'Abbrechen', dProofs: 'Nachweise', dElec: '{{count}} elektrische Geräte im Inventar',
+    dProofFor: 'Nachweis für: {{title}}', dProofScan: 'Sie scannen den Nachweis für: {{title}}', dProofCancel: 'Abbrechen', dProofs: 'Nachweise', dElec: '{{count}} elektrische Geräte im Inventar',
     dDateOk: 'Termin geändert.', dEventHint: 'Kein fester Termin – immer dann erledigen, wenn der Anlass eintritt, und den Nachweis hier ablegen.',
   },
   tr: {
@@ -479,6 +480,7 @@ const DUT_TEXT = {
     moreQ: 'Başka madde eklemek ister misin?', yes: 'Evet', no: 'Hayır, devam', customT: 'Kendi maddem', cTitle: 'Ne yapılmalı?', cRecur: 'Ne sıklıkla?',
     cDue: 'Sonraki tarih (GG.AA.YYYY, isteğe bağlı)', cProof: 'Hangi kanıt? (isteğe bağlı)', cAdd: 'Ekle', cAdded: '„{{title}}“ eklendi.', cMiss: 'Lütfen ne yapılması gerektiğini yaz.',
     r_once: 'tek seferlik', r_monthly: 'aylık', r_quarterly: 'üç aylık', r_halfyearly: 'altı aylık', r_yearly: 'yıllık', r_every: 'her {{n}} ayda bir', r_event: 'gerektiğinde',
+    foot: 'Not: Yükümlülük listeleri eOffis’in bir yardımıdır ve hukuken kontrol edilmemiştir. eOffis eksiksizlik ve doğruluk için sorumluluk kabul etmez. İşletmenizin yükümlülükleri sizin sorumluluğunuzdadır. Listeyi en iyisi mali müşavirinize veya odanıza (IHK, Handwerkskammer) kontrol ettirin.',
     ackT: 'Önemli not', ack: 'eOffis yükümlülük listesinin eksiksizliği ve doğruluğu için sorumluluk kabul etmez. eOffis yalnızca yardımcı olur ve hukuki danışmanlığın yerini tutmaz. İşletmenin yükümlülükleri senin sorumluluğundadır.',
     ackOk: 'Anladım', make: 'Yükümlülük takvimini oluştur', made: 'Yükümlülük takvimi oluşturuldu: {{count}} madde. Tarihler „Süreler“de de görünür.',
     based: 'Yükümlülük listesi: {{names}}', change: 'Sektörü veya bilgileri değiştir', addOwn: 'Kendi maddeni ekle', upcoming: 'Yaklaşan', event: 'Gerektiğinde', doneOnce: 'Tamamlandı', off: 'Geçerli değil',
@@ -504,6 +506,7 @@ const DUT_TEXT = {
     moreQ: 'Czy chcesz dodać kolejne punkty?', yes: 'Tak', no: 'Nie, dalej', customT: 'Własny punkt', cTitle: 'Co trzeba zrobić?', cRecur: 'Jak często?',
     cDue: 'Następny termin (DD.MM.RRRR, opcjonalnie)', cProof: 'Jaki dowód? (opcjonalnie)', cAdd: 'Dodaj', cAdded: 'Dodano „{{title}}”.', cMiss: 'Opisz, co trzeba zrobić.',
     r_once: 'jednorazowo', r_monthly: 'co miesiąc', r_quarterly: 'co kwartał', r_halfyearly: 'co pół roku', r_yearly: 'co roku', r_every: 'co {{n}} mies.', r_event: 'w razie potrzeby',
+    foot: 'Uwaga: listy obowiązków są pomocą eOffis i nie zostały sprawdzone prawnie. eOffis nie ponosi odpowiedzialności za ich kompletność i poprawność. Za obowiązki firmy odpowiada jej właściciel. Najlepiej zlecić sprawdzenie listy doradcy podatkowemu lub izbie (IHK, Handwerkskammer).',
     ackT: 'Ważna informacja', ack: 'eOffis nie ponosi odpowiedzialności za kompletność i poprawność listy obowiązków. eOffis służy jedynie pomocą i nie zastępuje porady prawnej. Za obowiązki firmy odpowiadasz Ty.',
     ackOk: 'Rozumiem', make: 'Utwórz kalendarz obowiązków', made: 'Utworzono kalendarz obowiązków: {{count}} punktów. Terminy są też w „Terminy”.',
     based: 'Według listy: {{names}}', change: 'Zmień branżę lub dane', addOwn: 'Dodaj własny punkt', upcoming: 'Nadchodzące', event: 'W razie potrzeby', doneOnce: 'Załatwione', off: 'Nie dotyczy',
@@ -529,6 +532,7 @@ const DUT_TEXT = {
     moreQ: 'Хотите добавить ещё пункты?', yes: 'Да', no: 'Нет, далее', customT: 'Свой пункт', cTitle: 'Что нужно сделать?', cRecur: 'Как часто?',
     cDue: 'Следующий срок (ДД.ММ.ГГГГ, необязательно)', cProof: 'Какое подтверждение? (необязательно)', cAdd: 'Добавить', cAdded: '«{{title}}» добавлено.', cMiss: 'Опишите, что нужно сделать.',
     r_once: 'однократно', r_monthly: 'ежемесячно', r_quarterly: 'ежеквартально', r_halfyearly: 'раз в полгода', r_yearly: 'ежегодно', r_every: 'каждые {{n}} мес.', r_event: 'по случаю',
+    foot: 'Примечание: списки обязанностей — это помощь eOffis, они не проверены юристами. eOffis не несёт ответственности за их полноту и правильность. Ответственность за обязанности предприятия лежит на вас. Лучше всего попросите налогового консультанта или палату (IHK, Handwerkskammer) проверить список.',
     ackT: 'Важное примечание', ack: 'eOffis не несёт ответственности за полноту и правильность списка обязанностей. eOffis служит только помощью и не заменяет юридическую консультацию. Ответственность за обязанности предприятия лежит на вас.',
     ackOk: 'Понятно', make: 'Создать календарь обязанностей', made: 'Календарь обязанностей создан: {{count}} пунктов. Сроки также в разделе «Сроки».',
     based: 'По списку: {{names}}', change: 'Изменить отрасль или данные', addOwn: 'Добавить свой пункт', upcoming: 'Предстоящие', event: 'По случаю', doneOnce: 'Выполнено', off: 'Не относится',
@@ -554,6 +558,7 @@ const DUT_TEXT = {
     moreQ: 'هل تريد إضافة بنود أخرى؟', yes: 'نعم', no: 'لا، تابع', customT: 'بند خاص', cTitle: 'ما المطلوب فعله؟', cRecur: 'كم مرة؟',
     cDue: 'الموعد التالي (يوم.شهر.سنة، اختياري)', cProof: 'ما الإثبات؟ (اختياري)', cAdd: 'إضافة', cAdded: 'تمت إضافة „{{title}}“.', cMiss: 'يرجى وصف ما يجب فعله.',
     r_once: 'مرة واحدة', r_monthly: 'شهريًا', r_quarterly: 'كل ثلاثة أشهر', r_halfyearly: 'كل ستة أشهر', r_yearly: 'سنويًا', r_every: 'كل {{n}} شهرًا', r_event: 'عند الحاجة',
+    foot: 'ملاحظة: قوائم الالتزامات مساعدة من eOffis ولم تُراجَع قانونيًا. لا يتحمّل eOffis أي مسؤولية عن اكتمالها وصحتها. التزامات منشأتك تقع على مسؤوليتك. يُفضَّل أن يراجع القائمة مستشارك الضريبي أو الغرفة المختصة (IHK، Handwerkskammer).',
     ackT: 'ملاحظة مهمة', ack: 'لا يتحمّل eOffis أي مسؤولية عن اكتمال قائمة الالتزامات وصحتها. eOffis للمساعدة فقط ولا يحل محل الاستشارة القانونية. التزامات منشأتك تقع على مسؤوليتك.',
     ackOk: 'فهمت', make: 'إنشاء تقويم الالتزامات', made: 'تم إنشاء تقويم الالتزامات: {{count}} بندًا. المواعيد موجودة أيضًا في „المواعيد“.',
     based: 'وفق القائمة: {{names}}', change: 'تغيير القطاع أو البيانات', addOwn: 'إضافة بند خاص', upcoming: 'قادم', event: 'عند الحاجة', doneOnce: 'منجز', off: 'لا ينطبق',
@@ -579,6 +584,7 @@ const DUT_TEXT = {
     moreQ: 'Vrei să adaugi și alte puncte?', yes: 'Da', no: 'Nu, mai departe', customT: 'Punct propriu', cTitle: 'Ce trebuie făcut?', cRecur: 'Cât de des?',
     cDue: 'Termenul următor (ZZ.LL.AAAA, opțional)', cProof: 'Ce dovadă? (opțional)', cAdd: 'Adaugă', cAdded: '„{{title}}” adăugat.', cMiss: 'Descrie ce trebuie făcut.',
     r_once: 'o singură dată', r_monthly: 'lunar', r_quarterly: 'trimestrial', r_halfyearly: 'semestrial', r_yearly: 'anual', r_every: 'la fiecare {{n}} luni', r_event: 'la nevoie',
+    foot: 'Notă: listele de obligații sunt un ajutor oferit de eOffis și nu sunt verificate juridic. eOffis nu își asumă răspunderea pentru completitudinea și corectitudinea lor. Obligațiile firmei sunt responsabilitatea dumneavoastră. Cel mai bine, cereți consultantului fiscal sau camerei (IHK, Handwerkskammer) să verifice lista.',
     ackT: 'Notă importantă', ack: 'eOffis nu își asumă răspunderea pentru completitudinea și corectitudinea listei de obligații. eOffis este doar un ajutor și nu înlocuiește consultanța juridică. Obligațiile firmei tale sunt responsabilitatea ta.',
     ackOk: 'Am înțeles', make: 'Creează calendarul obligațiilor', made: 'Calendarul obligațiilor a fost creat: {{count}} puncte. Termenele apar și la „Termene”.',
     based: 'După lista: {{names}}', change: 'Schimbă domeniul sau datele', addOwn: 'Adaugă un punct propriu', upcoming: 'Urmează', event: 'La nevoie', doneOnce: 'Rezolvat', off: 'Nu se aplică',
@@ -740,6 +746,7 @@ function dutCustomRead(prefix) {
   return d;
 }
 const dwRow = (x, W) => `<label class="check" style="align-items:flex-start"><input type="checkbox" data-a="baDwSel" data-v="${esc(x.id)}" ${W.chosen.has(x.id) ? 'checked' : ''}><span><b>${esc(baTx(x.title))}</b><br><span class="small muted">${esc([recurLabel(x), x.legal_ref].filter(Boolean).join(' · '))}</span></span></label>`;
+const dutFoot = () => `<p class="muted small" id="dutFoot" role="note" style="border-top:1px solid var(--line);padding-top:12px;margin-top:20px">${esc(t('dut.foot'))}</p>`;
 VIEWS.dutwiz = {
   title: () => t('dut.dutT'),
   render() {
@@ -754,7 +761,7 @@ VIEWS.dutwiz = {
         <details style="margin-top:10px"><summary class="small">${esc(t('dut.missing'))}</summary>${field('dw_new', t('dut.missingH'), '')}<button class="btn sm sec" data-a="baDwSuggest">${esc(t('dut.send'))}</button></details></div>
         <div class="card"><h2>${esc(t('dut.factsT'))}</h2>${field('dw_emp', t('dut.emp'), String(W.facts.employees || 0), 'inputmode="numeric"')}
         ${DUT_FACTS.filter(([, inds]) => !inds || inds.some((i) => chain.includes(i))).map(([k]) => `<label class="check"><input type="checkbox" data-a="baDwFact" data-v="${k}" ${W.facts[k] ? 'checked' : ''}>${esc(t('dut.f_' + k))}</label>`).join('')}</div>
-        <button class="btn" data-a="baDwNext">${esc(t('dut.next'))} ›</button>`;
+        <button class="btn" data-a="baDwNext">${esc(t('dut.next'))} ›</button>${dutFoot()}`;
     }
     if (W.step === 'list') {
       const names = indChain(W.sel).map(indName).join(', ');
@@ -764,11 +771,11 @@ VIEWS.dutwiz = {
         ${maybe.length ? `<div class="sec-h">${esc(t('dut.maybe'))}</div><div class="card">${maybe.map((x) => dwRow(x, W)).join('')}</div>` : ''}
         ${W.extra.length ? group(W.extra.map((d) => cell({ icon: 'plus', ic: 'g', title: d.title, sub: recurLabel(d), chevron: false })), t('dut.customT')) : ''}
         ${W.adding ? `${dutCustomForm('dwc_')}<button class="btn sec" data-a="baDwAdd">${ico('plus')}${esc(t('dut.cAdd'))}</button><button class="btn" data-a="baDwNo">${esc(t('dut.next'))} ›</button>`
-          : `<div class="card" id="dwMore"><p><b>${esc(t('dut.moreQ'))}</b></p><div class="grid2"><button class="btn sec" data-a="baDwYes">${esc(t('dut.yes'))}</button><button class="btn" data-a="baDwNo">${esc(t('dut.no'))}</button></div></div>`}`;
+          : `<div class="card" id="dwMore"><p><b>${esc(t('dut.moreQ'))}</b></p><div class="grid2"><button class="btn sec" data-a="baDwYes">${esc(t('dut.yes'))}</button><button class="btn" data-a="baDwNo">${esc(t('dut.no'))}</button></div></div>`}${dutFoot()}`;
     }
     return `<div class="card" id="dwAck"><h2>${esc(t('dut.ackT'))}</h2><p>${esc(t('dut.ack'))}</p>
       <label class="check"><input type="checkbox" id="dw_ack"><b>${esc(t('dut.ackOk'))}</b></label>
-      <button class="btn" data-a="baDwMake" id="dw_make" disabled>${ico('check')}${esc(t('dut.make'))}</button></div>`;
+      <button class="btn" data-a="baDwMake" id="dw_make" disabled>${ico('check')}${esc(t('dut.make'))}</button></div>${dutFoot()}`;
   },
   after() {
     const q = $('#dw_q');
@@ -817,7 +824,7 @@ VIEWS.duties = {
   title: () => t('dut.dutT'),
   render() {
     const P = dutSetup();
-    if (!P) return `<div class="card"><h2>${esc(t('dut.introT'))}</h2><p class="small">${esc(t('dut.introH'))}</p><button class="btn" data-a="baDwStart">${ico('check')}${esc(t('dut.start'))}</button></div>`;
+    if (!P) return `<div class="card"><h2>${esc(t('dut.introT'))}</h2><p class="small">${esc(t('dut.introH'))}</p><button class="btn" data-a="baDwStart">${ico('check')}${esc(t('dut.start'))}</button></div>${dutFoot()}`;
     const act = S.duties.filter((d) => d.active !== false);
     const up = act.filter((d) => d.next_due).sort((a, b) => a.next_due.localeCompare(b.next_due) || (a.priority || 2) - (b.priority || 2));
     const ev = act.filter((d) => !d.next_due && d.recur === 'event'), fin = act.filter((d) => !d.next_due && d.recur !== 'event');
@@ -827,7 +834,7 @@ VIEWS.duties = {
       <div class="grid2"><button class="btn sm sec" data-a="baDwStart">${esc(t('dut.change'))}</button><button class="btn sm sec" data-go="dutadd">${ico('plus')}${esc(t('dut.addOwn'))}</button></div></div>
       ${up.length ? group(up.map(dutCell), t('dut.upcoming')) : ''}${ev.length ? group(ev.map(dutCell), t('dut.event')) : ''}
       ${fin.length ? group(fin.map(dutCell), t('dut.doneOnce')) : ''}${off.length ? group(off.map(dutCell), t('dut.off')) : ''}
-      <p class="muted small">${esc(t('dut.ack'))}</p>`;
+      ${dutFoot()}`;
   },
   after() {
     const P = dutSetup(); if (!P || S.dutChecked || !DH()) return;
@@ -863,10 +870,10 @@ VIEWS.duty = {
         <button class="btn sec" data-a="baDuPick">${ico('folder')}${esc(t('dut.dPick'))}</button><button class="btn ghost" data-a="baDuDone">${esc(t('dut.dDoneNo'))}</button></div>` : ''}
       ${docs.length ? group(docs.map((x) => cell({ icon: 'doc', ic: 'g', title: x.title, sub: fmtDate(x.document_date || x.created_at), attrs: `data-go="doc" data-id="${x.id}"` })), t('dut.dProofs')) : ''}
       <button class="btn ghost" data-a="baDuToggle">${esc(on ? t('dut.dOff') : t('dut.dOn'))}</button>
-      ${d.custom ? `<button class="btn ghost" data-a="baDuDel">${esc(t('dut.dDel'))}</button>` : ''}`;
+      ${d.custom ? `<button class="btn ghost" data-a="baDuDel">${esc(t('dut.dDel'))}</button>` : ''}${dutFoot()}`;
   },
 };
-VIEWS.dutadd = { title: () => t('dut.addOwn'), render: () => `${dutCustomForm('dc_')}<button class="btn" data-a="baDuAdd">${ico('plus')}${esc(t('dut.cAdd'))}</button>` };
+VIEWS.dutadd = { title: () => t('dut.addOwn'), render: () => `${dutCustomForm('dc_')}<button class="btn" data-a="baDuAdd">${ico('plus')}${esc(t('dut.cAdd'))}</button>${dutFoot()}` };
 async function dutDoneToast(d) { const s = S.duties.find((x) => x.id === d.id) || d; toast(s.next_due ? t('dut.dDoneOk', { date: fmtDate(s.next_due) }) : t('dut.dDoneOnce')); }
 
 /* ---------- Nachweis scannen: nächster neuer Beleg gehört zur Pflicht ---------- */
