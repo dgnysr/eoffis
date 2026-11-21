@@ -12,8 +12,8 @@
 
 Backend: Supabase-Projekt `lqohxlxemawzrtdqjnci` (`supabase/schema.sql`), KI-Funktion `smooth-processor` (Code: `supabase/functions/ai/index.ts`, „Verify JWT“ aus), Server-Funktion `eoffis-api` (Code: `supabase/functions/eoffis-api/index.ts`, „Verify JWT“ aus). Schlüssel: nur der öffentliche Publishable Key steht in `config.js`. Einrichtungsschritte siehe `README.md` → „Einrichtung Sicherheit & Probezeit“.
 
-## Nächste Sitzung (ab 09.11.2026, am PC)
-Ergebnisse vom 08.11.2026 (Plattformen, Kosten, Personal, offene Schritte): `material/Auswertung_2026-11-08.md`.
+## Nächste Sitzung
+**Einstieg: `UEBERGABE.md`** (Stand 21.11.2026, 15:57 Uhr – was fertig ist, wo was liegt, offene Schritte in Reihenfolge).
 Server: GitHub → Actions → „Server einrichten“ → *Run workflow* (ersetzt die Handarbeit aus `README.md`; offen bleiben nur Brevo-SMTP, Turnstile, Apple/Google).
 
 ## Änderungsverlauf
