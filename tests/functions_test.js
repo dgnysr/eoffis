@@ -11,7 +11,7 @@ function makeSupabase(world) {
   function qb(table, role) {
     const st = { f: [], kind: 'select', row: null, single: false, range: null, limit: 0, onConflict: null };
     const rows = () => (tables[table] = tables[table] || []);
-    const match = (r) => st.f.every(([c, v]) => (c.startsWith('data->>') ? String((r.data || {})[c.slice(7)]) : r[c]) === v);
+    const match = (r) => st.f.every(([c, v, op]) => { const x = c.startsWith('data->>') ? String((r.data || {})[c.slice(7)]) : r[c]; return op === 'lt' ? x < v : op === 'neq' ? x !== v : x === v; });
     const run = () => {
       world.log.push(`${role}:${st.kind}:${table}`);
       if (table === 'secrets' && role !== 'service') return { data: null, error: { message: 'permission denied for table secrets' } };
@@ -30,7 +30,7 @@ function makeSupabase(world) {
       return { data: JSON.parse(JSON.stringify(out)), error: null };
     };
     const b = {
-      select() { return b; }, eq(c, v) { st.f.push([c, v]); return b; }, order() { return b; },
+      select() { return b; }, eq(c, v) { st.f.push([c, v]); return b; }, lt(c, v) { st.f.push([c, v, 'lt']); return b; }, neq(c, v) { st.f.push([c, v, 'neq']); return b; }, order() { return b; },
       range(a, z) { st.range = [a, z]; return b; }, limit(n) { st.limit = n; return b; }, maybeSingle() { st.single = true; return b; },
       upsert(r, o) { st.kind = 'upsert'; st.row = r; st.onConflict = o && o.onConflict; return b; },
       update(r) { st.kind = 'update'; st.row = r; return b; }, delete() { st.kind = 'delete'; return b; },
@@ -158,5 +158,9 @@ const ENV = { SUPABASE_URL: 'https://p.test', SUPABASE_ANON_KEY: 'ANON', SUPABAS
   r = await api({ action: 'share_get', id: 'a'.repeat(32) }, null); j = await r.json(); ok(r.status === 200 && /signed\.test/.test(j.url), 'Freigabe-Link öffnet ohne Konto');
   r = await api({ action: 'share_get', id: '../../etc' }, null); ok(r.status === 400, 'Freigabe-Link: ungültige Kennung abgelehnt');
   world.tables.shares[0].revoked_at = new Date().toISOString(); r = await api({ action: 'share_get', id: 'a'.repeat(32) }, null); ok(r.status === 404, 'Freigabe-Link: gesperrt');
+  world.tables.shares.push({ id: 'b'.repeat(32), path: 'u1/alt.bin', filename: 'Alt.zip', count: 1, expires_at: new Date(Date.now() - 3 * day).toISOString(), revoked_at: null });
+  world.removed = []; world.due = []; world.tables.push_subs = [];
+  r = await api({ action: 'daily' }, null, { 'x-cron-secret': 'cron-geheim' }); j = await r.json();
+  ok(j.shares && j.shares.removed === 1 && world.removed.includes('u1/alt.bin') && !world.removed.includes('u1/a.bin') && world.tables.shares.find((x) => x.id === 'b'.repeat(32)).path === '', 'Abgelaufene Freigabe: Datei gelöscht, gültige bleibt');
   r = await api({ action: 'unbekannt' }, 't1'); ok(r.status === 400, 'Unbekannte Aktion abgelehnt');
 })();

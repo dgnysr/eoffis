@@ -153,12 +153,23 @@ insert into subscriptions (owner, status) values ('88888888-8888-8888-8888-88888
 set role service_role;
 do $$ declare got text; begin
   select string_agg(left(owner::text, 1) || ':' || stage, ',' order by owner) into got from eoffis_trial_due() where stage is not null;
-  perform t_ok('Täglicher Lauf: richtige Nachrichten/Löschungen', got = '4:warn,5:end,6:delete_warn,7:delete', got);
+  perform t_ok('Täglicher Lauf: richtige Nachrichten, ohne Warnung keine Löschung', got = '4:warn,5:end,6:delete_warn,7:delete_warn', got);
+  insert into subscriptions (owner, notified_delwarn) values ('77777777-7777-7777-7777-777777777777', now() - interval '3 days') on conflict (owner) do update set notified_delwarn = now() - interval '3 days';
+  select string_agg(left(owner::text, 1) || ':' || stage, ',' order by owner) into got from eoffis_trial_due() where stage is not null;
+  perform t_ok('Löschung frühestens 7 Tage nach der Warnung', got = '4:warn,5:end,6:delete_warn', got);
+  update subscriptions set notified_delwarn = now() - interval '8 days' where owner = '77777777-7777-7777-7777-777777777777';
+  select string_agg(left(owner::text, 1) || ':' || stage, ',' order by owner) into got from eoffis_trial_due() where stage is not null;
+  perform t_ok('Täglicher Lauf: Löschung nach Warnung', got = '4:warn,5:end,6:delete_warn,7:delete', got);
   insert into subscriptions (owner, notified_warn) values ('44444444-4444-4444-4444-444444444444', now()) on conflict (owner) do update set notified_warn = now();
   insert into subscriptions (owner, notified_end) values ('55555555-5555-5555-5555-555555555555', now()) on conflict (owner) do update set notified_end = now();
   select string_agg(left(owner::text, 1) || ':' || stage, ',' order by owner) into got from eoffis_trial_due() where stage is not null;
   perform t_ok('Jede Nachricht nur einmal', got = '6:delete_warn,7:delete', got);
 end $$;
+reset role;
+insert into auth.users (id, is_anonymous, email, created_at) values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', false, 'j@test.de', now() - interval '90 days');
+insert into subscriptions (owner, abo_requested_at, notified_delwarn) values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', now() - interval '40 days', now() - interval '20 days');
+set role service_role;
+do $$ begin perform t_ok('Abo angefragt: Konto wird nicht gelöscht', not exists (select 1 from eoffis_trial_due() where owner = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' and stage is not null), ''); end $$;
 reset role;
 -- Löschen eines Kontos räumt alles ab
 set role authenticated; set request.jwt.claim.sub = '77777777-7777-7777-7777-777777777777';

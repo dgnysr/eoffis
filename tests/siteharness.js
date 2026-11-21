@@ -152,6 +152,10 @@ const CAPTURE = (cfg) => {
 async function newPage(browser, store, cfg) {
   const ctx = await browser.newContext(Object.assign({ viewport: { width: 400, height: 860 }, permissions: ['clipboard-read', 'clipboard-write'] }, cfg.ua ? { userAgent: cfg.ua } : {}, cfg.dpr ? { deviceScaleFactor: cfg.dpr } : {}, cfg.dark ? { colorScheme: 'dark' } : {}));
   const page = await ctx.newPage();
+  // Ältere Tests scannen absichtlich mehrmals dasselbe Bild: die Rückfrage „schon gespeichert“ dort automatisch bestätigen
+  // (paket7.js prüft die Rückfrage selbst und schaltet das mit window.__noAutoDup ab).
+  await page.addInitScript(() => { document.addEventListener('DOMContentLoaded', () => { const l = document.getElementById('layer'); if (!l) return;
+    new MutationObserver(() => { if (window.__noAutoDup || !/schon gespeichert|already saved/.test(l.textContent)) return; const b = [...l.querySelectorAll('button')].find((x) => /Speichern/.test(x.textContent)); if (b) b.click(); }).observe(l, { childList: true, subtree: true }); }); });
   const errors = [];
   page.on('pageerror', (e) => errors.push('PAGEERR ' + e.message));
   // Service Worker (sw.js) lässt sich im Testnetz nicht laden – diese Meldung ist erwartet

@@ -304,13 +304,18 @@ revoke all on public.secrets from anon, authenticated;
 create or replace function public.eoffis_trial_due() returns table (owner uuid, email text, anon boolean, stage text)
 language sql stable security definer set search_path = public, auth as $$
   with a as (
-    select u.id, u.email, coalesce(u.is_anonymous, false) as anon, s.notified_warn, s.notified_end, s.notified_delwarn,
+    select u.id, u.email, coalesce(u.is_anonymous, false) as anon, s.notified_warn, s.notified_end, s.notified_delwarn, s.abo_requested_at,
       public.eoffis_account(u.id) as acc
     from auth.users u left join public.subscriptions s on s.owner = u.id
     where coalesce(s.status, 'trial') <> 'active'
   )
+  -- Gelöscht wird nur, wenn die Warnung wirklich mindestens 7 Tage vorher verschickt wurde (auch nach Ausfall des täglichen Laufs)
+  -- und nie, solange eine Abo-Anfrage vorliegt (Bezahlsystem fehlt noch: Betreiber schaltet frei).
   select id, email, anon, case
-      when (acc->>'state') = 'expired' then 'delete'
+      when abo_requested_at is not null and (acc->>'state') in ('readonly', 'expired') then null
+      when (acc->>'state') = 'expired' and notified_delwarn is null then 'delete_warn'
+      when (acc->>'state') = 'expired' and notified_delwarn <= now() - make_interval(days => (public.eoffis_plan()->>'delete_warn_days')::int) then 'delete'
+      when (acc->>'state') = 'expired' then null
       when (acc->>'state') = 'readonly' and now() >= (acc->>'delete_at')::timestamptz - make_interval(days => (public.eoffis_plan()->>'delete_warn_days')::int) and notified_delwarn is null then 'delete_warn'
       when (acc->>'state') = 'readonly' and notified_end is null then 'end'
       when (acc->>'state') = 'trial' and now() >= (acc->>'warn_at')::timestamptz and notified_warn is null then 'warn'

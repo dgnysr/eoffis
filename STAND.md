@@ -1,6 +1,6 @@
 # Entwicklungsstand eOffis Web-App
 
-**Aktueller Stand:** Stand 21.11.2026 – Paket 1–3, Design 2026, Sicherheit (A), Probezeit (B), Server-Einrichtung per Knopfdruck, Betriebs-Akte: Inventar und Pflichten-Kalender (Branch `main`) – live unter https://dgnysr.github.io/eoffis/
+**Aktueller Stand:** Stand 21.11.2026 (Extremfall-Prüfung) – Paket 1–3, Design 2026, Sicherheit (A), Probezeit (B), Server-Einrichtung per Knopfdruck, Betriebs-Akte: Inventar und Pflichten-Kalender (Branch `main`) – live unter https://dgnysr.github.io/eoffis/
 
 ## Weiterentwickeln (Ausgangspunkt für jede neue Sitzung)
 1. Repository `dgnysr/eoffis` klonen – **immer auf dem neuesten Stand von `main` aufbauen**.
@@ -17,6 +17,20 @@ Ergebnisse vom 08.11.2026 (Plattformen, Kosten, Personal, offene Schritte): `mat
 Server: GitHub → Actions → „Server einrichten“ → *Run workflow* (ersetzt die Handarbeit aus `README.md`; offen bleiben nur Brevo-SMTP, Turnstile, Apple/Google).
 
 ## Änderungsverlauf
+### 21.11.2026 – Extremfall-Prüfung (fachlich und technisch)
+- **Probezeit-Löschung:** gelöscht wird nur, wenn die Warnung „in 7 Tagen gelöscht“ wirklich mindestens 7 Tage vorher verschickt wurde (auch nach Ausfall des täglichen Laufs), und nie, solange eine Abo-Anfrage vorliegt (`eoffis_trial_due`).
+- **Freigabe-Links:** abgelaufene verschlüsselte Dateien löscht der tägliche Lauf automatisch (Datensparsamkeit); der Eintrag bleibt als „abgelaufen“.
+- **Beträge:** `parseMoney` versteht englische Schreibweise (1,234.56), Minus hinten (12,50-), Klammern, „12,–“, Leerzeichen/Apostroph als Tausendertrenner; Datumsangaben in Beträgen werden abgelehnt.
+- **Währung:** „€“, „Euro“, „$“, „TL“ usw. werden zu ISO-Codes (`normCur`); unbekannte Zeichen führen nicht mehr zum Absturz der Dokumentansicht. Steuerberater-ZIP und Belegliste haben eine Spalte „Währung“.
+- **CSV/Excel:** Texte, die in Excel als Formel liefen (=, +, @, -Text), werden entschärft (`csvSafe`) – Steuerberater-Liste, Belegliste, Inventar.
+- **Datum:** auch TT.MM.JJ, TT/MM/JJJJ und ISO mit Uhrzeit; Jahre außerhalb 1900–2199 abgelehnt. Monatliche/jährliche Serien behalten den ursprünglichen Tag (31.01. → 28.02. → 31.03.; 29.02. im nächsten Schaltjahr wieder).
+- **Doppelte Belege:** gleiche Datei → Rückfrage vor dem Speichern; gleicher Absender + Rechnungsnummer (+ Betrag) → Warnung „Möglicherweise doppelt“ in der Dokumentansicht (Storno mit anderem Betrag nicht).
+- **Scans:** leere/kaputte/nicht lesbare Bilder brechen den Import der übrigen Dateien nicht mehr ab; sehr große Fotos (48 MP) und Großformat-PDFs werden vor dem Zeichnen verkleinert (sonst leere Seite auf iPhones).
+- **Ohne Internet:** verständliche Meldung statt „Failed to fetch“ (6 Sprachen).
+- **KI-Anweisung:** Rechnungen ohne USt mit Grund (Kleinunternehmer § 19, Reverse-Charge § 13b, innergemeinschaftlich/Ausfuhr) gelten als korrekt; Fremdwährung braucht USt in Euro; Storno/Gutschrift negativ; Währung als ISO-Code; unlesbare Dokumente erfinden nichts.
+- **Pflichtenlisten:** neu `alle.erechnung` (Empfang seit 2025, Ausstellen ab 2027/2028), `alle.minijob_arbeitszeit` (Merkmal „Minijobber“, 6 Sprachen), `gastro.arbeitszeit`, `gastro.sofortmeldung` (59 Vorlagen).
+- Tests: neu `tests/paket7.js` (11), DB +3, Server +1; `siteharness` bestätigt die Doppel-Rückfrage in älteren Tests automatisch. Gesamt 331 Prüfungen, 0 Fehler.
+
 ### 21.11.2026 – Anrede „Sie“ und Fußzeile bei den Pflichtenlisten
 - Alle deutschen Texte (App, Anmeldung, E-Mails des Servers, Pflichtenlisten in der Datenbank, App-Name) sprechen die Kunden mit „Sie“ an. Die KI wird angewiesen, deutsche Texte ebenfalls mit „Sie“ zu formulieren. Andere Sprachen unverändert.
 - Neue Fußzeile `dut.foot` (6 Sprachen) in allen Ansichten der Pflichtenlisten (Übersicht, Einrichtung, einzelne Pflicht, eigener Punkt): nicht rechtlich geprüft, keine Haftung, Kundenverantwortung, Empfehlung Prüfung durch Steuerberater/Kammer.

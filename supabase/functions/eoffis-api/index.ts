@@ -223,9 +223,21 @@ async function trialDaily(admin: ReturnType<typeof createClient>) {
   });
   return stats;
 }
+/** Abgelaufene Freigabe-Links: verschlüsselte Datei löschen (Datensparsamkeit), Eintrag bleibt als „abgelaufen“ sichtbar */
+async function sharesCleanup(admin: ReturnType<typeof createClient>) {
+  const cutoff = new Date(Date.now() - 86400000).toISOString();
+  const { data, error } = await admin.from('shares').select('id,path').lt('expires_at', cutoff).neq('path', '').limit(1000);
+  if (error) throw error;
+  const rows = (data || []) as { id: string; path: string }[];
+  if (!rows.length) return { removed: 0 };
+  await admin.storage.from('shares').remove(rows.map((r) => r.path));
+  for (const r of rows) await admin.from('shares').update({ path: '' }).eq('id', r.id);
+  return { removed: rows.length };
+}
 async function daily() {
   const admin = adminClient();
   const out: Record<string, unknown> = {};
+  try { out.shares = await sharesCleanup(admin); } catch (e) { out.sharesError = (e as Error).message; }
   try { out.trial = await trialDaily(admin); } catch (e) { out.trialError = (e as Error).message; }
   try { out.push = await pushDaily(admin); } catch (e) { out.pushError = (e as Error).message; }
   return json(out);

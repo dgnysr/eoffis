@@ -295,7 +295,7 @@ async function baAssetDel(id) {
   return true;
 }
 function invCsv() {
-  const q = (v) => { const s = String(v ?? ''); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const q = (v) => { const s = csvSafe(v); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   const n = (v) => (v == null ? '' : String(v).replace('.', ','));
   const head = ['Bezeichnung', 'Art', 'Hersteller', 'Modell', 'Seriennummer', 'Anzahl', 'Preis netto je Stück', 'Preis brutto je Stück', 'Kaufdatum', 'Lieferant', 'Garantie bis', 'Standort', 'Zustand', 'Elektrisch', 'Beleg', 'Notiz'];
   const rows = S.assets.slice().sort((a, b) => (a.purchase_date || '').localeCompare(b.purchase_date || '')).map((a) => [a.name, INV_TEXT.de['cat_' + a.category] || a.category, a.manufacturer, a.model, a.serial_number, a.quantity,
@@ -445,7 +445,7 @@ const DUT_TEXT = {
     indT: 'Welche Branche(n) hat Ihr Betrieb?', indH: 'Mehrere möglich. Passt nichts, gelten die allgemeinen Pflichten aller Betriebe.', search: 'Branche suchen …',
     missing: 'Meine Branche fehlt', missingH: 'Wie heißt Ihre Branche? Wir ergänzen sie.', send: 'Vorschlag senden', sent: 'Danke! Ihr Vorschlag ist angekommen.',
     factsT: 'Ein paar Angaben zu Ihrem Betrieb', emp: 'Mitarbeiter (ohne Inhaber)',
-    f_has_cash_register: 'Elektronische Kasse', f_has_vehicle: 'Firmenfahrzeug(e)', f_kapitalgesellschaft: 'GmbH, UG oder andere Gesellschaft (kein Einzelunternehmen)',
+    f_has_minijob: 'Minijobber (geringfügig Beschäftigte)', f_has_cash_register: 'Elektronische Kasse', f_has_vehicle: 'Firmenfahrzeug(e)', f_kapitalgesellschaft: 'GmbH, UG oder andere Gesellschaft (kein Einzelunternehmen)',
     f_ships_goods: 'Ware mit Verpackung an Kunden (auch Versand)', f_sells_by_weight: 'Verkauf nach Gewicht (Waage)', f_buys_precious_metals: 'Ankauf von Gold, Schmuck oder Uhren',
     f_handles_client_money: 'Nimmt Gelder von Kunden entgegen (z. B. Kautionen)', f_wohnimmobilienverwalter: 'Verwaltung von Wohnungen (WEG oder Miete)', f_has_grease_trap: 'Fettabscheider vorhanden',
     next: 'Weiter', loading: 'Pflichtenliste wird geladen …', fail: 'Die Pflichtenliste ist gerade nicht erreichbar. Bitte später erneut versuchen.',
@@ -471,7 +471,7 @@ const DUT_TEXT = {
     indT: 'İşletmen hangi sektör(ler)de?', indH: 'Birden fazla seçilebilir. Hiçbiri uymuyorsa tüm işletmeler için genel yükümlülükler geçerlidir.', search: 'Sektör ara …',
     missing: 'Sektörüm yok', missingH: 'Sektörünün adı ne? Ekleyeceğiz.', send: 'Öneriyi gönder', sent: 'Teşekkürler! Önerin ulaştı.',
     factsT: 'İşletmen hakkında birkaç bilgi', emp: 'Çalışan sayısı (sahibi hariç)',
-    f_has_cash_register: 'Elektronik kasa', f_has_vehicle: 'Şirket aracı/araçları', f_kapitalgesellschaft: 'GmbH, UG veya başka şirket (şahıs şirketi değil)',
+    f_has_minijob: 'Mini iş çalışanı (geringfügig)', f_has_cash_register: 'Elektronik kasa', f_has_vehicle: 'Şirket aracı/araçları', f_kapitalgesellschaft: 'GmbH, UG veya başka şirket (şahıs şirketi değil)',
     f_ships_goods: 'Müşteriye ambalajlı mal (kargo dahil)', f_sells_by_weight: 'Tartıyla satış (terazi)', f_buys_precious_metals: 'Altın, mücevher veya saat alımı',
     f_handles_client_money: 'Müşterilerden para alır (ör. depozito)', f_wohnimmobilienverwalter: 'Konut yönetimi (WEG veya kira)', f_has_grease_trap: 'Yağ ayırıcı var',
     next: 'İleri', loading: 'Yükümlülük listesi yükleniyor …', fail: 'Yükümlülük listesine şu an ulaşılamıyor. Lütfen daha sonra tekrar dene.',
@@ -497,7 +497,7 @@ const DUT_TEXT = {
     indT: 'W jakiej branży (branżach) działa Twoja firma?', indH: 'Można wybrać kilka. Jeśli nic nie pasuje, obowiązują ogólne obowiązki wszystkich firm.', search: 'Szukaj branży …',
     missing: 'Brak mojej branży', missingH: 'Jak nazywa się Twoja branża? Uzupełnimy ją.', send: 'Wyślij propozycję', sent: 'Dziękujemy! Propozycja dotarła.',
     factsT: 'Kilka informacji o Twojej firmie', emp: 'Pracownicy (bez właściciela)',
-    f_has_cash_register: 'Kasa elektroniczna', f_has_vehicle: 'Samochód(-y) firmowy(-e)', f_kapitalgesellschaft: 'GmbH, UG lub inna spółka (nie jednoosobowa)',
+    f_has_minijob: 'Pracownicy na minijob', f_has_cash_register: 'Kasa elektroniczna', f_has_vehicle: 'Samochód(-y) firmowy(-e)', f_kapitalgesellschaft: 'GmbH, UG lub inna spółka (nie jednoosobowa)',
     f_ships_goods: 'Towar w opakowaniu dla klientów (także wysyłka)', f_sells_by_weight: 'Sprzedaż na wagę', f_buys_precious_metals: 'Skup złota, biżuterii lub zegarków',
     f_handles_client_money: 'Przyjmuje pieniądze klientów (np. kaucje)', f_wohnimmobilienverwalter: 'Zarządzanie mieszkaniami (WEG lub najem)', f_has_grease_trap: 'Separator tłuszczu',
     next: 'Dalej', loading: 'Ładowanie listy obowiązków …', fail: 'Lista obowiązków jest teraz niedostępna. Spróbuj później.',
@@ -523,7 +523,7 @@ const DUT_TEXT = {
     indT: 'В какой отрасли (отраслях) работает предприятие?', indH: 'Можно выбрать несколько. Если ничего не подходит, действуют общие обязанности всех предприятий.', search: 'Найти отрасль …',
     missing: 'Моей отрасли нет', missingH: 'Как называется ваша отрасль? Мы добавим её.', send: 'Отправить предложение', sent: 'Спасибо! Предложение получено.',
     factsT: 'Немного о вашем предприятии', emp: 'Сотрудники (без владельца)',
-    f_has_cash_register: 'Электронная касса', f_has_vehicle: 'Служебный автомобиль', f_kapitalgesellschaft: 'GmbH, UG или другое общество (не ИП)',
+    f_has_minijob: 'Мини-работники (Minijob)', f_has_cash_register: 'Электронная касса', f_has_vehicle: 'Служебный автомобиль', f_kapitalgesellschaft: 'GmbH, UG или другое общество (не ИП)',
     f_ships_goods: 'Товар в упаковке для клиентов (в т. ч. доставка)', f_sells_by_weight: 'Продажа на вес (весы)', f_buys_precious_metals: 'Скупка золота, украшений или часов',
     f_handles_client_money: 'Принимает деньги клиентов (напр. залоги)', f_wohnimmobilienverwalter: 'Управление квартирами (WEG или аренда)', f_has_grease_trap: 'Есть жироуловитель',
     next: 'Далее', loading: 'Загрузка списка обязанностей …', fail: 'Список обязанностей сейчас недоступен. Попробуйте позже.',
@@ -549,7 +549,7 @@ const DUT_TEXT = {
     indT: 'ما قطاع (قطاعات) منشأتك؟', indH: 'يمكن اختيار أكثر من واحد. إن لم يناسب شيء، تسري الالتزامات العامة لكل المنشآت.', search: 'ابحث عن قطاع …',
     missing: 'قطاعي غير موجود', missingH: 'ما اسم قطاعك؟ سنضيفه.', send: 'إرسال الاقتراح', sent: 'شكرًا! وصل اقتراحك.',
     factsT: 'بعض المعلومات عن منشأتك', emp: 'عدد الموظفين (بدون المالك)',
-    f_has_cash_register: 'صندوق نقد إلكتروني', f_has_vehicle: 'مركبة/مركبات الشركة', f_kapitalgesellschaft: 'GmbH أو UG أو شركة أخرى (ليست مؤسسة فردية)',
+    f_has_minijob: 'عاملون بنظام Minijob', f_has_cash_register: 'صندوق نقد إلكتروني', f_has_vehicle: 'مركبة/مركبات الشركة', f_kapitalgesellschaft: 'GmbH أو UG أو شركة أخرى (ليست مؤسسة فردية)',
     f_ships_goods: 'بضائع مغلّفة للعملاء (بما في ذلك الشحن)', f_sells_by_weight: 'البيع بالوزن (ميزان)', f_buys_precious_metals: 'شراء الذهب أو المجوهرات أو الساعات',
     f_handles_client_money: 'يستلم أموال العملاء (مثل التأمينات)', f_wohnimmobilienverwalter: 'إدارة الشقق (WEG أو إيجار)', f_has_grease_trap: 'يوجد فاصل دهون',
     next: 'التالي', loading: 'جارٍ تحميل قائمة الالتزامات …', fail: 'قائمة الالتزامات غير متاحة حاليًا. يرجى المحاولة لاحقًا.',
@@ -575,7 +575,7 @@ const DUT_TEXT = {
     indT: 'În ce domeniu (domenii) lucrează firma ta?', indH: 'Poți alege mai multe. Dacă nu se potrivește nimic, se aplică obligațiile generale ale tuturor firmelor.', search: 'Caută domeniul …',
     missing: 'Domeniul meu lipsește', missingH: 'Cum se numește domeniul tău? Îl vom adăuga.', send: 'Trimite propunerea', sent: 'Mulțumim! Propunerea a ajuns.',
     factsT: 'Câteva date despre firma ta', emp: 'Angajați (fără proprietar)',
-    f_has_cash_register: 'Casă de marcat electronică', f_has_vehicle: 'Vehicul(e) de firmă', f_kapitalgesellschaft: 'GmbH, UG sau altă societate (nu întreprindere individuală)',
+    f_has_minijob: 'Angajați cu minijob', f_has_cash_register: 'Casă de marcat electronică', f_has_vehicle: 'Vehicul(e) de firmă', f_kapitalgesellschaft: 'GmbH, UG sau altă societate (nu întreprindere individuală)',
     f_ships_goods: 'Marfă ambalată pentru clienți (și expediere)', f_sells_by_weight: 'Vânzare la greutate (cântar)', f_buys_precious_metals: 'Cumpărare de aur, bijuterii sau ceasuri',
     f_handles_client_money: 'Primește bani de la clienți (de ex. garanții)', f_wohnimmobilienverwalter: 'Administrare de locuințe (WEG sau închiriere)', f_has_grease_trap: 'Separator de grăsimi',
     next: 'Mai departe', loading: 'Se încarcă lista de obligații …', fail: 'Lista de obligații nu este disponibilă acum. Încearcă mai târziu.',
@@ -599,7 +599,7 @@ const DUT_TEXT = {
 for (const l of Object.keys(DUT_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].dut = Object.assign({}, I18N[l].dut || {}, DUT_TEXT[l]); }
 COLS.push('duties');
 S.duties = [];
-const DUT_FACTS = [['has_cash_register', null], ['has_vehicle', null], ['kapitalgesellschaft', null], ['ships_goods', ['einzelhandel']], ['sells_by_weight', ['einzelhandel']],
+const DUT_FACTS = [['has_cash_register', null], ['has_vehicle', null], ['has_minijob', null], ['kapitalgesellschaft', null], ['ships_goods', ['einzelhandel']], ['sells_by_weight', ['einzelhandel']],
   ['buys_precious_metals', ['juwelier']], ['handles_client_money', ['immobilienmakler']], ['wohnimmobilienverwalter', ['immobilienmakler']], ['has_grease_trap', ['gastro']]];
 const DUT_RECUR = [['once', 'once'], ['monthly', 'monthly'], ['quarterly', 'quarterly'], ['halfyearly', 'halfyearly'], ['yearly', 'yearly'], ['every24', 'every_n_months'], ['event', 'event']];
 const DH = () => (window.EOFFIS_HOST && window.EOFFIS_HOST.duties) || null;

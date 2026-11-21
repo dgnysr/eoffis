@@ -525,15 +525,15 @@ async function accPrepare() {
 }
 async function advisorZip(docs) {
   const zip = new JSZip();
-  const cellv = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const cellv = (v) => `"${csvSafe(v).replace(/"/g, '""')}"`;
   const nf = (n) => (n == null ? '' : Number(n).toFixed(2).replace('.', ','));
-  const rows = [['Nr', 'Belegart', 'Datum', 'Absender', 'Belegnummer', 'Netto', 'USt', 'Brutto', 'Datei', 'Übertragen an', 'SHA-256'].map(cellv).join(';')];
+  const rows = [['Nr', 'Belegart', 'Datum', 'Absender', 'Belegnummer', 'Netto', 'USt', 'Brutto', 'Währung', 'Datei', 'Übertragen an', 'SHA-256'].map(cellv).join(';')];
   const sorted = docs.slice().sort((a, b) => accDateOf(a).localeCompare(accDateOf(b)));
   for (const [i, d] of sorted.entries()) {
     const f = await docFile(d); const p = accDirs(d).join('/') + '/' + f.name;
     zip.file(p, f);
     const lt = lastTransfer(d);
-    rows.push([i + 1, ACC_DIR[accTypeOf(d) || 'rechnung'], fmtDate(accDateOf(d)), d.sender, d.invoice_number || d.document_number, nf(d.amount_net), nf(d.vat_amount), nf(d.amount_gross), p, lt ? progName(accProfile(), lt.to) : '', d.sha256].map(cellv).join(';'));
+    rows.push([i + 1, ACC_DIR[accTypeOf(d) || 'rechnung'], fmtDate(accDateOf(d)), d.sender, d.invoice_number || d.document_number, nf(d.amount_net), nf(d.vat_amount), nf(d.amount_gross), normCur(d.currency) || 'EUR', p, lt ? progName(accProfile(), lt.to) : '', d.sha256].map(cellv).join(';'));
   }
   zip.file('Uebersicht.csv', '﻿' + rows.join('\r\n'));
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });

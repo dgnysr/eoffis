@@ -134,13 +134,36 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2)).replace(/[^a-zA-Z0-9-]/g, '');
 const nowIso = () => new Date().toISOString();
 const clone = (o) => JSON.parse(JSON.stringify(o));
-const money = (n, cur = 'EUR') => (n === null || n === undefined || isNaN(n) ? '–' : new Intl.NumberFormat('de-DE', { style: 'currency', currency: cur || 'EUR' }).format(n));
-function parseMoney(s) {
-  const c = String(s ?? '').replace(/[€\s]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.');
-  if (!c) return null;
-  const n = Number(c);
-  return isFinite(n) ? n : null;
+/** Währung als ISO-Code (KI/E-Rechnung liefern auch „€“, „Euro“, „$“, „TL“ …); unbekannt → null */
+const CUR_ALIAS = { '€': 'EUR', EURO: 'EUR', EUROS: 'EUR', '$': 'USD', 'US$': 'USD', DOLLAR: 'USD', '£': 'GBP', 'FR.': 'CHF', SFR: 'CHF', 'SFR.': 'CHF', '₺': 'TRY', TL: 'TRY', 'ZŁ': 'PLN', ZL: 'PLN', '₽': 'RUB', LEI: 'RON', LEU: 'RON', '¥': 'JPY', 'KČ': 'CZK', KC: 'CZK', KR: 'DKK' };
+function normCur(c) {
+  const k = String(c ?? '').trim().toUpperCase(); if (!k) return null;
+  const v = CUR_ALIAS[k] || k;
+  if (!/^[A-Z]{3}$/.test(v)) return null;
+  try { new Intl.NumberFormat('de-DE', { style: 'currency', currency: v }); return v; } catch { return null; }
 }
+const money = (n, cur = 'EUR') => {
+  if (n === null || n === undefined || n === '' || isNaN(n)) return '–';
+  const c = normCur(cur) || 'EUR';
+  try { return new Intl.NumberFormat('de-DE', { style: 'currency', currency: c }).format(n); } catch { return String(n); }
+};
+function parseMoney(s) {
+  if (typeof s === 'number') return isFinite(s) ? s : null;
+  // Leerzeichen/Apostroph als Tausendertrenner, „12,–“ = 12,00, Minus vorn/hinten/(Klammern), deutsche und englische Schreibweise
+  let c = String(s ?? '').replace(/[\s  ']/g, '').replace(/[−–]/g, '-').replace(/(\d)[,.]-+/g, '$1');
+  if (/\d-\d/.test(c)) return null;
+  const neg = /^\(.*\)$/.test(c) || /^[^\d]*-/.test(c) || /\d-[^\d]*$/.test(c);
+  c = c.replace(/[^\d.,]/g, '');
+  if (!/\d/.test(c)) return null;
+  const lc = c.lastIndexOf(','), ld = c.lastIndexOf('.');
+  if (lc >= 0 && ld >= 0) c = lc > ld ? c.replace(/\./g, '').replace(',', '.') : c.replace(/,/g, '');
+  else if (lc >= 0) c = c.match(/,/g).length > 1 ? c.replace(/,/g, '') : c.replace(',', '.');
+  else if (ld >= 0 && (c.match(/\./g).length > 1 || /^\d{1,3}\.\d{3}$/.test(c))) c = c.replace(/\./g, '');
+  const n = Number(c);
+  return isFinite(n) ? (neg ? -n : n) : null;
+}
+/** CSV-Zelle: Text, der in Excel als Formel liefe (=, +, @, - ohne Zahl), mit ' entschärfen */
+const csvSafe = (v) => { const x = String(v ?? ''); return /^[=+@\t\r]/.test(x) || /^-(?![\d,.]+$)/.test(x) ? "'" + x : x; };
 const numStr = (n) => (n === null || n === undefined ? '' : String(n).replace('.', ','));
 const fmtIban = (s) => String(s || '').replace(/\s+/g, '').replace(/(.{4})/g, '$1 ').trim();
 function safeName(s) {
@@ -185,9 +208,10 @@ function fmtDate(iso) { if (!iso) return '–'; const [y, m, d] = String(iso).sl
 function parseDate(input) {
   const s = String(input || '').trim();
   let y, m, d, mm;
-  if ((mm = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/))) [d, m, y] = [+mm[1], +mm[2], +mm[3]];
-  else if ((mm = s.match(/^(\d{4})-(\d{2})-(\d{2})$/))) [y, m, d] = [+mm[1], +mm[2], +mm[3]];
+  if ((mm = s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4}|\d{2})$/))) [d, m, y] = [+mm[1], +mm[2], mm[3].length === 2 ? 2000 + +mm[3] : +mm[3]];
+  else if ((mm = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ][\d:.]+(?:Z|[+-]\d{2}:?\d{2})?)?$/))) [y, m, d] = [+mm[1], +mm[2], +mm[3]];
   else return null;
+  if (y < 1900 || y > 2199) return null;
   const dt = new Date(y, m - 1, d);
   if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) return null;
   return toISO(dt);
@@ -416,7 +440,8 @@ async function guard(fn) {
     if (e && e.conflict) { toast(t('doc.conflict')); await reloadAll(); render(); return; }
     console.error(e);
     const m = String((e && e.message) || '');
-    if (e && e.code === 'quota_exceeded') toast(t('web.storeQuota'));
+    if (navigator.onLine === false || /failed to fetch|networkerror|load failed|network request failed/i.test(m)) toast(t('web.offline'));
+    else if (e && e.code === 'quota_exceeded') toast(t('web.storeQuota'));
     else if (e && e.code === 'resource_exhausted') toast(t('web.busy'));
     else if (/too large|document size|256/i.test(m)) toast(t('web.tooLarge'));
     else toast(t('web.saveFailed', { msg: errText(e) }));
@@ -772,7 +797,8 @@ async function importFiles(files) {
           const firstIdx = S.scan.items.length;
           for (let i = 1; i <= pdf.numPages && S.scan.items.length < MAX_PAGES + 1; i++) {
             const page = await pdf.getPage(i);
-            const vp = page.getViewport({ scale: 1.6 });
+            const vp0 = page.getViewport({ scale: 1 });
+            const vp = page.getViewport({ scale: Math.min(1.6, 3000 / Math.max(vp0.width, vp0.height, 1)) }); // Großformate (Pläne) nicht über die Canvas-Grenze der Handys
             const c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height;
             await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
             await addPageFromCanvas(c, `${f.name} · ${i}`, per);
@@ -783,10 +809,17 @@ async function importFiles(files) {
           }
         } catch (e) { console.error(e); toast(t('web.pdfFail')); }
       } else if (isImageFile(f)) {
-        const img = await loadImage(f);
-        const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
-        c.getContext('2d').drawImage(img, 0, 0);
-        await addPageFromCanvas(c, f.name, f.size);
+        // Einzeln absichern: ein kaputtes/leeres/nicht lesbares Bild (z. B. HEIC außerhalb von Safari) bricht die übrigen nicht ab.
+        // Sehr große Fotos (48 MP) direkt verkleinert zeichnen – iPhones zeichnen sonst eine leere Seite.
+        let c = null;
+        try {
+          if (!f.size) throw new Error('empty');
+          const img = await loadImage(f);
+          const sc = Math.min(1, 3000 / Math.max(img.naturalWidth, img.naturalHeight, 1));
+          c = document.createElement('canvas'); c.width = Math.max(1, Math.round(img.naturalWidth * sc)); c.height = Math.max(1, Math.round(img.naturalHeight * sc));
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        } catch (e) { console.error(e); toast(`${f.name}: ${t('scan.unsupported')}`); c = null; }
+        if (c) await addPageFromCanvas(c, f.name, f.size);
       } else toast(`${f.name}: ${t('scan.unsupported')}`);
     }
     await persistDraft();
@@ -934,6 +967,12 @@ async function finishScan(mode) {
   const items = S.scan.items;
   if (!items.length || draftProblem(items)) return;
   if (!mode && !(await ask(t('scan.finishConfirm'), t('scan.finish')))) return;
+  // Gleiche Datei schon gespeichert (z. B. zweimal hochgeladen)? → nachfragen, sonst doppelte Zahlung/Übertragung
+  try {
+    let src = ''; for (const it of items) { const pg = await store.one('pages', it.id); if (pg) src += pg.dataUrl || pg.xml || ''; }
+    const h = await sha256(src), twin = S.docs.find((x) => x.sha256 === h && !x.generated);
+    if (twin && !(await ask(t('scan.dupAsk', { title: twin.title }), t('common.save')))) return;
+  } catch (e) { console.error(e); }
   S.busy = t('scan.uploading'); render();
   await guard(async () => {
     const id = uid();
@@ -968,6 +1007,14 @@ async function finishScan(mode) {
 const DOC_TEXT = ['title', 'doc_type', 'sender', 'sender_address', 'recipient', 'recipient_address', 'invoice_number', 'iban', 'bic', 'payment_reference'];
 const DOC_MONEY = ['amount_net', 'vat_amount', 'amount_gross'];
 const getDoc = (id) => S.docs.find((d) => d.id === id);
+/** Möglicher Doppelbeleg: gleicher Absender + gleiche Rechnungs-/Belegnummer (und, falls bekannt, gleicher Betrag) */
+const dupKey = (v) => String(v || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+function dupTwin(d) {
+  const no = dupKey(d.invoice_number || d.document_number), from = dupKey(d.sender);
+  if (!no || !from || d.generated) return null;
+  return S.docs.find((x) => x.id !== d.id && !x.generated && dupKey(x.invoice_number || x.document_number) === no && dupKey(x.sender) === from
+    && (x.amount_gross == null || d.amount_gross == null || Math.abs(x.amount_gross - d.amount_gross) < 0.005)) || null;
+}
 VIEWS.doc = {
   title: () => (getDoc(S.params.id) || {}).title || t('docs.title'),
   render() {
@@ -984,7 +1031,8 @@ VIEWS.doc = {
         ${d.archived ? `<span class="pill c-red">🔒 ${esc(t('docs.archived'))}</span>` : ''}
         ${d.example ? `<span class="pill c-orange">${esc(t('web.example'))}</span>` : ''}</div>`;
     const nextBtn = st.step < 4 ? `<button class="btn" data-a="docStep" data-v="${st.step + 1}">${esc(t('web.next'))}: ${esc(steps[st.step])} ›</button>` : '';
-    return pills + nav + [docStep1, docStep2, docStep3, docStep4][st.step - 1](d, st) + nextBtn;
+    const twin = dupTwin(d);
+    return pills + (twin ? `<div class="banner warn">${esc(t('doc.dupHint', { title: twin.title }))} <button class="sec-link" data-go="doc" data-id="${esc(twin.id)}">›</button></div>` : '') + nav + [docStep1, docStep2, docStep3, docStep4][st.step - 1](d, st) + nextBtn;
   },
   after() {
     const d = getDoc(S.params.id); if (!d || !d.page_count || (S.docUi && S.docUi.step !== 1)) return;
@@ -1110,7 +1158,7 @@ async function analyzeDoc(id) {
     const inp = await aiInputFor(d);
     const prompt = `Du bist der Dokumentassistent von eOffis für kleine Betriebe in Deutschland. Heute ist ${todayISO()}. ${companyLine()}
 ${inp.text}
-Lies das Dokument genau. Erfinde nichts: Unbekanntes ist null. Beträge als Zahl mit Punkt als Dezimaltrennzeichen. Datumsangaben als YYYY-MM-DD.
+Lies das Dokument genau. Erfinde nichts: Unbekanntes ist null. Beträge als Zahl mit Punkt als Dezimaltrennzeichen. "currency" als ISO-Code (EUR, CHF, USD …). Dokumente in jeder Sprache lesen; ist der Text unlesbar, leer oder kein Dokument, "title" "Unlesbares Dokument" und sonst null/leere Listen. Datumsangaben als YYYY-MM-DD.
 Schreibe "explanation" (2–5 Sätze, ohne Fachjargon) und "next_steps" (1–5 konkrete Schritte) auf ${LANG_NAMES[lang]}. Auf Deutsch den Leser immer mit „Sie“ ansprechen. Namen, Anschriften und Nummern bleiben in Originalschreibweise; Anschriften mehrzeilig mit \\n.
 "payment_required" ist true, wenn der Empfänger zahlen soll – auch ohne ausdrücklich genannte Zahlungsfrist (z. B. Rechnung, Mahnung, Beitragsbescheid).
 "suggested_action": Schlage vor, ob der Betrieb schriftlich reagieren sollte. "type" ist "reply" (Antwort), "statement" (Stellungnahme/Widerspruch), "cancellation" (Kündigung – nur bei Verträgen, wenn eine Kündigung naheliegt) oder "none". "question" ist eine kurze Ja/Nein-Frage auf ${LANG_NAMES[lang]}, z. B. „Soll ich die Kündigung für Sie schreiben?“.
@@ -1119,7 +1167,7 @@ Schreibe "explanation" (2–5 Sätze, ohne Fachjargon) und "next_steps" (1–5 k
 "response_recipient" und "response_address": zuständige Stelle und vollständige Postanschrift für eine ANTWORT (meist der Absender), "response_reference": Aktenzeichen/Kunden-/Vertrags-/Rechnungsnummer, "response_subject": passender Betreff, "recipient_email": nur eine ausdrücklich genannte E-Mail-Adresse für Antworten. Nichts erfinden.
 Verträge: "contract_end" (Vertragsende), "cancellation_date" (letzter Tag, an dem eine Kündigung zugehen muss – NICHT Vertragsende), "contract_number", "contract_terms" (Laufzeit, Verlängerung, Kündigungsform, Frist), "contract_party" (Vertragspartner/Versicherer), "contract_start", "notice_period" (z. B. "3 Monate zum Laufzeitende"), "auto_renew" (true/false), "cost_amount" (Beitrag/Kosten je Zahlung, Zahl), "cost_interval" ("monthly"|"quarterly"|"yearly"|"once"), "coverage" (Leistung/Versicherungsschutz in einem kurzen Satz) – nur wenn belegt, sonst null.
 Skonto: "discount_date", "discount_percent" (Zahl), "discount_terms" – nur wenn genannt.
-Rechnungen: "invoice_checks" prüft die Pflichtangaben nach § 14 Abs. 4 UStG (Name/Anschrift beider Parteien, Steuernummer oder USt-IdNr., Ausstellungsdatum, Rechnungsnummer, Menge/Art der Leistung, Leistungsdatum, Entgelt nach Steuersätzen, Steuersatz und Steuerbetrag oder Befreiungshinweis) und rechnet die Summen nach. Kleinbetragsrechnung bis 250 € nach § 33 UStDV vereinfacht. Jeder Eintrag {"label","status":"present"|"missing"|"unclear","detail"} auf ${LANG_NAMES[lang]}. Bei Nicht-Rechnungen leere Liste. Das ist keine rechtsverbindliche Freigabe.
+Rechnungen: "invoice_checks" prüft die Pflichtangaben nach § 14 Abs. 4 UStG (Name/Anschrift beider Parteien, Steuernummer oder USt-IdNr., Ausstellungsdatum, Rechnungsnummer, Menge/Art der Leistung, Leistungsdatum, Entgelt nach Steuersätzen, Steuersatz und Steuerbetrag oder Befreiungshinweis) und rechnet die Summen nach. Kleinbetragsrechnung bis 250 € nach § 33 UStDV vereinfacht. Rechnungen ohne Umsatzsteuer sind korrekt, wenn ein Grund genannt ist – Kleinunternehmer (§ 19 UStG), „Steuerschuldnerschaft des Leistungsempfängers“ (Reverse-Charge, § 13b UStG; bei EU-Leistungen mit USt-IdNr. beider Seiten), steuerfreie innergemeinschaftliche Lieferung oder Ausfuhr: dann "vat_amount" 0 und den Hinweis als "present" werten; fehlt der Grund, "missing". Bei Rechnungen in fremder Währung muss der Steuerbetrag auch in Euro angegeben sein (§ 16 Abs. 6 UStG). Stornorechnungen und Gutschriften/Korrekturen, die eine frühere Rechnung an den Betrieb mindern: Beträge negativ angeben, "payment_required" false. Jeder Eintrag {"label","status":"present"|"missing"|"unclear","detail"} auf ${LANG_NAMES[lang]}. Bei Nicht-Rechnungen leere Liste. Das ist keine rechtsverbindliche Freigabe.
 "ocr_text": der vollständig lesbare Originaltext (höchstens 15000 Zeichen) für die Volltextsuche.
 "folder" ist einer von: ${FOLDERS.join(', ')} – firma = Firmen-Stammdaten (Gewerbeanmeldung, Handelsregisterauszug, Ausweis des Inhabers, Zuteilung Steuernummer/USt-IdNr., Gesellschaftsvertrag), finanzamt = Steuerbescheide und Schreiben des Finanzamts, buchhaltung = Buchhaltungsbelege (Eingangsrechnungen, Quittungen/Kassenbons, Lieferscheine, Kontoauszüge, Gutschriften), bank = Bank- und Kreditverträge, Schreiben der Bank (außer Kontoauszügen), versicherungen = Versicherungspolicen und -schreiben, personal = Arbeitsverträge/Lohn/Sozialversicherung, behoerden = sonstige Behörden/Kammern, mietvertraege = Miete/Pacht. "dates[].kind" ist einer von: payment, reply, contract, cancellation, skonto, other; "date" ist null, wenn kein eindeutiges Datum genannt ist.
 Vorauszahlungsbescheid des Finanzamts oder der Gemeinde (Einkommensteuer, Gewerbesteuer, Körperschaftsteuer, Kirchensteuer, Solidaritätszuschlag): "prepayments" listet jede künftige Vorauszahlung {"tax": Steuerart auf Deutsch, "due_date": "YYYY-MM-DD", "amount": Zahl}; diese Termine NICHT zusätzlich in "dates". Sonst leere Liste.
@@ -1139,7 +1187,7 @@ Antworte nur mit einem JSON-Objekt dieser Form:
     await persistDoc(getDoc(id), {
       title, doc_type: r.doc_type || null, sender: r.sender || null, sender_address: r.sender_address || null,
       recipient: r.recipient || null, recipient_address: r.recipient_address || null, invoice_number: r.invoice_number || null,
-      amount_gross: num(r.amount_gross), amount_net: num(r.amount_net), vat_amount: num(r.vat_amount), currency: r.currency || 'EUR',
+      amount_gross: num(r.amount_gross), amount_net: num(r.amount_net), vat_amount: num(r.vat_amount), currency: normCur(r.currency) || 'EUR',
       payment_required: !!r.payment_required, due_date: iso(r.payment_due_date), iban: r.iban ? String(r.iban).replace(/\s+/g, '') : null,
       bic: r.bic || null, payment_reference: r.payment_reference || null, is_contract: !!r.is_contract, is_incoming_invoice: !!r.is_incoming_invoice,
       folder: ACC_TYPES.includes(r.acc_type) ? 'buchhaltung' : FOLDERS.includes(r.folder) ? r.folder : r.folder === 'rechnungen' ? 'buchhaltung' : 'sonstiges', explanation: r.explanation || '',
@@ -1581,17 +1629,19 @@ VIEWS.task = {
   },
 };
 function keepTaskInputs() { if (!S.taskDraft) return; S.taskDraft.title = val('t_title'); S.taskDraft._due = val('t_due'); S.taskDraft._time = val('t_time'); S.taskDraft.notes = val('t_notes'); }
-function nextDue(iso, recur) {
-  const d = fromISO(iso), day = d.getDate(), add = recur === 'monthly' ? 1 : recur === 'quarterly' ? 3 : 12;
+function nextDue(iso, recur, anchor) {
+  // anchor = ursprünglicher Tag der Serie: 31.01. → 28.02. → 31.03. (nicht dauerhaft 28.)
+  const d = fromISO(iso), day = Math.max(d.getDate(), Number(anchor) || 0), add = recur === 'monthly' ? 1 : recur === 'quarterly' ? 3 : 12;
   const n = new Date(d.getFullYear(), d.getMonth() + add, 1); n.setDate(Math.min(day, new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate()));
   return toISO(n);
 }
 /** Wiederkehrende Frist erledigt → nächsten Termin anlegen (einmalig je Termin) */
 async function spawnNext(task) {
   if (!task.recur || !task.due_date || task.status !== 'done') return;
-  const due = nextDue(task.due_date, task.recur);
+  const anchor = task.anchor_day || fromISO(task.due_date).getDate();
+  const due = nextDue(task.due_date, task.recur, anchor);
   if (S.tasks.some((x) => x.series === (task.series || task.id) && x.due_date === due)) return;
-  const rec = { id: uid(), title: task.title, kind: task.kind, due_date: due, status: 'open', priority: task.priority, notes: task.notes || '', recur: task.recur, series: task.series || task.id, document_id: task.document_id || null, template_key: task.template_key || null, created_at: nowIso(), version: 0 };
+  const rec = { id: uid(), title: task.title, kind: task.kind, due_date: due, status: 'open', priority: task.priority, notes: task.notes || '', recur: task.recur, anchor_day: anchor, series: task.series || task.id, document_id: task.document_id || null, template_key: task.template_key || null, created_at: nowIso(), version: 0 };
   const saved = await saveVersioned('tasks', rec); S.tasks.push(saved); toast(t('tasks.nextCreated', { date: fmtDate(due) }));
 }
 async function taskSave() {
@@ -1912,15 +1962,15 @@ async function exportZip() {
     const zip = new JSZip();
     const tab = S.exTab || 'prebook';
     const docs = S.docs.filter((d) => S.exSel.has(d.id) && d.page_count && (tab === 'prebook' ? d.tax_flag !== 'deadline' : d.tax_flag === 'deadline')).sort((a, b) => a.folder.localeCompare(b.folder) || (a.created_at || '').localeCompare(b.created_at || ''));
-    const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const rows = [['Nr', 'Ordner', 'Datei', 'Titel', 'Art', 'Absender', 'Rechnungsnr', 'Netto', 'USt', 'Brutto', 'Fällig', 'Bezahlt', 'Markierung', 'Erfasst', 'SHA-256'].map(cell).join(';')];
+    const cell = (v) => `"${csvSafe(v).replace(/"/g, '""')}"`;
+    const rows = [['Nr', 'Ordner', 'Datei', 'Titel', 'Art', 'Absender', 'Rechnungsnr', 'Netto', 'USt', 'Brutto', 'Währung', 'Fällig', 'Bezahlt', 'Markierung', 'Erfasst', 'SHA-256'].map(cell).join(';')];
     const nf = (n) => (n == null ? '' : Number(n).toFixed(2).replace('.', ','));
     for (const [i, d] of docs.entries()) {
       const pages = (await store.where('pages', 'docId', d.id)).sort((a, b) => a.idx - b.idx);
       const folder = safeName(t('docs.folder_' + d.folder));
       const name = `${String(i + 1).padStart(3, '0')}_${safeName(d.title)}.${d.file_kind === 'xml' ? 'xml' : 'pdf'}`;
       zip.file(`${folder}/${name}`, d.file_kind === 'xml' ? (pages[0] && pages[0].xml) || '' : pagesToPdf(pages));
-      rows.push([i + 1, t('docs.folder_' + d.folder), `${folder}/${name}`, d.title, d.doc_type, d.sender, d.invoice_number, nf(d.amount_net), nf(d.vat_amount), nf(d.amount_gross), fmtDate(d.due_date), d.paid ? 'ja' : 'nein', t('doc.flag_' + d.tax_flag), fmtDate(d.created_at), d.sha256].map(cell).join(';'));
+      rows.push([i + 1, t('docs.folder_' + d.folder), `${folder}/${name}`, d.title, d.doc_type, d.sender, d.invoice_number, nf(d.amount_net), nf(d.vat_amount), nf(d.amount_gross), normCur(d.currency) || 'EUR', fmtDate(d.due_date), d.paid ? 'ja' : 'nein', t('doc.flag_' + d.tax_flag), fmtDate(d.created_at), d.sha256].map(cell).join(';'));
     }
     zip.file('Uebersicht.csv', '﻿' + rows.join('\r\n'));
     const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
