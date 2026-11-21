@@ -306,7 +306,7 @@ const S = {
 };
 const FOLDERS = ['buchhaltung', 'firma', 'finanzamt', 'bank', 'versicherungen', 'personal', 'behoerden', 'mietvertraege', 'hygiene', 'sonstiges'];
 const KINDS = ['payment', 'reply', 'contract', 'cancellation', 'skonto', 'tax', 'hygiene', 'personnel', 'permit', 'other'];
-const INDUSTRIES = ['gastro', 'handwerk', 'friseur', 'reinigung', 'einzelhandel', 'sonstiges'];
+const INDUSTRIES = ['gastro', 'handwerk', 'friseur', 'reinigung', 'einzelhandel', 'juwelier', 'immobilienmakler', 'sonstiges'];
 
 function addHistory(rec, action, note) {
   rec.history = (rec.history || []).concat([{ at: nowIso(), action, note: note || '' }]).slice(-40);
@@ -1101,6 +1101,8 @@ async function persistDoc(d, patch, note) {
   upsertLocal('docs', saved);
   return saved;
 }
+/** Inventar (Betriebs-Akte A): welche Positionen eines Belegs ins Inventar gehören – auch für ungewöhnliche Betriebe */
+const INV_PROMPT = `Inventar: "assets" listet bei Rechnungen, Quittungen, Lieferscheinen und Kaufverträgen die angeschafften langlebigen Gegenstände, die der Betrieb selbst nutzt (Geräte, Maschinen, Werkzeuge, Computer, Handys, Möbel, Fahrzeuge, Kassen, Waagen, Tresore, Einrichtung, gekaufte Software-Lizenzen) – je nach Branche auch Ungewöhnliches (z. B. Friseurstuhl, Kaffeemaschine, Bühnentechnik, Zahnarztstuhl). NICHT: Verbrauchsmaterial, Ware zum Weiterverkauf, Lebensmittel, Dienstleistungen, Reparaturen, Miete, Abos, Versand. Nur Gegenstände ab etwa 50 € Einzelpreis oder klar erkennbare Geräte. Je Eintrag: "name" kurze Bezeichnung auf Deutsch, "category" einer von geraet, it, maschine, werkzeug, moebel, fahrzeug, kasse, software, einrichtung, sonstiges; "manufacturer", "model", "serial_number" und "warranty_months" nur wenn im Beleg genannt, sonst null; "quantity" Anzahl; "unit_price_net"/"unit_price_gross" Einzelpreis oder null; "electrical" true bei elektrisch betriebenen Geräten. Sonst leere Liste.`;
 async function analyzeDoc(id) {
   const d = getDoc(id); if (!d || !S.sample) return;
   S.docUi = { analyzing: true }; render();
@@ -1122,8 +1124,9 @@ Rechnungen: "invoice_checks" prüft die Pflichtangaben nach § 14 Abs. 4 UStG (N
 "folder" ist einer von: ${FOLDERS.join(', ')} – firma = Firmen-Stammdaten (Gewerbeanmeldung, Handelsregisterauszug, Ausweis des Inhabers, Zuteilung Steuernummer/USt-IdNr., Gesellschaftsvertrag), finanzamt = Steuerbescheide und Schreiben des Finanzamts, buchhaltung = Buchhaltungsbelege (Eingangsrechnungen, Quittungen/Kassenbons, Lieferscheine, Kontoauszüge, Gutschriften), bank = Bank- und Kreditverträge, Schreiben der Bank (außer Kontoauszügen), versicherungen = Versicherungspolicen und -schreiben, personal = Arbeitsverträge/Lohn/Sozialversicherung, behoerden = sonstige Behörden/Kammern, mietvertraege = Miete/Pacht. "dates[].kind" ist einer von: payment, reply, contract, cancellation, skonto, other; "date" ist null, wenn kein eindeutiges Datum genannt ist.
 Vorauszahlungsbescheid des Finanzamts oder der Gemeinde (Einkommensteuer, Gewerbesteuer, Körperschaftsteuer, Kirchensteuer, Solidaritätszuschlag): "prepayments" listet jede künftige Vorauszahlung {"tax": Steuerart auf Deutsch, "due_date": "YYYY-MM-DD", "amount": Zahl}; diese Termine NICHT zusätzlich in "dates". Sonst leere Liste.
 Buchhaltung: "acc_type" ist "rechnung" (Eingangsrechnung an den Betrieb), "quittung" (Quittung, Kassenbon, Tank-/Bewirtungsbeleg), "lieferschein", "kontoauszug", "gutschrift" oder "none" (kein Buchhaltungsbeleg, z. B. Behördenschreiben, Vertrag, Mahnung ohne neue Rechnung). "document_number": Nummer dieses Belegs (Rechnungs-, Lieferschein-, Quittungsnummer) oder null. "reference_numbers": im Beleg genannte andere Nummern, mit denen er zu anderen Belegen gehört (Lieferschein-, Auftrags-, Bestell-, Rechnungsnummern), sonst leere Liste.
+${INV_PROMPT}
 Antworte nur mit einem JSON-Objekt dieser Form:
-{"title":string,"prepayments":[{"tax":string,"due_date":string,"amount":number}],"acc_type":string,"document_number":string|null,"reference_numbers":[string],"doc_type":string,"sender":string|null,"sender_address":string|null,"recipient":string|null,"recipient_address":string|null,"invoice_number":string|null,"amount_gross":number|null,"amount_net":number|null,"vat_amount":number|null,"currency":string|null,"payment_required":boolean,"payment_due_date":string|null,"iban":string|null,"bic":string|null,"payment_reference":string|null,"is_contract":boolean,"is_incoming_invoice":boolean,"folder":string,"explanation":string,"next_steps":[string],"dates":[{"kind":string,"date":string|null,"description":string}],"document_date":string|null,"suggested_action":{"type":string,"question":string},"action_needed":boolean,"suggested_task":string,"response_recipient":string|null,"response_address":string|null,"response_reference":string|null,"response_subject":string|null,"recipient_email":string|null,"contract_end":string|null,"cancellation_date":string|null,"contract_number":string|null,"contract_terms":string|null,"contract_party":string|null,"contract_start":string|null,"notice_period":string|null,"auto_renew":boolean|null,"cost_amount":number|null,"cost_interval":string|null,"coverage":string|null,"discount_date":string|null,"discount_percent":number|null,"discount_terms":string|null,"invoice_checks":[{"label":string,"status":string,"detail":string}],"ocr_text":string}`;
+{"title":string,"assets":[{"name":string,"category":string,"manufacturer":string|null,"model":string|null,"serial_number":string|null,"quantity":number,"unit_price_net":number|null,"unit_price_gross":number|null,"warranty_months":number|null,"electrical":boolean}],"prepayments":[{"tax":string,"due_date":string,"amount":number}],"acc_type":string,"document_number":string|null,"reference_numbers":[string],"doc_type":string,"sender":string|null,"sender_address":string|null,"recipient":string|null,"recipient_address":string|null,"invoice_number":string|null,"amount_gross":number|null,"amount_net":number|null,"vat_amount":number|null,"currency":string|null,"payment_required":boolean,"payment_due_date":string|null,"iban":string|null,"bic":string|null,"payment_reference":string|null,"is_contract":boolean,"is_incoming_invoice":boolean,"folder":string,"explanation":string,"next_steps":[string],"dates":[{"kind":string,"date":string|null,"description":string}],"document_date":string|null,"suggested_action":{"type":string,"question":string},"action_needed":boolean,"suggested_task":string,"response_recipient":string|null,"response_address":string|null,"response_reference":string|null,"response_subject":string|null,"recipient_email":string|null,"contract_end":string|null,"cancellation_date":string|null,"contract_number":string|null,"contract_terms":string|null,"contract_party":string|null,"contract_start":string|null,"notice_period":string|null,"auto_renew":boolean|null,"cost_amount":number|null,"cost_interval":string|null,"coverage":string|null,"discount_date":string|null,"discount_percent":number|null,"discount_terms":string|null,"invoice_checks":[{"label":string,"status":string,"detail":string}],"ocr_text":string}`;
     const r = await aiJson(prompt, inp.images);
     if (!r || typeof r !== 'object') throw { code: 'invalid_json' };
     const docDate = (r.document_date && parseDate(r.document_date)) || todayISO();
@@ -1161,7 +1164,7 @@ Antworte nur mit einem JSON-Objekt dieser Form:
       cost_amount: typeof r.cost_amount === 'number' ? r.cost_amount : null, cost_interval: ['monthly', 'quarterly', 'yearly', 'once'].includes(r.cost_interval) ? r.cost_interval : null, coverage: r.coverage || null,
       discount_date: iso(r.discount_date), discount_percent: num(r.discount_percent), discount_terms: r.discount_terms || null,
       invoice_checks: Array.isArray(r.invoice_checks) ? r.invoice_checks.slice(0, 15).map((c) => ({ label: String(c.label || ''), status: ['present', 'missing', 'unclear'].includes(c.status) ? c.status : 'unclear', detail: String(c.detail || '') })) : [],
-      ocr_text: String(r.ocr_text || '').slice(0, 15000),
+      ocr_text: String(r.ocr_text || '').slice(0, 15000), assets_found: Array.isArray(r.assets) ? r.assets.slice(0, 30) : [],
       analyzed_at: nowIso(),
     }, 'KI-Analyse');
     let calIds = [];
@@ -1937,6 +1940,10 @@ const HUB = () => [
     ['archive', 'web.hubArchive', 'web.hubArchiveH', 'data-a="hubDocs" data-v="archived"'],
     ['pen', 'web.hubContracts', 'web.hubContractsH', 'data-go="contracts"'],
     ['xml', 'web.hubErech', 'web.hubErechH', 'data-go="erech"'],
+  ]],
+  ['ba.hub', [
+    ['box', 'ba.invT', 'ba.invH', 'data-go="inv"'],
+    ['check', 'ba.dutT', 'ba.dutH', 'data-go="duties"'],
   ]],
   ['web.hubPlanning', [
     ['clock', 'web.hubDates', 'web.hubDatesH', 'data-go="tasks"'],

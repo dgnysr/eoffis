@@ -4,7 +4,7 @@
 // - Fake-KI (sample/sample.json), Download-Erfassung, Bibliotheken lokal bzw. als Stub
 const fs = require('fs');
 const path = require('path');
-const PW = require(process.env.PW_MODULE || (fs.existsSync('/home/claude/.npm-global/lib/node_modules/playwright') ? '/home/claude/.npm-global/lib/node_modules/playwright' : '/opt/npm-tools/node_modules/playwright'));
+const PW = (() => { for (const m of [process.env.PW_MODULE, '/home/claude/.npm-global/lib/node_modules/playwright', '/opt/npm-tools/node_modules/playwright', 'playwright']) { if (!m) continue; try { return require(m); } catch (e) {} } throw new Error('Playwright fehlt'); })();
 // Ohne heruntergeladenen Playwright-Browser das installierte Chrome nutzen
 const CHROME = process.env.CHROME || (fs.existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : null);
 const chromium = { launch: (o = {}) => PW.chromium.launch(Object.assign(CHROME ? { executablePath: CHROME } : {}, o)) };
@@ -82,6 +82,7 @@ const INIT = (cfg) => {
   const db = { doc: docRef, collection: colRef };
   window.__mock = { saved: [], ai: [] };
   const AI = (prompt) => {
+    if (cfg.aiHook) { const hk = cfg.aiHook(prompt); if (hk !== undefined) return hk; }
     window.__mock.ai.push(prompt.slice(0, 80));
     if (/Kontoauszug/.test(prompt)) return { transactions: cfg.bankTx || [] };
     if (/Welche Angaben|Stelle nur Fragen/.test(prompt)) return { questions: [{ question: 'Welche Kundennummer haben Sie?' }, { question: 'Bis wann soll geantwortet werden?' }] };
@@ -125,8 +126,8 @@ async function newPage(browser, db, cfg) {
   page.on('pageerror', (e) => errors.push('PAGEERR ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|net::/.test(m.text())) errors.push(m.text()); });
   await page.route(/fonts\.(googleapis|gstatic)/, (r) => r.abort());
-  await page.route(/pdf-lib/, (r) => r.fulfill({ body: fs.readFileSync('/opt/npm-tools/node_modules/pdf-lib/dist/pdf-lib.min.js'), contentType: 'text/javascript' }));
-  await page.route(/jszip/, (r) => r.fulfill({ body: fs.readFileSync('/opt/npm-tools/node_modules/jszip/dist/jszip.min.js'), contentType: 'text/javascript' }));
+  await page.route(/pdf-lib/, (r) => r.fulfill({ body: fs.readFileSync(path.join(__dirname, '..', 'vendor', 'pdf-lib.min.js')), contentType: 'text/javascript' }));
+  await page.route(/jszip/, (r) => r.fulfill({ body: fs.readFileSync(path.join(__dirname, '..', 'vendor', 'jszip.min.js')), contentType: 'text/javascript' }));
   await page.route(/jspdf/, (r) => r.fulfill({ body: JSPDF_STUB, contentType: 'text/javascript' }));
   await page.route(/pdf\.js\/|pdf\.min\.js/, (r) => r.fulfill({ body: PDFJS_STUB, contentType: 'text/javascript' }));
   await page.exposeBinding('__dbcall', async (_src, op, a) => { try { return await db.call(cfg.uid, op, a); } catch (e) { return { __err: e }; } });

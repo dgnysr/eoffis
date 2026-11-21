@@ -1,10 +1,10 @@
 # Entwicklungsstand eOffis Web-App
 
-**Aktueller Stand:** Stand 18.11.2026 – Paket 1–3, Design 2026, Sicherheit (A), Probezeit (B), Server-Einrichtung per Knopfdruck + Datenbank für die Betriebs-Akte (Branch `main`) – live unter https://dgnysr.github.io/eoffis/
+**Aktueller Stand:** Stand 21.11.2026 – Paket 1–3, Design 2026, Sicherheit (A), Probezeit (B), Server-Einrichtung per Knopfdruck, Betriebs-Akte: Inventar (Branch `main`) – live unter https://dgnysr.github.io/eoffis/
 
 ## Weiterentwickeln (Ausgangspunkt für jede neue Sitzung)
 1. Repository `dgnysr/eoffis` klonen – **immer auf dem neuesten Stand von `main` aufbauen**.
-2. Quellcode ändern in `src/app.js`, `src/buchhaltung.js` (Paket 1), `src/heute.js` (Paket 2), `src/unterlagen.js` (Paket 3), `src/design.js` (Design 2026), `src/konto.js` (Probezeit, Speicher, Abo), `src/shell.html` (CSS), `src/i18n.json` (Texte, 6 Sprachen). Zusatzmodule fügt `build_site.py` vor `boot();` ein.
+2. Quellcode ändern in `src/app.js`, `src/buchhaltung.js` (Paket 1), `src/heute.js` (Paket 2), `src/unterlagen.js` (Paket 3), `src/design.js` (Design 2026), `src/konto.js` (Probezeit, Speicher, Abo), `src/betriebsakte.js` (Betriebs-Akte: Inventar, Pflichten-Kalender), `src/shell.html` (CSS), `src/i18n.json` (Texte, 6 Sprachen). Zusatzmodule fügt `build_site.py` vor `boot();` ein.
 3. `cd src && python3 build_site.py` erzeugt `index.html` + `eoffis-app.js` (mit Prüfsummen und Sicherheitsrichtlinie).
 4. Tests: **`bash tests/run_all.sh`** (Datenbank, Server-Funktionen, Oberfläche, echte Bibliotheken unter CSP).
 5. Commit + Push auf `main` → GitHub Pages veröffentlicht automatisch (1–2 Min.).
@@ -17,6 +17,16 @@ Ergebnisse vom 08.11.2026 (Plattformen, Kosten, Personal, offene Schritte): `mat
 Server: GitHub → Actions → „Server einrichten“ → *Run workflow* (ersetzt die Handarbeit aus `README.md`; offen bleiben nur Brevo-SMTP, Turnstile, Apple/Google).
 
 ## Änderungsverlauf
+### 21.11.2026 – Betriebs-Akte A: Inventar direkt aus Rechnungen
+- Neues Modul `src/betriebsakte.js`, Sammlung `assets/` in kv. Menü „Mehr“ → „Betriebs-Akte“ → „Inventar“.
+- Die KI-Auswertung erkennt jetzt angeschaffte langlebige Gegenstände (`INV_PROMPT` in `app.js`: Geräte, Maschinen, IT, Möbel, Fahrzeuge, Kassen/Waagen, Software, Einrichtung – branchenoffen, ohne Verbrauchsmaterial, Ware, Dienstleistungen) und trägt sie automatisch ein: Name, Art, Hersteller, Modell, Seriennummer, Anzahl, Einzelpreis netto/brutto, Kaufdatum, Lieferant, Garantie bis, „elektrisch“.
+- Keine Doppelten: gleiche Seriennummer, oder gleicher Name + Lieferant innerhalb 60 Tagen (Lieferschein ↔ Rechnung ergänzt Preis/Datum; erneut gescannte Rechnung wird zusammengeführt). Erneute Analyse legt nichts doppelt an; entfernte Gegenstände kommen nicht wieder.
+- Im Beleg: Karte „Ins Inventar übernommen“ mit „Entfernen“, dazu einmalig die Frage „Möchtest du an dieser Stelle alle früheren Rechnungen, Lieferscheine, Belege … hochladen, damit deine Inventarliste vervollständigt wird?“ (Ja / Später / Nicht mehr fragen; auch oben im Inventar).
+- **Frühere Belege hochladen:** beliebig viele Dateien, jede wird ein eigener Beleg (bereits vorhandene per Prüfsumme übersprungen), ausgewertet und abgelegt. Fällt die KI aus (Tageslimit), werden die übrigen nur abgelegt → „Weiter auswerten“. Ein angefangener Scan bleibt erhalten.
+- **Bereits gescannte Belege durchsuchen:** prüft ältere Rechnungen ohne Bilder anhand des erkannten Texts, bis zu 10 Belege je KI-Anfrage (günstig). E-Rechnungen (XML) werden über ihre Positionen geprüft.
+- Inventar-Ansicht: Anzahl und Anschaffungswert, nach Art gruppiert, ausgemusterte/verkaufte getrennt; Bearbeiten (Standort, Zustand, Garantie …), von Hand hinzufügen, löschen, Liste als CSV für Excel/Versicherung.
+- Einrichtung/Einstellungen: Branchen „Juwelier“ und „Immobilienmakler“ ergänzt. 6 Sprachen.
+- Tests: neu `tests/paket5.js` (18); `tests/harness.js` findet Playwright und Bibliotheken jetzt auch in anderen Umgebungen, KI-Antworten pro Test steuerbar (`aiHook`). Gesamtlauf: 282 Prüfungen, 0 Fehler.
 ### 20.11.2026 – Kontoanzeige oben rechts
 - Auf jeder Seite (außer der Einrichtung) neben der Sprachwahl: orange „Testzugang“ bzw. grün der Name der E-Mail-Adresse. Antippen zeigt „Dein Konto“: Testzugang erklärt + „Konto sichern“ + „Ich habe schon ein Konto – anmelden“, bzw. „Angemeldet als …“ + „Abmelden“; dazu Testzeitraum/Abo-Status.
 - Abmelden aus einem ungesicherten Testzugang (auch über Einstellungen) warnt zuerst, dass die Unterlagen sonst verloren sind.

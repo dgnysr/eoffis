@@ -129,8 +129,8 @@ async function newPage(browser, store, cfg) {
   // Service Worker (sw.js) lässt sich im Testnetz nicht laden – diese Meldung ist erwartet
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|net::|fetching the script|ServiceWorker/.test(m.text())) errors.push(m.text()); });
   await page.route(/fonts\.(googleapis|gstatic)/, (r) => r.abort());
-  await page.route(/pdf-lib/, (r) => r.fulfill({ body: fs.readFileSync('/opt/npm-tools/node_modules/pdf-lib/dist/pdf-lib.min.js'), contentType: 'text/javascript' }));
-  await page.route(/jszip/, (r) => r.fulfill({ body: fs.readFileSync('/opt/npm-tools/node_modules/jszip/dist/jszip.min.js'), contentType: 'text/javascript' }));
+  await page.route(/pdf-lib/, (r) => r.fulfill({ body: fs.readFileSync(path.join(__dirname, '..', 'vendor', 'pdf-lib.min.js')), contentType: 'text/javascript' }));
+  await page.route(/jszip/, (r) => r.fulfill({ body: fs.readFileSync(path.join(__dirname, '..', 'vendor', 'jszip.min.js')), contentType: 'text/javascript' }));
   await page.route(/jspdf/, (r) => r.fulfill({ body: JSPDF_STUB, contentType: 'text/javascript' }));
   await page.route(/pdf\.js\/|pdf\.min\.js/, (r) => r.fulfill({ body: PDFJS_STUB, contentType: 'text/javascript' }));
   await page.route(/supabase-js/, (r) => r.fulfill({ body: SBMOCK, contentType: 'text/javascript' }));
@@ -141,8 +141,8 @@ async function newPage(browser, store, cfg) {
       if (n === 'supabase.min.js') return js(SBMOCK);
       if (n === 'pdf.min.js') return js(PDFJS_STUB);
       if (n === 'jspdf.umd.min.js') return js(JSPDF_STUB);
-      if (n === 'jszip.min.js') return js(fs.readFileSync('/opt/npm-tools/node_modules/jszip/dist/jszip.min.js'));
-      if (n === 'pdf-lib.min.js') return js(fs.readFileSync('/opt/npm-tools/node_modules/pdf-lib/dist/pdf-lib.min.js'));
+      if (n === 'jszip.min.js') return js(fs.readFileSync(path.join(__dirname, '..', 'vendor', 'jszip.min.js')));
+      if (n === 'pdf-lib.min.js') return js(fs.readFileSync(path.join(__dirname, '..', 'vendor', 'pdf-lib.min.js')));
       return js('');
     }
     if (f.endsWith('.html') && !cfg.realLibs) {
