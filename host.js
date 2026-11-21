@@ -320,8 +320,15 @@
     },
   };
 
+  /* ---------- Betriebs-Akte: Branchen und Pflichtenlisten (supabase/duties.sql) ---------- */
+  const duties = sb ? {
+    async industries() { const { data, error } = await sb.rpc('industry_list'); if (error) throw error; return data || []; },
+    async list(keys, facts) { const { data, error } = await sb.rpc('duty_list', { p_industries: keys || [], p_facts: facts || {} }); if (error) throw error; return data || []; },
+    async suggest(name, note) { const { error } = await sb.rpc('industry_suggest', { p_name: name, p_note: note || null }); if (error) throw error; },
+  } : null;
+
   window.EOFFIS_HOST = {
-    fn, push, share, account,
+    fn, push, share, account, duties,
     siteUrl: location.origin + location.pathname,
     logout: async () => { try { localStorage.removeItem('eoffis.space'); } catch { /* egal */ } await sb.auth.signOut(); },
     email: () => (session && session.user && session.user.email) || null,

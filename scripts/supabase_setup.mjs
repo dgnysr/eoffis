@@ -54,6 +54,7 @@ for (let i = 0; proj.status !== 'ACTIVE_HEALTHY'; i++) {
 // 2) Datenbank
 await sql(fs.readFileSync(path.join(root, 'supabase/schema.sql'), 'utf8'));
 log('Datenbank: schema.sql eingespielt');
+if (fs.existsSync(path.join(root, 'supabase/duties.sql'))) { await sql(fs.readFileSync(path.join(root, 'supabase/duties.sql'), 'utf8')); log('Datenbank: Pflichtenlisten (duties.sql) eingespielt'); }
 if (env.OPERATOR_EMAIL) {
   await sql(`insert into public.operators (email) values (lower(${lit(env.OPERATOR_EMAIL)})) on conflict do nothing`);
   const r = await sql(`insert into public.subscriptions (owner, status) select id, 'active' from auth.users where lower(email) = lower(${lit(env.OPERATOR_EMAIL)})
@@ -127,7 +128,9 @@ if (tok) {
   const ind = await call('/rest/v1/industries?select=key', {}, tok);
   ok('Branchenliste', Array.isArray(ind.b) && ind.b.some((x) => x.key === 'juwelier'), ind);
   const dl = await call('/rest/v1/rpc/duty_list', { method: 'POST', body: JSON.stringify({ p_industries: ['juwelier'], p_facts: { employees: 2 } }) }, tok);
-  ok('Pflichtenliste abrufen', dl.s === 200 && Array.isArray(dl.b), dl);
+  ok('Pflichtenliste abrufen', dl.s === 200 && Array.isArray(dl.b) && dl.b.some((x) => x.id === 'juwelier.goaml') && dl.b.some((x) => x.id === 'alle.gbu' && x.applies), dl);
+  const il = await call('/rest/v1/rpc/industry_list', { method: 'POST', body: '{}' }, tok);
+  ok('Branchen für die App', il.s === 200 && Array.isArray(il.b) && il.b.some((x) => x.key === 'immobilienmakler'), il);
   const ac = await call('/rest/v1/rpc/account_info', { method: 'POST', body: '{}' }, tok);
   ok('Probezeit-Status', ac.b?.state === 'trial', ac);
   const ea = await call('/functions/v1/eoffis-api', { method: 'POST', body: JSON.stringify({ action: 'lexware_key_status' }) }, tok);

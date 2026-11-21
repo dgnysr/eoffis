@@ -25,7 +25,8 @@ function mock(opts) {
       if (u === '/rest/v1/kv' && req.method === 'POST') return send(201);
       if (u.startsWith('/rest/v1/kv?')) return send(200, [{ path: `data/users/${UID}/main/assets/selftest` }]);
       if (u.startsWith('/rest/v1/industries')) return send(200, [{ key: 'alle' }, { key: 'juwelier' }]);
-      if (u === '/rest/v1/rpc/duty_list') return send(200, []);
+      if (u === '/rest/v1/rpc/duty_list') return send(200, [{ id: 'juwelier.goaml', applies: true }, { id: 'alle.gbu', applies: true }]);
+      if (u === '/rest/v1/rpc/industry_list') return send(200, [{ key: 'alle' }, { key: 'immobilienmakler' }]);
       if (u === '/rest/v1/rpc/account_info') return send(200, { state: opts.accState || 'trial' });
       if (u === '/functions/v1/eoffis-api') return send(200, { set: false });
       if (u === '/functions/v1/smooth-processor') return opts.noAi ? send(503, { code: 'not_configured' }) : send(400, { error: 'Kein Text' });
@@ -72,7 +73,7 @@ async function run(name, opts, check) {
     ok('Täglicher Lauf wird ersetzt, nicht verdoppelt', /cron\.unschedule[\s\S]*cron\.schedule/.test(cs));
     ok('Beide Funktionen ohne „Verify JWT“ bereitgestellt (ohne Rückfrage)', /--yes/.test(r.cli) && /deploy smooth-processor --project-ref ref --no-verify-jwt/.test(r.cli) && /deploy eoffis-api --project-ref ref --no-verify-jwt/.test(r.cli) && /\[functions\.smooth-processor\]\nverify_jwt = false/.test(r.toml));
     ok('Anmeldung: Testen ohne E-Mail, Konto sichern, Rücksprung', r.st.auth && r.st.auth.external_anonymous_users_enabled && r.st.auth.security_manual_linking_enabled && r.st.auth.site_url === 'https://dgnysr.github.io/eoffis/');
-    ok('Kundenprüfung bestanden und Testkonto gelöscht', /Prüfung: 9\/9/.test(r.o) && r.st.sql.some((q) => q.includes(`delete from auth.users where id = '${UID}'`)), r.o);
+    ok('Kundenprüfung bestanden und Testkonto gelöscht', /Prüfung: 10\/10/.test(r.o) && r.st.sql.some((q) => q.includes(`delete from auth.users where id = '${UID}'`)), r.o);
     ok('Fehlende optionale Schlüssel werden genannt', /Noch offen.*BREVO_API_KEY/.test(r.o));
   });
   await run('zweiter Lauf', { have: ['EOFFIS_ENC_KEY', 'ANTHROPIC_API_KEY', 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'BREVO_API_KEY', 'MAIL_FROM'], vapid: 'BEreits' }, (r) => {

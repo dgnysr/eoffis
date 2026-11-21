@@ -1,6 +1,6 @@
 # Entwicklungsstand eOffis Web-App
 
-**Aktueller Stand:** Stand 21.11.2026 – Paket 1–3, Design 2026, Sicherheit (A), Probezeit (B), Server-Einrichtung per Knopfdruck, Betriebs-Akte: Inventar (Branch `main`) – live unter https://dgnysr.github.io/eoffis/
+**Aktueller Stand:** Stand 21.11.2026 – Paket 1–3, Design 2026, Sicherheit (A), Probezeit (B), Server-Einrichtung per Knopfdruck, Betriebs-Akte: Inventar und Pflichten-Kalender (Branch `main`) – live unter https://dgnysr.github.io/eoffis/
 
 ## Weiterentwickeln (Ausgangspunkt für jede neue Sitzung)
 1. Repository `dgnysr/eoffis` klonen – **immer auf dem neuesten Stand von `main` aufbauen**.
@@ -17,6 +17,13 @@ Ergebnisse vom 08.11.2026 (Plattformen, Kosten, Personal, offene Schritte): `mat
 Server: GitHub → Actions → „Server einrichten“ → *Run workflow* (ersetzt die Handarbeit aus `README.md`; offen bleiben nur Brevo-SMTP, Turnstile, Apple/Google).
 
 ## Änderungsverlauf
+### 21.11.2026 – Betriebs-Akte B: Pflichten-Kalender je Branche
+- **Pflichtenlisten in der Datenbank:** neu `supabase/duties.sql` (wird vom Workflow „Server einrichten“ nach `schema.sql` eingespielt, beliebig oft; Version steigt bei inhaltlicher Änderung automatisch). 55 Vorlagen: alle Betriebe (Steuererklärungen, Aufbewahrung, Datenschutz, Transparenzregister, Kasse/TSE, mit Mitarbeitern: BG-Lohnnachweis, SV-Jahresmeldung, Gefährdungsbeurteilung, Unterweisung, Betriebsarzt, Ersthelfer, Feuerlöscher, E-Check, Aushänge, Fahrzeuge …), Einzelhandel (LUCID, Waage), **Juwelier** (goAML, Risikoanalyse, Identifizierung, Ankauf, Waage, Einbruchmeldeanlage), **Immobilienmakler** (§ 34c, Weiterbildung 20 h/3 J., GwG, Energieausweis, MaBV, Verwalter-Haftpflicht), **Friseur** (Handwerksrolle, Preisaushang, Hygieneplan, Hautschutz, Vorsorge Feuchtarbeit, Gefahrstoffe), Gastronomie, Handwerk, Reinigung. Neue Funktionen `industry_list()`, `industry_suggest()` (höchstens 20 Vorschläge je Konto).
+- **App** (`src/betriebsakte.js`, Sammlung `duties/`, `host.js` → `EOFFIS_HOST.duties`): Menü „Mehr“ → „Pflichten-Kalender“ und Karte auf der Startseite. Ablauf: Branche(n) ankreuzen (Suche, „Meine Branche fehlt“ → Vorschlag an den Betreiber) und Merkmale (Mitarbeiterzahl, Kasse, Fahrzeug, Gesellschaft, je Branche z. B. Waage, Goldankauf, Kundengelder) → Meldung „eOffis arbeitet für deinen Betrieb nach dieser Pflichtenliste: …“ (zutreffende angekreuzt, „trifft evtl. zu“ zum Ankreuzen) → „Möchtest du noch weitere Punkte hinzufügen?“ → Haftungshinweis mit „Verstanden“ → Kalender.
+- Jede aktive Pflicht mit Termin hat genau eine Frist unter „Fristen“ (Heute-Liste, Morgen-Erinnerung, Kalender-Export inklusive). Erledigt – auch direkt in „Fristen“ – setzt den nächsten Termin (feste Tage wie 16.02., sonst Abstand ab Erledigung). Verschieben in „Fristen“ wird übernommen; gelöschte Fristen aktiver Pflichten werden wieder angelegt.
+- **Nachweis:** „Erledigt – Nachweis scannen“ (der nächste Scan wird automatisch Nachweis; endet beim Verlassen), „Nachweis aus der Ablage wählen“ oder ohne Nachweis. Beleg zeigt „Nachweis für: …“. E-Check-Pflicht zeigt die elektrischen Geräte aus dem Inventar.
+- Branche später ändern: bisherige Entscheidungen bleiben, nicht mehr passende Pflichten → „Trifft nicht zu“ (Nachweise bleiben). Neue/geänderte Vorlagen: Texte werden still aktualisiert („aktualisiert“), neue Punkte als Hinweis zum Prüfen. Eigene Punkte jederzeit.
+- 6 Sprachen (Vorlagentexte deutsch). Tests: `tests/db/test.sql` +11 (Inhalt, Versionen, Vorschläge), neu `tests/paket6.js` (21), `setup_test.js` prüft Pflichtenliste und Branchen (10/10). Gesamtlauf: 314 Prüfungen, 0 Fehler.
 ### 21.11.2026 – Betriebs-Akte A: Inventar direkt aus Rechnungen
 - Neues Modul `src/betriebsakte.js`, Sammlung `assets/` in kv. Menü „Mehr“ → „Betriebs-Akte“ → „Inventar“.
 - Die KI-Auswertung erkennt jetzt angeschaffte langlebige Gegenstände (`INV_PROMPT` in `app.js`: Geräte, Maschinen, IT, Möbel, Fahrzeuge, Kassen/Waagen, Software, Einrichtung – branchenoffen, ohne Verbrauchsmaterial, Ware, Dienstleistungen) und trägt sie automatisch ein: Name, Art, Hersteller, Modell, Seriennummer, Anzahl, Einzelpreis netto/brutto, Kaufdatum, Lieferant, Garantie bis, „elektrisch“.

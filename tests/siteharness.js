@@ -12,7 +12,25 @@ const AI_SRC = H.match(/const AI = \(prompt\) => \{[\s\S]*?\n  \};/)[0];
 
 /** Speicher wie Tabelle public.kv + kv_lease mit RLS (nur eigener Pfad data/users/<uid>/…) */
 class KvStore {
-  constructor() { this.rows = new Map(); this.leases = new Map(); this.calls = 0; this.account = {}; this.aboRequests = 0; }
+  constructor() {
+    this.rows = new Map(); this.leases = new Map(); this.calls = 0; this.account = {}; this.aboRequests = 0; this.suggestions = [];
+    this.industries = [['alle', null], ['einzelhandel', null], ['juwelier', 'einzelhandel'], ['immobilienmakler', null], ['friseur', null], ['gastro', null], ['sonstiges', null]]
+      .map(([key, parent], i) => ({ key, parent, names: { de: key }, aliases: key === 'friseur' ? ['Barbier'] : [], sort: i }));
+    const T = (id, industry, recur, due_rule, conditions, title, extra) => Object.assign({ id, industry, recur, due_rule, conditions, title: { de: title }, description: { de: 'Beschreibung ' + title }, category: 'arbeitsschutz', every_months: null, proof: 'Nachweis ' + title, legal_ref: 'Gesetz', source_url: 'https://www.gesetze-im-internet.de/x.html', priority: 2, version: 1 }, extra || {});
+    this.templates = [
+      T('alle.steuer', 'alle', 'yearly', { month: 7, day: 31 }, {}, 'Steuererklärung', { category: 'steuer', priority: 1 }),
+      T('alle.gbu', 'alle', 'yearly', { days: 30 }, { min_employees: 1 }, 'Gefährdungsbeurteilung'),
+      T('alle.elektro', 'alle', 'every_n_months', { days: 60 }, { min_employees: 1 }, 'Elektrische Geräte prüfen', { every_months: 12 }),
+      T('alle.kasse', 'alle', 'once', { days: 30 }, { facts: { has_cash_register: true } }, 'Kasse melden'),
+      T('einzelhandel.waage', 'einzelhandel', 'every_n_months', { days: 30 }, { facts: { sells_by_weight: true } }, 'Waage eichen', { every_months: 24 }),
+      T('juwelier.goaml', 'juwelier', 'once', { days: 14 }, {}, 'goAML registrieren', { priority: 1 }),
+      T('juwelier.ident', 'juwelier', 'event', {}, {}, 'Kunden identifizieren'),
+      T('juwelier.risiko', 'juwelier', 'yearly', { days: 30 }, {}, 'Risikoanalyse'),
+      T('immobilienmakler.weiterbildung', 'immobilienmakler', 'every_n_months', { days: 90 }, {}, 'Weiterbildung', { every_months: 36 }),
+      T('friseur.preise', 'friseur', 'yearly', { month: 1, day: 31 }, {}, 'Preisverzeichnis'),
+      T('gastro.reinigung', 'gastro', 'monthly', { day: 7 }, {}, 'Monatliche Kontrolle'),
+    ];
+  }
   /** Kontostatus wie public.eoffis_account (Probezeit, Speicher); Tests setzen this.account.state / quota / used */
   acct(uid, anon) {
     const used = this.account.used != null ? this.account.used : [...this.rows.values()].filter((r) => r.owner === uid).reduce((n, r) => n + r.path.length + Buffer.byteLength(JSON.stringify(r.data)), 0);
@@ -27,6 +45,16 @@ class KvStore {
     this.calls++;
     if (!uid) return { error: { message: 'JWT expired' } };
     if (a.kind === 'rpc' && a.fn === 'account_info') return { data: this.account.missing ? null : this.acct(uid, a.anon) };
+    if (a.kind === 'rpc' && a.fn === 'industry_list') return this.dutyFail ? { error: { message: 'down' } } : { data: JSON.parse(JSON.stringify(this.industries)) };
+    if (a.kind === 'rpc' && a.fn === 'industry_suggest') { this.suggestions.push(a.args); return { data: null }; }
+    if (a.kind === 'rpc' && a.fn === 'duty_list') {
+      // wie public.duty_list: allgemeine + gewählte Branchen + Oberbranchen, applies nach Mitarbeiterzahl/Merkmalen
+      if (this.dutyFail) return { error: { message: 'down' } };
+      const par = new Map(this.industries.map((i) => [i.key, i.parent])), chain = new Set(['alle']);
+      for (const k of a.args.p_industries || []) { let c = k; while (c && par.has(c) && !chain.has(c)) { chain.add(c); c = par.get(c); } }
+      const f = a.args.p_facts || {};
+      return { data: this.templates.filter((x) => chain.has(x.industry)).map((x) => Object.assign({}, x, { applies: (x.conditions.min_employees || 0) <= (f.employees || 0) && Object.entries(x.conditions.facts || {}).every(([k, v]) => f[k] === v) })).map((x) => { const y = Object.assign({}, x); delete y.conditions; return y; }) };
+    }
     if (a.kind === 'rpc' && a.fn === 'abo_request') { this.aboRequests++; this.account.abo_requested = true; return { data: this.acct(uid, a.anon) }; }
     if (a.kind === 'rpc') {
       if (a.fn !== 'kv_acquire') return { error: { message: 'unknown rpc' } };

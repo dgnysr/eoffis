@@ -20,6 +20,7 @@ run Paket2 node paket2.js
 run Paket3 node paket3.js
 run Paket4 node paket4.js
 run Inventar node paket5.js
+run Pflichten node paket6.js
 run Bibliotheken node csp_libs.js
 run Einrichtung node setup_test.js
 run Kontoanzeige node konto_anzeige.js

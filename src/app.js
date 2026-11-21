@@ -1943,7 +1943,7 @@ const HUB = () => [
   ]],
   ['ba.hub', [
     ['box', 'ba.invT', 'ba.invH', 'data-go="inv"'],
-    ['check', 'ba.dutT', 'ba.dutH', 'data-go="duties"'],
+    ['check', 'dut.dutT', 'dut.dutH', 'data-go="duties"'],
   ]],
   ['web.hubPlanning', [
     ['clock', 'web.hubDates', 'web.hubDatesH', 'data-go="tasks"'],

@@ -16,8 +16,13 @@ for i in 1 2; do
   out=$($P -v ON_ERROR_STOP=1 -f "$here/../supabase/schema.sql" 2>&1); rc=$?
   if [ $rc -ne 0 ] || echo "$out" | grep -q ERROR; then echo "FAIL schema.sql Durchlauf $i: $out"; exit 1; fi
 done
+for i in 1 2; do
+  out=$($P -v ON_ERROR_STOP=1 -f "$here/../supabase/duties.sql" 2>&1); rc=$?
+  if [ $rc -ne 0 ] || echo "$out" | grep -q ERROR; then echo "FAIL duties.sql Durchlauf $i: $out"; exit 1; fi
+done
 echo "PASS schema.sql läuft fehlerfrei (auch zweimal)"
-res=$($P -f "$here/db/test.sql" 2>&1 | grep -E '^ ?(PASS|FAIL)' | sed 's/^ //')
+echo "PASS duties.sql läuft fehlerfrei (auch zweimal)"
+res=$($P -v duties="$here/../supabase/duties.sql" -f "$here/db/test.sql" 2>&1 | grep -E '^ ?(PASS|FAIL)' | sed 's/^ //')
 echo "$res"
 echo "$res" | grep -q '^FAIL' && exit 1
 exit 0

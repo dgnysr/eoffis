@@ -179,6 +179,31 @@ do $$ begin perform t_ok('Konto A unverändert', (select count(*) from kv where 
 
 -- ===== Betriebs-Akte: Branchen und Pflichtenlisten =====
 reset role;
+-- Inhalt aus supabase/duties.sql (Startbranchen)
+set role authenticated; set request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+do $$ begin
+  perform t_ok('Pflichtenlisten: jede Vorlage mit Titel, Nachweis/Grundlage und gültiger Regel', not exists (select 1 from duty_templates where coalesce(title->>'de', '') = '' or (proof is null and legal_ref is null)
+    or (recur = 'every_n_months' and every_months is null) or (recur = 'yearly' and not (due_rule ? 'month' or due_rule ? 'days' or due_rule ? 'months'))));
+  perform t_ok('Juwelier: Geldwäsche (goAML, Risikoanalyse) + Einzelhandel + Allgemein', (select count(*) from duty_list(array['juwelier']) where id in ('juwelier.goaml','juwelier.gwg_risiko','einzelhandel.waage','alle.steuererklaerung')) = 4);
+  perform t_ok('Makler: § 34c, Weiterbildung, Energieausweis', (select count(*) from duty_list(array['immobilienmakler']) where id in ('immobilienmakler.erlaubnis','immobilienmakler.weiterbildung','immobilienmakler.energieausweis')) = 3);
+  perform t_ok('Friseur mit 2 Mitarbeitern: Hautschutz trifft zu, Juwelier-Pflichten nicht dabei', (select applies from duty_list(array['friseur'], '{"employees":2}') where id = 'friseur.hautschutz')
+    and not exists (select 1 from duty_list(array['friseur']) where id like 'juwelier.%'));
+  perform t_ok('Ohne Mitarbeiter: Arbeitsschutz „trifft evtl. zu“', not (select applies from duty_list(array['friseur'], '{"employees":0}') where id = 'alle.gbu'));
+  perform t_ok('Merkmal Kasse: Meldung trifft zu', (select applies from duty_list(array['juwelier'], '{"has_cash_register":true}') where id = 'alle.kasse_meldung'));
+  perform t_ok('Branchen für die App lesbar', (select count(*) from industry_list() where key in ('juwelier','immobilienmakler','friseur')) = 3);
+  perform industry_suggest('Bestattungsinstitut', 'Test');
+  perform t_ok('Branche über App vorschlagen', (select count(*) from industry_requests where name = 'Bestattungsinstitut') = 1);
+end $$;
+reset role;
+do $$ declare v int; begin
+  update duty_templates set description = '{"de":"geändert"}' where id = 'alle.gbu';
+  select version into v from duty_templates where id = 'alle.gbu';
+  perform t_ok('Vorlage geändert → nächstes Einspielen erhöht Version', v = 1);
+end $$;
+\i :duties
+do $$ begin perform t_ok('Version nach Änderung erhöht', (select version from duty_templates where id = 'alle.gbu') = 2 and (select version from duty_templates where id = 'alle.unterweisung') = 1); end $$;
+delete from industry_requests;
+delete from duty_templates;
 insert into public.duty_templates (id, industry, title, conditions) values
   ('t.alle', 'alle', '{"de":"Allgemein"}', '{}'),
   ('t.ehandel', 'einzelhandel', '{"de":"Handel"}', '{}'),
