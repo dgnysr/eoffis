@@ -48,7 +48,7 @@ async function run(name, opts, check) {
   fs.chmodSync(cli, 0o755);
   const env = { ...process.env, SUPABASE_ACCESS_TOKEN: opts.token || 'good', SUPABASE_API: m.url, PROJECT_URL: m.url, CONFIG_PATH: cfg, SUPABASE_CLI: cli, SETUP_WAIT_MS: '10', ...(opts.env || {}) };
   delete env.GITHUB_STEP_SUMMARY;
-  for (const k of ['ANTHROPIC_API_KEY', 'BREVO_API_KEY', 'MAIL_FROM', 'OPERATOR_EMAIL']) if (!(opts.env || {})[k]) delete env[k];
+  for (const k of ['ANTHROPIC_API_KEY', 'BREVO_API_KEY', 'MAIL_FROM', 'OPERATOR_EMAIL', 'BREVO_SMTP_USER', 'BREVO_SMTP_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET']) if (!(opts.env || {})[k]) delete env[k];
   const out = await new Promise((r) => { const p = spawn('node', [path.join(root, 'scripts/supabase_setup.mjs')], { env }); let o = ''; p.stdout.on('data', (d) => (o += d)); p.stderr.on('data', (d) => (o += d)); p.on('close', (code) => r({ code, o })); });
   m.srv.close();
   const read = (f) => (fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '');
@@ -74,11 +74,18 @@ async function run(name, opts, check) {
     ok('Beide Funktionen ohne „Verify JWT“ bereitgestellt (ohne Rückfrage)', /--yes/.test(r.cli) && /deploy smooth-processor --project-ref ref --no-verify-jwt/.test(r.cli) && /deploy eoffis-api --project-ref ref --no-verify-jwt/.test(r.cli) && /\[functions\.smooth-processor\]\nverify_jwt = false/.test(r.toml));
     ok('Anmeldung: Testen ohne E-Mail, Konto sichern, Rücksprung', r.st.auth && r.st.auth.external_anonymous_users_enabled && r.st.auth.security_manual_linking_enabled && r.st.auth.site_url === 'https://dgnysr.github.io/eoffis/');
     ok('Kundenprüfung bestanden und Testkonto gelöscht', /Prüfung: 10\/10/.test(r.o) && r.st.sql.some((q) => q.includes(`delete from auth.users where id = '${UID}'`)), r.o);
+    ok('Ohne Brevo-/Google-Angaben: Anmeldung unverändert', !('smtp_host' in r.st.auth) && !('external_google_enabled' in r.st.auth) && /oauth:\s*\[\]/.test(r.cfg));
     ok('Fehlende optionale Schlüssel werden genannt', /Noch offen.*BREVO_API_KEY/.test(r.o));
   });
   await run('zweiter Lauf', { have: ['EOFFIS_ENC_KEY', 'ANTHROPIC_API_KEY', 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'BREVO_API_KEY', 'MAIL_FROM'], vapid: 'BEreits' }, (r) => {
     ok('Zweiter Lauf: Push-Schlüssel bleiben', r.code === 0 && !(r.st.secrets || []).some((s) => /VAPID_P/.test(s.name)) && r.cfg.includes("vapidPublicKey: 'BEreits'"), r.o);
     ok('Zweiter Lauf: Kennwort des täglichen Laufs erneuert', (r.st.secrets || []).some((s) => s.name === 'CRON_SECRET'));
+  });
+  await run('mit Brevo und Google', { have: ['EOFFIS_ENC_KEY', 'ANTHROPIC_API_KEY'], env: { MAIL_FROM: 'eOffis <info@eoffis.de>', BREVO_SMTP_USER: 'abc@smtp-brevo.com', BREVO_SMTP_KEY: 'xsmtp', GOOGLE_CLIENT_ID: 'gid.apps.googleusercontent.com', GOOGLE_CLIENT_SECRET: 'gsec' } }, (r) => {
+    const a = r.st.auth || {};
+    ok('Anmelde-Mails über Brevo mit eigener Absender-Adresse', r.code === 0 && a.smtp_host === 'smtp-relay.brevo.com' && a.smtp_admin_email === 'info@eoffis.de' && a.smtp_sender_name === 'eOffis' && a.smtp_user === 'abc@smtp-brevo.com', r.o);
+    ok('Anmeldung mit Google eingeschaltet und in der App sichtbar', a.external_google_enabled === true && a.external_google_client_id === 'gid.apps.googleusercontent.com' && /oauth:\s*\['google'\]/.test(r.cfg));
+    ok('Geheimnisse nicht im Protokoll', !/xsmtp|gsec/.test(r.o));
   });
   await run('falscher Schlüssel', { token: 'bad' }, (r) => ok('Ungültiger Zugangsschlüssel: klare Meldung', r.code === 1 && /SUPABASE_ACCESS_TOKEN\) ungültig/.test(r.o), r.o));
   await run('ohne KI-Schlüssel', { noAi: true }, (r) => ok('Fehlender KI-Schlüssel lässt die Prüfung scheitern', r.code === 1 && /FAIL KI-Funktion: ANTHROPIC_API_KEY fehlt/.test(r.o), r.o));

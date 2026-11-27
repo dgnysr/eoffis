@@ -1,7 +1,8 @@
 // Richtet das Supabase-Projekt von eOffis vollständig ein bzw. bringt es auf den Stand dieses Repos (beliebig oft ausführbar):
 // Projekt aufwecken → Datenbank (schema.sql) → Geheimschlüssel → KI-Funktion + eoffis-api → Anmeldung → täglicher Lauf → Prüfung.
 // Läuft im GitHub-Workflow „Server einrichten“. Benötigt nur SUPABASE_ACCESS_TOKEN (Supabase → Account → Access Tokens).
-// Optional: OPERATOR_EMAIL (eigenes Konto dauerhaft freischalten), ANTHROPIC_API_KEY, BREVO_API_KEY, MAIL_FROM (werden nur gesetzt, wenn übergeben).
+// Optional: OPERATOR_EMAIL (eigenes Konto dauerhaft freischalten), ANTHROPIC_API_KEY, BREVO_API_KEY, MAIL_FROM (werden nur gesetzt, wenn übergeben),
+// BREVO_SMTP_USER + BREVO_SMTP_KEY (Anmelde-Mails über Brevo), GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET (Anmeldung mit Google).
 // Für Tests überschreibbar: SUPABASE_API, PROJECT_URL, CONFIG_PATH, SUPABASE_CLI, SETUP_WAIT_MS.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -97,7 +98,18 @@ for (const [name, src] of Object.entries(fns)) {
 }
 
 // 5) Anmeldung: Testen ohne E-Mail, Konto später sichern, Rücksprung zur App
-await api('PATCH', `/v1/projects/${ref}/config/auth`, { site_url: SITE, uri_allow_list: SITE + '**', external_anonymous_users_enabled: true, security_manual_linking_enabled: true });
+const authCfg = { site_url: SITE, uri_allow_list: SITE + '**', external_anonymous_users_enabled: true, security_manual_linking_enabled: true };
+// Anmelde-Mails (Bestätigen, Passwort vergessen) über Brevo mit eigener Absender-Adresse – nur wenn die Brevo-SMTP-Angaben übergeben wurden
+if (env.BREVO_SMTP_USER && env.BREVO_SMTP_KEY && env.MAIL_FROM) {
+  const m = env.MAIL_FROM.match(/^(.*)<(.+)>$/);
+  Object.assign(authCfg, { smtp_host: 'smtp-relay.brevo.com', smtp_port: '587', smtp_user: env.BREVO_SMTP_USER, smtp_pass: env.BREVO_SMTP_KEY,
+    smtp_admin_email: (m ? m[2] : env.MAIL_FROM).trim(), smtp_sender_name: (m && m[1].trim()) || 'eOffis', rate_limit_email_sent: 100 });
+  log('Anmelde-Mails laufen über Brevo (' + authCfg.smtp_admin_email + ')');
+}
+// Anmeldung mit Google – nur wenn Client-ID und Secret übergeben wurden
+const google = !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
+if (google) { Object.assign(authCfg, { external_google_enabled: true, external_google_client_id: env.GOOGLE_CLIENT_ID, external_google_secret: env.GOOGLE_CLIENT_SECRET }); log('Anmeldung mit Google eingeschaltet'); }
+await api('PATCH', `/v1/projects/${ref}/config/auth`, authCfg);
 log('Anmeldung eingestellt');
 
 // 6) Täglicher Lauf 06:00 UTC (Morgen-Erinnerung, Probezeit-Nachrichten, Löschung abgelaufener Konten)
@@ -110,6 +122,7 @@ log('Täglicher Lauf eingeplant (06:00 UTC)');
 
 // 7) App-Einstellungen: Push-Schlüssel und Freigabe-Links aktivieren
 cfg = cfg.replace(/vapidPublicKey:\s*'[^']*'/, `vapidPublicKey: '${vapidPub}'`).replace(/shares:\s*false/, 'shares: true');
+if (google && !/oauth:\s*\[[^\]]*'google'/.test(cfg)) cfg = cfg.replace(/oauth:\s*\[([^\]]*)\]/, (_, a) => `oauth: [${[a.trim(), "'google'"].filter(Boolean).join(', ')}]`);
 fs.writeFileSync(CONFIG, cfg);
 
 // 8) Prüfung wie ein echter Kunde: anonym anmelden, Daten speichern, Pflichtenliste, Server-Funktionen; danach Testkonto löschen

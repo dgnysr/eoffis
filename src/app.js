@@ -53,7 +53,7 @@ const EXTRA = {
     info_erech_t: 'E-Rechnungspflicht', info_erech: 'Seit 01.01.2025 müssen alle Betriebe E-Rechnungen empfangen können. Ausstellen wird Pflicht ab 2027 (Vorjahresumsatz über 800.000 €) und ab 2028 für alle.',
     info_kasse_t: 'Kassen & Belege', info_kasse: 'Elektronische Kassen brauchen eine TSE, jeder Verkauf einen Beleg (Belegausgabepflicht). Seit 2025 müssen elektronische Kassen dem Finanzamt gemeldet werden. Eine allgemeine Kassenpflicht ist geplant, aber noch nicht beschlossen.',
     info_aufb_t: 'Aufbewahrung', info_aufb: 'Rechnungen und Buchungsbelege 8 Jahre, Bücher und Jahresabschlüsse 10 Jahre, Geschäftsbriefe 6 Jahre.',
-    info_frist_t: 'Fristen am Wochenende', info_frist: 'Fällt eine Steuerfrist auf ein Wochenende oder einen Feiertag, gilt der nächste Werktag.',
+    info_frist_t: 'Fristen am Wochenende', info_frist: 'Fällt eine Steuerfrist auf ein Wochenende oder einen Feiertag, gilt der nächste Werktag. Feiertage Ihres Bundeslands zählen mit, wenn Sie es in den Einstellungen angeben.',
     infoStand: 'Stand: November 2026 · allgemeine Information, keine Rechts- oder Steuerberatung.',
     contracts: 'Verträge',
     street: 'Straße und Hausnummer', zip: 'PLZ', city: 'Ort', buyerMail: 'E-Mail des Kunden', buyerRef: 'Käuferreferenz / Leitweg-ID', buyerRefPh: 'z. B. Bestellnummer oder Leitweg-ID', dates: 'Daten', note: 'Hinweis auf der Rechnung', recalc: 'Summen aktualisieren',
@@ -225,11 +225,28 @@ function easter(y) {
   return toISO(new Date(y, month - 1, day));
 }
 const holCache = {};
-function holidays(y) {
-  if (holCache[y]) return holCache[y];
-  const e = easter(y);
-  return (holCache[y] = new Set([`${y}-01-01`, addDays(e, -2), addDays(e, 1), `${y}-05-01`, addDays(e, 39), addDays(e, 50), `${y}-10-03`, `${y}-12-25`, `${y}-12-26`]));
+/** Landesweite Feiertage je Bundesland (nur solche, die im ganzen Land gelten – örtliche wie Fronleichnam in Teilen Sachsens/Thüringens
+    oder Mariä Himmelfahrt in Bayern zählen nicht, damit eine Frist nie zu spät berechnet wird) */
+const BUNDESLAENDER = ['BW', 'BY', 'BE', 'BB', 'HB', 'HH', 'HE', 'MV', 'NI', 'NW', 'RP', 'SL', 'SN', 'ST', 'SH', 'TH'];
+function stateHolidays(y, bl, e) {
+  const has = (list) => list.includes(bl), out = [];
+  if (has(['BW', 'BY', 'ST'])) out.push(`${y}-01-06`);
+  if (has(['BE']) && y >= 2019 || has(['MV']) && y >= 2023) out.push(`${y}-03-08`);
+  if (has(['BW', 'BY', 'HE', 'NW', 'RP', 'SL'])) out.push(addDays(e, 60));
+  if (has(['SL'])) out.push(`${y}-08-15`);
+  if (has(['TH']) && y >= 2019) out.push(`${y}-09-20`);
+  if (has(['BB', 'MV', 'SN', 'ST', 'TH']) || has(['HB', 'HH', 'NI', 'SH']) && y >= 2018 || y === 2017) out.push(`${y}-10-31`);
+  if (has(['BW', 'BY', 'NW', 'RP', 'SL'])) out.push(`${y}-11-01`);
+  if (has(['SN'])) { const d = new Date(y, 10, 22); d.setDate(22 - ((d.getDay() + 4) % 7)); out.push(toISO(d)); }
+  return out;
 }
+function holidays(y) {
+  const bl = (S.profile && BUNDESLAENDER.includes(S.profile.bundesland)) ? S.profile.bundesland : '', key = y + '|' + bl;
+  if (holCache[key]) return holCache[key];
+  const e = easter(y);
+  return (holCache[key] = new Set([`${y}-01-01`, addDays(e, -2), addDays(e, 1), `${y}-05-01`, addDays(e, 39), addDays(e, 50), `${y}-10-03`, `${y}-12-25`, `${y}-12-26`].concat(stateHolidays(y, bl, e))));
+}
+const blSelect = (id, cur) => `<label class="f" for="${id}">${esc(t('web.bundesland'))}<select class="in" id="${id}"><option value="">${esc(t('web.blNone'))}</option>${BUNDESLAENDER.map((k) => `<option value="${k}" ${cur === k ? 'selected' : ''}>${esc(t('web.bl_' + k))}</option>`).join('')}</select></label>`;
 const isWorkday = (iso) => { const d = fromISO(iso); const w = d.getDay(); return w !== 0 && w !== 6 && !holidays(d.getFullYear()).has(iso); };
 const shiftWork = (iso) => { let c = iso; while (!isWorkday(c)) c = addDays(c, 1); return c; };
 function thirdLastBankday(y, m0) { let d = toISO(new Date(y, m0 + 1, 0)), n = 0; for (;;) { if (isWorkday(d) && ++n === 3) return d; d = addDays(d, -1); } }
@@ -598,6 +615,7 @@ VIEWS.setup = {
       ${field('s_name', t('auth.companyName'), '', 'autocomplete="organization"')}
       <div class="f" style="font-weight:700;color:var(--muted);font-size:.86rem">${esc(t('settings.industry'))}</div>
       <div class="chips" id="s_ind">${INDUSTRIES.map((i, n) => chip(t('settings.ind_' + i), S.setupInd === i, `data-a="pickInd" data-v="${i}"`)).join('')}</div>
+      ${blSelect('s_bl', '')}
       ${field('s_mail', t('settings.advisorEmail'), '', 'type="email" autocomplete="off"')}
       <button class="btn" data-a="setupSave">${esc(t('web.start'))}</button></div>
 `;
@@ -2048,6 +2066,7 @@ VIEWS.settings = {
         ${field('st_name', t('auth.companyName'), p.company_name || '')}
         <div class="f" style="font-weight:700;color:var(--muted);font-size:.86rem">${esc(t('settings.industry'))}</div>
         <div class="chips">${INDUSTRIES.map((i) => chip(t('settings.ind_' + i), ind === i, `data-a="setInd" data-v="${i}"`)).join('')}</div>
+        ${blSelect('st_bl', p.bundesland || '')}
         ${(() => { const c = companyData(p); return `${field('st_street', t('web.street'), c.street)}<div class="grid2">${field('st_zip', t('web.zip'), c.zip, 'inputmode="numeric"')}${field('st_city', t('web.city'), c.city)}</div>`; })()}
         ${field('st_email', t('web.companyMail'), p.email || '', 'type="email"')}
         <div class="grid2 stack">${field('st_contact', t('web.contact'), p.contact || '')}${field('st_phone', t('web.phone'), p.phone || '', 'type="tel"')}</div>
@@ -2125,7 +2144,7 @@ document.addEventListener('click', async (e) => {
     case 'setupSave': {
       const name = val('s_name').trim(); if (!name) { $('#s_name').focus(); return toast(t('auth.companyName')); }
       return guard(async () => {
-        const p = { company_name: name, industry: S.setupInd || 'sonstiges', language: lang, tax_advisor_email: val('s_mail').trim() || null, address: '', tax_number: '', vat_id: '', iban: '', invoice_prefix: 'RE-', next_invoice_no: 1, dauerfrist: false, created_at: nowIso() };
+        const p = { company_name: name, industry: S.setupInd || 'sonstiges', language: lang, tax_advisor_email: val('s_mail').trim() || null, bundesland: BUNDESLAENDER.includes(val('s_bl')) ? val('s_bl') : null, address: '', tax_number: '', vat_id: '', iban: '', invoice_prefix: 'RE-', next_invoice_no: 1, dauerfrist: false, created_at: nowIso() };
         await store.setProfile(p); S.profile = p; go('home');
       });
     }
@@ -2213,6 +2232,7 @@ document.addEventListener('click', async (e) => {
         street: val('st_street').trim(), zip: val('st_zip').trim(), city: val('st_city').trim(), email: val('st_email').trim(), contact: val('st_contact').trim(), phone: val('st_phone').trim(),
         address: [val('st_name').trim(), val('st_street').trim(), [val('st_zip').trim(), val('st_city').trim()].filter(Boolean).join(' ')].filter(Boolean).join('\n'),
         tax_number: val('st_tax').trim(), vat_id: val('st_vat').trim(), tax_advisor_email: val('st_mail').trim() || null,
+        bundesland: BUNDESLAENDER.includes(val('st_bl')) ? val('st_bl') : null,
       });
       if (p.vat_id && !vatIdValid(p.vat_id)) toast(t('settings.vatId') + ' ✗');
       await store.setProfile(p); S.profile = p; S.setInd = null; if (!p.vat_id || vatIdValid(p.vat_id)) toast(t('web.toastSaved')); render();

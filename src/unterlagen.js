@@ -566,3 +566,12 @@ async function ctrRollover() {
   const orig = reloadAll;
   reloadAll = async function () { const r = await orig.apply(this, arguments); try { if (await ctrRollover()) { if (typeof ktoSafeRender === "function") ktoSafeRender(); else render(); } } catch (e) { console.warn(e); } return r; };
 }
+
+/* =================== Feiertage je Bundesland (27.11.2026): Texte für die Auswahl =================== */
+{
+  const N = { BW: 'Baden-Württemberg', BY: 'Bayern', BE: 'Berlin', BB: 'Brandenburg', HB: 'Bremen', HH: 'Hamburg', HE: 'Hessen', MV: 'Mecklenburg-Vorpommern', NI: 'Niedersachsen', NW: 'Nordrhein-Westfalen', RP: 'Rheinland-Pfalz', SL: 'Saarland', SN: 'Sachsen', ST: 'Sachsen-Anhalt', SH: 'Schleswig-Holstein', TH: 'Thüringen' };
+  const L = { de: ['Bundesland (für Feiertage bei Fristen)', 'Nicht angegeben – nur bundesweite Feiertage'], tr: ['Eyalet (sürelerde resmî tatiller için)', 'Belirtilmedi – yalnızca ülke genelindeki tatiller'],
+    pl: ['Kraj związkowy (święta przy terminach)', 'Nie podano – tylko święta ogólnokrajowe'], ru: ['Федеральная земля (праздники для сроков)', 'Не указано – только общегерманские праздники'],
+    ar: ['الولاية (للعطلات عند حساب المواعيد)', 'غير محدد – العطلات الاتحادية فقط'], ro: ['Land federal (sărbători la termene)', 'Neprecizat – doar sărbătorile naționale'] };
+  for (const l of Object.keys(L)) { I18N[l] = I18N[l] || {}; I18N[l].web = Object.assign({}, I18N[l].web || {}, { bundesland: L[l][0], blNone: L[l][1] }, Object.fromEntries(Object.entries(N).map(([k, v]) => ['bl_' + k, v]))); }
+}

@@ -61,6 +61,18 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     const r = await ev(() => [dutFirstDue({ recur: 'once', due_rule: { date: '2099-06-01' } }), dutFirstDue({ recur: 'once', due_rule: { date: '2020-06-01' } }) === addDays(todayISO(), 14)]);
     assert(r[0] === '2099-06-01' && r[1], JSON.stringify(r));
   });
+  await check('Feiertage je Bundesland: Bayern, Sachsen, Berlin, ohne Angabe nur bundesweit', async () => {
+    const r = await ev(() => { const f = (bl, y) => { S.profile = Object.assign({}, S.profile, { bundesland: bl }); return [...holidays(y)]; };
+      const out = { by: f('BY', 2026), sn: f('SN', 2026), be: f('BE', 2026), ni17: f('NI', 2017), ni16: f('NI', 2016), none: f(null, 2026), wd: (S.profile.bundesland = 'BY', isWorkday('2026-06-04')) }; S.profile.bundesland = null; return out; });
+    assert(['2026-01-06', '2026-06-04', '2026-11-01'].every((d) => r.by.includes(d)) && !r.by.includes('2026-10-31') && !r.by.includes('2026-08-15'), 'BY ' + r.by);
+    assert(r.sn.includes('2026-11-18') && r.sn.includes('2026-10-31') && !r.sn.includes('2026-06-04'), 'SN ' + r.sn);
+    assert(r.be.includes('2026-03-08') && r.ni17.includes('2017-10-31') && !r.ni16.includes('2016-10-31'), 'BE/NI');
+    assert(r.none.length === 9 && r.wd === false, 'bundesweit ' + r.none.length);
+  });
+  await check('Bundesland in den Einstellungen wählbar und gespeichert', async () => {
+    await ev(() => go('settings')); await p.selectOption('#st_bl', 'NW'); await p.click('[data-a=settingsSave]');
+    await p.waitForFunction(() => S.profile.bundesland === 'NW'); assert((await ev(() => holidays(2027).has('2027-11-01'))), 'Allerheiligen NRW');
+  });
   await check('Keine Fehler im Browser', async () => assert(!errors.length, errors.join(' | ').slice(0, 300)));
   await browser.close();
   process.exit(failed ? 1 : 0);

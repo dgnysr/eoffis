@@ -33,7 +33,7 @@ Jedes Paket: Tests grün (`bash tests/run_all.sh`), Eintrag in `STAND.md`, Verö
 - Tests: siehe letzter Eintrag in `STAND.md`.
 
 ## Offen – nächste Schritte (Reihenfolge laut Fahrplan)
-1. **Von Dogan offen:** Name und Anbieter der eigenen Domain (für E-Mail-Versand über Brevo mit SPF/DKIM/DMARC und Anmeldung mit Google – beides entschieden: JA); Feiertage je Bundesland bei Fristen (Empfehlung: ja).
+1. **Eigene Domain eoffis.de + eoffis.com (IONOS):** E-Mail über Brevo (SPF/DKIM/DMARC bei IONOS eintragen, Secrets `BREVO_API_KEY`, `BREVO_SMTP_USER`, `BREVO_SMTP_KEY`, `MAIL_FROM`) und Anmeldung mit Google (Google Cloud OAuth-Client, Secrets `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`), danach „Server einrichten“. Feiertage je Bundesland: erledigt 27.11.
 2. **Test mit echten Betrieben** (1–2 Juweliere, Makler oder Friseure) – wird von Dogan organisiert. Dabei fragen: Offline-Scannen gewünscht?
 3. **Nach dem Praxistest von selbst ansprechen:** Modul C (Vertrags-Check/Angebotsvergleich, Sammlung `offers/` vorbereitet) – ob und wie; Modul D (Verwertung alter Geräte: eBay-API, Kleinanzeigen-Kopierpaket, Awin/AdCell, eBay Partner Network – oder nur ein Link) – ob und wie. eBay-Entwicklerkonto „emfid“ besteht, Schlüssel nur als GitHub-Secret.
 4. AGB/AVV: Archiv- und Löschregel (12 Monate, Warnungen, Löschen auf Wunsch) aufnehmen.
