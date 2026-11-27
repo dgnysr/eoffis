@@ -161,9 +161,17 @@ const pu = projUrl.replace(/\/$/, '');
 const call = async (p, init = {}, tok) => { const r = await fetch(pu + p, { ...init, headers: { apikey: anonKey, 'content-type': 'application/json', ...(tok ? { authorization: 'Bearer ' + tok } : {}), ...(init.headers || {}) } }); let b = null; try { b = await r.json(); } catch { /* leer */ } return { s: r.status, b }; };
 const checks = [];
 const ok = (name, cond, info = '') => { checks.push([name, !!cond]); log(`${cond ? 'PASS' : 'FAIL'} ${name}${cond ? '' : ' – ' + JSON.stringify(info).slice(0, 300)}`); };
-const su = await call('/auth/v1/signup', { method: 'POST', body: '{}' });
+// Mit Roboter-Prüfung: für die Dauer der Prüfung den offiziellen Test-Schlüssel von Cloudflare setzen (lässt nur den Test-Token durch),
+// danach in jedem Fall wieder den echten Schlüssel – so prüft der Selbsttest den echten Weg mit Prüf-Token, ohne die Prüfung auszuschalten.
+const capOn = !!authCfg.security_captcha_enabled;
+const CAP_TEST_SECRET = '1x0000000000000000000000000000000AA', CAP_TEST_TOKEN = 'XXXX.DUMMY.TOKEN.XXXX';
+const cap = (o = {}) => JSON.stringify(capOn ? { ...o, gotrue_meta_security: { captcha_token: CAP_TEST_TOKEN } } : o);
+if (capOn) { await api('PATCH', `/v1/projects/${ref}/config/auth`, { security_captcha_secret: CAP_TEST_SECRET }); log('Roboter-Prüfung: Selbsttest mit Test-Token'); }
+let su = { s: 0, b: null };
+try {
+for (let i = 0; i < (capOn ? 8 : 1); i++) { su = await call('/auth/v1/signup', { method: 'POST', body: cap() }); if (su.b?.access_token) break; await new Promise((r) => setTimeout(r, WAIT / 2)); }
 const tok = su.b?.access_token, uidv = su.b?.user?.id;
-ok('Kostenlos testen (anonyme Anmeldung)', tok, su);
+ok('Kostenlos testen (anonyme Anmeldung' + (capOn ? ' mit Roboter-Prüfung' : '') + ')', tok, su);
 if (tok) {
   const w = await call('/rest/v1/kv', { method: 'POST', body: JSON.stringify({ path: `data/users/${uidv}/main/assets/selftest`, data: { name: 'Selbsttest' } }) }, tok);
   ok('Daten speichern', w.s === 201, w);
@@ -202,9 +210,12 @@ if (env.BREVO_API_KEY) {
         body: JSON.stringify({ sender, to: [{ email: sender.email }], subject: 'eOffis: Test der Antwort-Adresse ' + sender.email, textContent: 'Wenn Sie diese E-Mail lesen, kommen Antworten von Kunden an ' + sender.email + ' bei Ihnen an.' }) }).catch((e) => ({ ok: false, status: e.message }));
       ok('Test-E-Mail an die Antwort-Adresse verschickt', ra.ok, ra.status);
     }
-    const rc = await call('/auth/v1/recover', { method: 'POST', body: JSON.stringify({ email: env.OPERATOR_EMAIL }) });
+    const rc = await call('/auth/v1/recover', { method: 'POST', body: cap({ email: env.OPERATOR_EMAIL }) });
     ok('Test-Anmelde-Mail (Passwort zurücksetzen) über eigene Domain verschickt', rc.s === 200, rc);
   }
+}
+} finally {
+  if (capOn) { await api('PATCH', `/v1/projects/${ref}/config/auth`, { security_captcha_secret: env.TURNSTILE_SECRET }); log('Roboter-Prüfung: echter Schlüssel wieder aktiv'); }
 }
 const job = await sql(`select count(*)::int as n from cron.job where jobname = 'eoffis-morgen'`);
 ok('Täglicher Lauf vorhanden', Array.isArray(job) && job[0]?.n === 1, job);

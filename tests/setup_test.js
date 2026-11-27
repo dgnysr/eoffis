@@ -19,11 +19,11 @@ function mock(opts) {
       if (u === '/v1/projects/ref/database/query') { const q = JSON.parse(b).query; st.sql.push(q); return send(201, /count\(\*\)/.test(q) ? [{ n: 1 }] : []); }
       if (u === '/v1/projects/ref/secrets' && req.method === 'GET') return send(200, (opts.have || []).map((name) => ({ name, value: 'x' })));
       if (u === '/v1/projects/ref/secrets') { st.secrets = JSON.parse(b); return send(201); }
-      if (u === '/v1/projects/ref/config/auth') { st.auth = JSON.parse(b); return send(200, {}); }
+      if (u === '/v1/projects/ref/config/auth') { st.auth = Object.assign(st.auth || {}, JSON.parse(b)); (st.authLog = st.authLog || []).push(JSON.parse(b)); return send(200, {}); }
       if (u.startsWith('/v3/smtp/statistics')) return req.headers['api-key'] === 'brevo-ok' ? send(200, {}) : send(401, {});
       if (u === '/v3/smtp/email') { st.mails = (st.mails || []).concat([JSON.parse(b)]); return send(201, { messageId: 'x' }); }
       if (u === '/auth/v1/recover') { st.recover = JSON.parse(b).email; return send(200, {}); }
-      if (u === '/auth/v1/signup') return send(200, { access_token: 'tok', user: { id: UID } });
+      if (u === '/auth/v1/signup') { const tk = (JSON.parse(b || '{}').gotrue_meta_security || {}).captcha_token; st.signupCap = { tk, secret: st.auth && st.auth.security_captcha_secret }; if (st.auth && st.auth.security_captcha_enabled && !(tk === 'XXXX.DUMMY.TOKEN.XXXX' && st.auth.security_captcha_secret === '1x0000000000000000000000000000000AA')) return send(400, { msg: 'captcha verification process failed' }); return send(200, { access_token: 'tok', user: { id: UID } }); }
       if (req.headers.authorization !== 'Bearer tok' || req.headers.apikey !== 'ANON') return send(401, {});
       if (u === '/rest/v1/kv' && req.method === 'POST') return send(201);
       if (u.startsWith('/rest/v1/kv?')) return send(200, [{ path: `data/users/${UID}/main/assets/selftest` }]);
@@ -98,6 +98,7 @@ async function run(name, opts, check) {
     const a = r.st.auth || {};
     ok('Turnstile: Roboter-Prüfung in Supabase eingeschaltet', r.code === 0 && a.security_captcha_enabled === true && a.security_captcha_provider === 'turnstile' && a.security_captcha_secret === 'tsec-geheim', r.o);
     ok('Turnstile-Secret nicht im Protokoll', !/tsec-geheim/.test(r.o));
+    ok('Turnstile: Selbsttest mit Test-Schlüssel und Test-Token, danach wieder echter Schlüssel', r.st.signupCap && r.st.signupCap.tk === 'XXXX.DUMMY.TOKEN.XXXX' && r.st.signupCap.secret === '1x0000000000000000000000000000000AA' && r.st.authLog[r.st.authLog.length - 1].security_captcha_secret === 'tsec-geheim' && /Prüfung: (\d+)\/\1 bestanden/.test(r.o), r.o.slice(-600));
   });
   await run('Roboter-Prüfung ohne Site Key', { have: ['EOFFIS_ENC_KEY', 'ANTHROPIC_API_KEY'], env: { TURNSTILE_SECRET: 'tsec' } }, (r) => ok('Ohne Site Key in der App bleibt die Prüfung aus (sonst scheitert jede Anmeldung)', r.code === 0 && !('security_captcha_enabled' in (r.st.auth || {})) && /Roboter-Prüfung bleibt aus/.test(r.o), r.o));
   await run('falscher Schlüssel', { token: 'bad' }, (r) => ok('Ungültiger Zugangsschlüssel: klare Meldung', r.code === 1 && /SUPABASE_ACCESS_TOKEN\) ungültig/.test(r.o), r.o));
