@@ -33,9 +33,10 @@ Jedes Paket: Tests grün (`bash tests/run_all.sh`), Eintrag in `STAND.md`, Verö
 - Tests: siehe letzter Eintrag in `STAND.md`.
 
 ## Offen – nächste Schritte (Reihenfolge laut Fahrplan)
-1. **Eigene Domain eoffis.de + eoffis.com (IONOS):** E-Mail über Brevo (SPF/DKIM/DMARC bei IONOS eintragen, Secrets `BREVO_API_KEY`, `BREVO_SMTP_USER`, `BREVO_SMTP_KEY`, `MAIL_FROM`) und Anmeldung mit Google (Google Cloud OAuth-Client, Secrets `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`), danach „Server einrichten“. Feiertage je Bundesland: erledigt 27.11.
+1. **ERLEDIGT 27.11.:** E-Mail über Brevo live (Domain eoffis.de authentifiziert, Absender info@eoffis.de) und Anmeldung mit Google eingeschaltet (Status „Test“, Secrets gesetzt, „Server einrichten“ 11/11). Feiertage je Bundesland erledigt. Offen: Live-Test Google-Anmeldung durch Dogan; Postfach info@eoffis.de für Antworten?
 2. **Test mit echten Betrieben** (1–2 Juweliere, Makler oder Friseure) – wird von Dogan organisiert. Dabei fragen: Offline-Scannen gewünscht?
 3. **Nach dem Praxistest von selbst ansprechen:** Modul C (Vertrags-Check/Angebotsvergleich, Sammlung `offers/` vorbereitet) – ob und wie; Modul D (Verwertung alter Geräte: eBay-API, Kleinanzeigen-Kopierpaket, Awin/AdCell, eBay Partner Network – oder nur ein Link) – ob und wie. eBay-Entwicklerkonto „emfid“ besteht, Schlüssel nur als GitHub-Secret.
-4. AGB/AVV: Archiv- und Löschregel (12 Monate, Warnungen, Löschen auf Wunsch) aufnehmen.
-5. Server-Reste: Brevo (`BREVO_API_KEY`, `MAIL_FROM` als GitHub-Secrets, dann „Server einrichten“), Roboter-Prüfung (Cloudflare Turnstile), Anmeldung mit Google/Apple.
-6. Später: Leistungsnachweis vor Ort → Lexware. Bezahlsystem ganz am Ende (Abo 29/49 €/Monat).
+4. **Vor echten Kunden:** Startseite und Datenschutzerklärung auf eoffis.de (IONOS; App dort erreichbar machen), dann Google-Anmeldung in der Google Cloud (Projekt „eoffis“, Google Auth Platform) von „Test“ auf „Veröffentlicht“ stellen – bis dahin nur eingetragene Testnutzer (max. 100) mit Google.
+5. AGB/AVV: Archiv- und Löschregel (12 Monate, Warnungen, Löschen auf Wunsch) aufnehmen.
+6. Server-Reste: Roboter-Prüfung (Cloudflare Turnstile), Anmeldung mit Apple. Brevo-Schlüssel im Nov. 2027 vorsorglich erneuern.
+7. Später: Leistungsnachweis vor Ort → Lexware. Bezahlsystem ganz am Ende (Abo 29/49 €/Monat).

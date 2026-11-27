@@ -14,9 +14,13 @@ Backend: Supabase-Projekt `lqohxlxemawzrtdqjnci` (`supabase/schema.sql`), KI-Fun
 
 ## Nächste Sitzung
 **Einstieg: `UEBERGABE.md`** (Stand 27.11.2026 – was fertig ist, wo was liegt, offene Schritte in Reihenfolge).
-Server: GitHub → Actions → „Server einrichten“ → *Run workflow* (ersetzt die Handarbeit aus `README.md`; offen bleiben nur Brevo-SMTP, Turnstile, Apple/Google).
+Server: GitHub → Actions → „Server einrichten“ → *Run workflow* (ersetzt die Handarbeit aus `README.md`; offen bleiben nur Turnstile und Apple).
 
 ## Änderungsverlauf
+### 27.11.2026 – E-Mail über Brevo und Anmeldung mit Google
+- Brevo: Domain eoffis.de authentifiziert (mail.eoffis.de), Absender info@eoffis.de, Anmelde- und Erinnerungs-Mails live (Test-Mail angekommen).
+- Google-Anmeldung eingeschaltet (Google Cloud Projekt „eoffis“, Status „Test“; veröffentlichen erst nach Startseite + Datenschutzerklärung auf eoffis.de). „Server einrichten“ 11/11.
+
 ### 27.11.2026 – Entscheidungen von Dogan umgesetzt
 - **Feiertage je Bundesland:** Auswahl bei der Einrichtung und in den Einstellungen (`profile.bundesland`); Fristen am Feiertag rücken auf den nächsten Werktag. Gezählt werden nur landesweite Feiertage (nicht örtliche wie Fronleichnam in Teilen Sachsens/Thüringens oder Mariä Himmelfahrt in Bayern), damit eine Frist nie zu spät berechnet wird.
 - **Vorbereitet für eigene Domain eoffis.de (IONOS):** „Server einrichten“ stellt Anmelde-Mails auf Brevo um, sobald die Secrets `BREVO_SMTP_USER`, `BREVO_SMTP_KEY`, `MAIL_FROM` vorhanden sind, und schaltet die Anmeldung mit Google ein (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, dazu `oauth: ['google']` in config.js).
