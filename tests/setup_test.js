@@ -45,7 +45,7 @@ async function run(name, opts, check) {
   const cfg = path.join(dir, 'config.js');
   fs.writeFileSync(cfg, fs.readFileSync(path.join(root, 'config.js'), 'utf8')
     .replace(/supabaseUrl:\s*'[^']*'/, "supabaseUrl: 'https://ref.supabase.co'").replace(/supabaseAnonKey:\s*'[^']*'/, "supabaseAnonKey: 'ANON'")
-    .replace(/vapidPublicKey:\s*'[^']*'/, `vapidPublicKey: '${opts.vapid || ''}'`));
+    .replace(/vapidPublicKey:\s*'[^']*'/, `vapidPublicKey: '${opts.vapid || ''}'`).replace(/oauth:\s*\[[^\]]*\]/, 'oauth: []'));
   const cli = path.join(dir, 'cli.sh'), cliLog = path.join(dir, 'cli.log');
   fs.writeFileSync(cli, `#!/bin/sh\n[ "$3" = "--help" ] && { echo "  -y, --yes  confirm"; exit 0; }\necho "$@" >> ${cliLog}\nwd=$(echo "$@" | sed 's/.*--workdir \\([^ ]*\\).*/\\1/')\ncat "$wd/supabase/config.toml" > ${dir}/toml\nls "$wd/supabase/functions/$3/index.ts" >/dev/null || exit 3\n`);
   fs.chmodSync(cli, 0o755);
@@ -90,6 +90,7 @@ async function run(name, opts, check) {
     ok('Anmeldung mit Google eingeschaltet und in der App sichtbar', a.external_google_enabled === true && a.external_google_client_id === 'gid.apps.googleusercontent.com' && /oauth:\s*\['google'\]/.test(r.cfg));
     ok('Geheimnisse nicht im Protokoll', !/xsmtp|gsec|brevo-ok/.test(r.o));
     ok('Brevo-Schlüssel geprüft, Test-E-Mails an den Betreiber (Brevo + Anmelde-Mail)', /PASS E-Mail-Schlüssel/.test(r.o) && r.st.mails && r.st.mails[0].to[0].email === 'chef@x.de' && r.st.mails[0].sender.email === 'info@eoffis.de' && r.st.recover === 'chef@x.de', r.o.slice(-400));
+    ok('Test-E-Mail an die Antwort-Adresse info@ (Weiterleitung prüfen)', r.st.mails && r.st.mails.length === 2 && r.st.mails[1].to[0].email === 'info@eoffis.de' && /PASS Test-E-Mail an die Antwort-Adresse/.test(r.o), r.o.slice(-400));
   });
   await run('Brevo-Schlüssel ungültig', { have: ['EOFFIS_ENC_KEY', 'ANTHROPIC_API_KEY'], env: { BREVO_API_KEY: 'abgelaufen' } }, (r) => ok('Ungültiger Brevo-Schlüssel fällt auf', r.code === 1 && /FAIL E-Mail-Schlüssel/.test(r.o), r.o.slice(-300)));
   await run('falscher Schlüssel', { token: 'bad' }, (r) => ok('Ungültiger Zugangsschlüssel: klare Meldung', r.code === 1 && /SUPABASE_ACCESS_TOKEN\) ungültig/.test(r.o), r.o));

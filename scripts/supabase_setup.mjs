@@ -167,6 +167,12 @@ if (env.BREVO_API_KEY) {
     const r = await fetch(brevo + '/v3/smtp/email', { method: 'POST', headers: { 'api-key': bkey, 'content-type': 'application/json', accept: 'application/json' },
       body: JSON.stringify({ sender, to: [{ email: env.OPERATOR_EMAIL }], subject: 'eOffis: Test-E-Mail (Erinnerungen)', textContent: 'Diese Test-E-Mail kommt über Brevo von ' + sender.email + '. Erinnerungen und Hinweise an Kunden werden genauso verschickt.' }) }).catch((e) => ({ ok: false, status: e.message }));
     ok('Test-E-Mail über Brevo verschickt', r.ok, r.status);
+    // Antwort-Adresse (Absender) muss erreichbar sein: Test-Mail an den Absender selbst, z. B. info@… → Weiterleitung ins eigene Postfach
+    if (sender.email.toLowerCase() !== env.OPERATOR_EMAIL.trim().toLowerCase()) {
+      const ra = await fetch(brevo + '/v3/smtp/email', { method: 'POST', headers: { 'api-key': bkey, 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({ sender, to: [{ email: sender.email }], subject: 'eOffis: Test der Antwort-Adresse ' + sender.email, textContent: 'Wenn Sie diese E-Mail lesen, kommen Antworten von Kunden an ' + sender.email + ' bei Ihnen an.' }) }).catch((e) => ({ ok: false, status: e.message }));
+      ok('Test-E-Mail an die Antwort-Adresse verschickt', ra.ok, ra.status);
+    }
     const rc = await call('/auth/v1/recover', { method: 'POST', body: JSON.stringify({ email: env.OPERATOR_EMAIL }) });
     ok('Test-Anmelde-Mail (Passwort zurücksetzen) über eigene Domain verschickt', rc.s === 200, rc);
   }
