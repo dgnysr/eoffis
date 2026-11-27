@@ -45,6 +45,19 @@ const assert = (c, m) => { if (!c) throw new Error(m); };
     assert(/verpasst/.test(await text()) && /Nächste Möglichkeit/.test(await text()), (await text()).slice(0, 200));
     await ev(() => reloadAll()); assert((await ev(() => S.tasks.filter((x) => x.document_id === 'v1').length)) === 1, 'doppelte Frist');
   });
+  await check('Schon gekündigt (Kündigungsschreiben vorhanden oder Frist erledigt): keine Verlängerung', async () => {
+    const r = await ev(async () => {
+      const now = new Date().toISOString(), past = addDays(todayISO(), -20);
+      await store.put('docs', { id: 'v3', title: 'Gekündigt', sender: 'Alt AG', is_contract: true, auto_renew: true, cancellation_date: past, folder: 'sonstiges', page_count: 0, created_at: now, updated_at: now, version: 0 });
+      await store.put('replies', { id: 'r3', docId: 'v3', kind: 'cancellation', data: {}, created_at: now, version: 0 });
+      await store.put('docs', { id: 'v4', title: 'Erledigt', sender: 'Beta AG', is_contract: true, auto_renew: true, cancellation_date: past, folder: 'sonstiges', page_count: 0, created_at: now, updated_at: now, version: 0 });
+      await store.put('tasks', { id: 'k4', document_id: 'v4', title: 'Kündigen', kind: 'cancellation', due_date: past, status: 'done', created_at: now, version: 0 });
+      await reloadAll();
+      return [getDoc('v3').cancellation_date === past && !getDoc('v3').cancel_missed, getDoc('v4').cancellation_date === past && !getDoc('v4').cancel_missed];
+    });
+    assert(r[0] && r[1], JSON.stringify(r));
+    await ev(() => go('contract', { id: 'v1' }));
+  });
   await check('Vertrag bearbeiten: Verlängerungszeitraum speicherbar, neues Datum löscht den Verpasst-Hinweis', async () => {
     await p.fill('#ct_renewm', '24'); await p.fill('#ct_cancel', (await ev(() => fmtDate(addDays(todayISO(), 100))))); await p.click('[data-a=ctrSave]');
     await p.waitForFunction(() => getDoc('v1').renewal_months === 24 && !getDoc('v1').cancel_missed);

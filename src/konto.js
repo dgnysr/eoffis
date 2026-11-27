@@ -178,7 +178,7 @@ window.addEventListener('eoffis-account', async () => { await kontoRefresh(); kt
     const A = S.acct; if (!A || !KH()) return h;
     const st = A.state;
     if (st === 'readonly' || st === 'expired') {
-      h = `<div class="banner warn kto-b"><span>${esc(t('kto.roBanner', { date: fmtDate(A.delete_at) }))}</span><button class="btn sm" data-go="abo">${esc(t('kto.aboBtn'))}</button></div>` + h;
+      h = `<div class="banner warn kto-b kto-ro"><span>${esc(t('kto.roBanner', { date: fmtDate(A.delete_at) }))}</span><button class="btn sm" data-go="abo">${esc(t('kto.aboBtn'))}</button></div>` + h;
     } else if (st === 'trial' && (S.view === 'home' || S.view === 'more')) {
       const n = ktoDays(A.trial_end), warn = Date.now() >= new Date(A.warn_at).getTime();
       if (warn) h = `<div class="banner warn kto-b"><span>${esc(n <= 1 ? t('kto.endsIn1') : t('kto.endsIn', { n }))}</span><button class="btn sm" data-go="abo">${esc(t('kto.aboBtn'))}</button></div>` + h;
@@ -454,7 +454,9 @@ async function ktoExportAll() {
           file = `Unterlagen/${folder}/${year}/${String(i + 1).padStart(4, '0')}_${safeName(d.title || 'Dokument') || 'Dokument'}.${d.file_kind === 'xml' ? 'xml' : 'pdf'}`;
           while (used.has(file)) file = file.replace(/(\.\w+)$/, '_2$1');
           used.add(file);
-          zip.file(file, d.file_kind === 'xml' ? (pages[0] && pages[0].xml) || '' : pagesToPdf(pages));
+          // Ein kaputtes Seitenbild darf das Gesamtpaket nicht verhindern: Datei auslassen, in der Übersicht vermerken
+          try { zip.file(file, d.file_kind === 'xml' ? (pages[0] && pages[0].xml) || '' : pagesToPdf(pages)); }
+          catch (e) { console.warn(e); file = 'FEHLER: ' + file; }
         }
       }
       rows.push([i + 1, t('docs.folder_' + d.folder), file, d.title, d.doc_type, d.sender, d.invoice_number, nf(d.amount_net), nf(d.vat_amount), nf(d.amount_gross), normCur(d.currency) || '', fmtDate(d.due_date), d.paid ? 'ja' : 'nein', fmtDate(d.created_at), d.archived ? 'ja' : 'nein', d.sha256].map(cell).join(';'));
@@ -491,9 +493,10 @@ async function ktoDelGo(btn) {
   btn.disabled = true;
   try {
     await H.fn('eoffis-api', { action: 'account_delete', confirm: 'LÖSCHEN', retention_ack: true });
-    $('#layer').innerHTML = ''; toast(t('kto.delDone'));
-    await H.logout();
-  } catch (x) { err.textContent = t('kto.delFail', { msg: errText(x) }); btn.disabled = false; }
+  } catch (x) { err.textContent = t('kto.delFail', { msg: errText(x) }); btn.disabled = false; return; }
+  // Gelöscht: Abmelden kann scheitern, weil das Konto schon weg ist – dann Anmeldedaten im Browser trotzdem entfernen
+  $('#layer').innerHTML = ''; toast(t('kto.delDone'));
+  try { await H.logout(); } catch (e) { console.warn(e); try { localStorage.removeItem('eoffis.auth'); } catch { /* egal */ } location.reload(); }
 }
 // Archiv-Hinweis oben: zusätzlich „Alles herunterladen“
 {
@@ -501,7 +504,7 @@ async function ktoDelGo(btn) {
   banners = function () {
     const h = orig.apply(this, arguments);
     if (!KH() || !ktoRO()) return h;
-    return h.replace(/(<div class="banner warn kto-b">[\s\S]*?)(<\/div>)/, `$1<button class="btn sm sec" data-a="ktoDlDlg">${esc(t('kto.dlAll'))}</button>$2`);
+    return h.replace(/(<div class="banner warn kto-b kto-ro">[\s\S]*?)(<\/div>)/, `$1<button class="btn sm sec" data-a="ktoDlDlg">${esc(t('kto.dlAll'))}</button>$2`);
   };
   // Konto-Fenster: Herunterladen und Löschen für jedes Konto
   const origAcc = ktoAccount;

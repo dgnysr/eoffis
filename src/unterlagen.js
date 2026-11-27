@@ -552,6 +552,9 @@ async function ctrRollover() {
   let n = 0;
   for (const d of S.docs.filter(isContractDoc)) {
     const nx = ctrNextCancel(d); if (!nx) continue;
+    // Schon gekündigt (Kündigungsschreiben erstellt oder Kündigungsfrist als erledigt markiert)? Dann nichts verlängern.
+    if ((S.replies || []).some((r) => r.docId === d.id && r.kind === 'cancellation')
+      || S.tasks.some((x) => x.document_id === d.id && x.kind === 'cancellation' && x.status === 'done' && x.due_date >= addDays(d.cancellation_date, -60))) continue;
     try {
       const saved = await persistDoc(d, Object.assign({ cancel_missed: d.cancellation_date }, nx), t('unt.ctrNext', { date: fmtDate(nx.cancellation_date) }));
       const open = S.tasks.find((x) => x.document_id === d.id && x.kind === 'cancellation' && x.status !== 'done');
