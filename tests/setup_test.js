@@ -20,6 +20,9 @@ function mock(opts) {
       if (u === '/v1/projects/ref/secrets' && req.method === 'GET') return send(200, (opts.have || []).map((name) => ({ name, value: 'x' })));
       if (u === '/v1/projects/ref/secrets') { st.secrets = JSON.parse(b); return send(201); }
       if (u === '/v1/projects/ref/config/auth') { st.auth = JSON.parse(b); return send(200, {}); }
+      if (u.startsWith('/v3/smtp/statistics')) return req.headers['api-key'] === 'brevo-ok' ? send(200, {}) : send(401, {});
+      if (u === '/v3/smtp/email') { st.mails = (st.mails || []).concat([JSON.parse(b)]); return send(201, { messageId: 'x' }); }
+      if (u === '/auth/v1/recover') { st.recover = JSON.parse(b).email; return send(200, {}); }
       if (u === '/auth/v1/signup') return send(200, { access_token: 'tok', user: { id: UID } });
       if (req.headers.authorization !== 'Bearer tok' || req.headers.apikey !== 'ANON') return send(401, {});
       if (u === '/rest/v1/kv' && req.method === 'POST') return send(201);
@@ -46,9 +49,9 @@ async function run(name, opts, check) {
   const cli = path.join(dir, 'cli.sh'), cliLog = path.join(dir, 'cli.log');
   fs.writeFileSync(cli, `#!/bin/sh\n[ "$3" = "--help" ] && { echo "  -y, --yes  confirm"; exit 0; }\necho "$@" >> ${cliLog}\nwd=$(echo "$@" | sed 's/.*--workdir \\([^ ]*\\).*/\\1/')\ncat "$wd/supabase/config.toml" > ${dir}/toml\nls "$wd/supabase/functions/$3/index.ts" >/dev/null || exit 3\n`);
   fs.chmodSync(cli, 0o755);
-  const env = { ...process.env, SUPABASE_ACCESS_TOKEN: opts.token || 'good', SUPABASE_API: m.url, PROJECT_URL: m.url, CONFIG_PATH: cfg, SUPABASE_CLI: cli, SETUP_WAIT_MS: '10', ...(opts.env || {}) };
+  const env = { ...process.env, SUPABASE_ACCESS_TOKEN: opts.token || 'good', SUPABASE_API: m.url, PROJECT_URL: m.url, BREVO_API: m.url, CONFIG_PATH: cfg, SUPABASE_CLI: cli, SETUP_WAIT_MS: '10', ...(opts.env || {}) };
   delete env.GITHUB_STEP_SUMMARY;
-  for (const k of ['ANTHROPIC_API_KEY', 'BREVO_API_KEY', 'MAIL_FROM', 'OPERATOR_EMAIL', 'BREVO_SMTP_USER', 'BREVO_SMTP_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET']) if (!(opts.env || {})[k]) delete env[k];
+  for (const k of ['ANTHROPIC_API_KEY', 'BREVO_API_KEY', 'MAIL_FROM', 'OPERATOR_EMAIL', 'BREVO_SMTP_USER', 'BREVO_SMTP_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'TESTMAIL']) if (!(opts.env || {})[k]) delete env[k];
   const out = await new Promise((r) => { const p = spawn('node', [path.join(root, 'scripts/supabase_setup.mjs')], { env }); let o = ''; p.stdout.on('data', (d) => (o += d)); p.stderr.on('data', (d) => (o += d)); p.on('close', (code) => r({ code, o })); });
   m.srv.close();
   const read = (f) => (fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '');
@@ -81,12 +84,14 @@ async function run(name, opts, check) {
     ok('Zweiter Lauf: Push-Schlüssel bleiben', r.code === 0 && !(r.st.secrets || []).some((s) => /VAPID_P/.test(s.name)) && r.cfg.includes("vapidPublicKey: 'BEreits'"), r.o);
     ok('Zweiter Lauf: Kennwort des täglichen Laufs erneuert', (r.st.secrets || []).some((s) => s.name === 'CRON_SECRET'));
   });
-  await run('mit Brevo und Google', { have: ['EOFFIS_ENC_KEY', 'ANTHROPIC_API_KEY'], env: { MAIL_FROM: 'eOffis <info@eoffis.de>', BREVO_SMTP_USER: 'abc@smtp-brevo.com', BREVO_SMTP_KEY: 'xsmtp', GOOGLE_CLIENT_ID: 'gid.apps.googleusercontent.com', GOOGLE_CLIENT_SECRET: 'gsec' } }, (r) => {
+  await run('mit Brevo und Google', { have: ['EOFFIS_ENC_KEY', 'ANTHROPIC_API_KEY'], env: { BREVO_API_KEY: 'brevo-ok', TESTMAIL: 'true', OPERATOR_EMAIL: 'chef@x.de', MAIL_FROM: 'eOffis <info@eoffis.de>', BREVO_SMTP_USER: 'abc@smtp-brevo.com', BREVO_SMTP_KEY: 'xsmtp', GOOGLE_CLIENT_ID: 'gid.apps.googleusercontent.com', GOOGLE_CLIENT_SECRET: 'gsec' } }, (r) => {
     const a = r.st.auth || {};
     ok('Anmelde-Mails über Brevo mit eigener Absender-Adresse', r.code === 0 && a.smtp_host === 'smtp-relay.brevo.com' && a.smtp_admin_email === 'info@eoffis.de' && a.smtp_sender_name === 'eOffis' && a.smtp_user === 'abc@smtp-brevo.com', r.o);
     ok('Anmeldung mit Google eingeschaltet und in der App sichtbar', a.external_google_enabled === true && a.external_google_client_id === 'gid.apps.googleusercontent.com' && /oauth:\s*\['google'\]/.test(r.cfg));
-    ok('Geheimnisse nicht im Protokoll', !/xsmtp|gsec/.test(r.o));
+    ok('Geheimnisse nicht im Protokoll', !/xsmtp|gsec|brevo-ok/.test(r.o));
+    ok('Brevo-Schlüssel geprüft, Test-E-Mails an den Betreiber (Brevo + Anmelde-Mail)', /PASS E-Mail-Schlüssel/.test(r.o) && r.st.mails && r.st.mails[0].to[0].email === 'chef@x.de' && r.st.mails[0].sender.email === 'info@eoffis.de' && r.st.recover === 'chef@x.de', r.o.slice(-400));
   });
+  await run('Brevo-Schlüssel ungültig', { have: ['EOFFIS_ENC_KEY', 'ANTHROPIC_API_KEY'], env: { BREVO_API_KEY: 'abgelaufen' } }, (r) => ok('Ungültiger Brevo-Schlüssel fällt auf', r.code === 1 && /FAIL E-Mail-Schlüssel/.test(r.o), r.o.slice(-300)));
   await run('falscher Schlüssel', { token: 'bad' }, (r) => ok('Ungültiger Zugangsschlüssel: klare Meldung', r.code === 1 && /SUPABASE_ACCESS_TOKEN\) ungültig/.test(r.o), r.o));
   await run('ohne KI-Schlüssel', { noAi: true }, (r) => ok('Fehlender KI-Schlüssel lässt die Prüfung scheitern', r.code === 1 && /FAIL KI-Funktion: ANTHROPIC_API_KEY fehlt/.test(r.o), r.o));
   await run('Datenbank falsch', { accState: 'readonly' }, (r) => ok('Fehlerhafte Prüfung → Lauf scheitert', r.code === 1 && /FAIL Probezeit-Status/.test(r.o), r.o));

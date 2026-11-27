@@ -7,6 +7,11 @@ on:
     branches: [main]
     paths: ['supabase/**', 'scripts/supabase_setup.mjs']
   workflow_dispatch:
+    inputs:
+      testmail:
+        description: 'Test-E-Mails an das Betreiber-Konto schicken'
+        type: boolean
+        default: false
 permissions:
   contents: write
 concurrency: { group: supabase-setup, cancel-in-progress: false }
@@ -31,6 +36,7 @@ jobs:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           OPERATOR_EMAIL: ${{ secrets.OPERATOR_EMAIL || vars.OPERATOR_EMAIL }}
+          TESTMAIL: ${{ inputs.testmail || 'false' }}
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ] && [ "$GITHUB_EVENT_NAME" = push ]; then
             echo "::warning::SUPABASE_ACCESS_TOKEN fehlt noch – Server-Einrichtung übersprungen"; exit 0; fi

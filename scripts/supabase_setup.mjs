@@ -154,6 +154,21 @@ if (tok) {
   ok('Nur eigene Daten sichtbar', Array.isArray(fremd.b) && fremd.b.every((x) => x.path.startsWith(`data/users/${uidv}/`)), fremd);
   await sql(`delete from auth.users where id = ${lit(uidv)}`);
 }
+// E-Mail: Brevo-Schlüssel gültig? Auf Wunsch (Knopf „Run workflow“ → Test-E-Mail) je eine Test-E-Mail an das Betreiber-Konto:
+// über die Brevo-Schnittstelle (Erinnerungen) und über SMTP (Anmelde-Mails, als „Passwort zurücksetzen“-Mail)
+const brevo = (env.BREVO_API || 'https://api.brevo.com').replace(/\/$/, '');
+if (env.BREVO_API_KEY) {
+  const bk = await fetch(brevo + '/v3/smtp/statistics/aggregatedReport?days=1', { headers: { 'api-key': env.BREVO_API_KEY, accept: 'application/json' } }).catch((e) => ({ ok: false, status: e.message }));
+  ok('E-Mail-Schlüssel (Brevo) gültig', bk.ok, bk.status);
+  if (env.TESTMAIL === 'true' && env.OPERATOR_EMAIL && env.MAIL_FROM) {
+    const m = env.MAIL_FROM.match(/^(.*)<(.+)>$/), sender = m ? { name: m[1].trim(), email: m[2].trim() } : { name: 'eOffis', email: env.MAIL_FROM.trim() };
+    const r = await fetch(brevo + '/v3/smtp/email', { method: 'POST', headers: { 'api-key': env.BREVO_API_KEY, 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({ sender, to: [{ email: env.OPERATOR_EMAIL }], subject: 'eOffis: Test-E-Mail (Erinnerungen)', textContent: 'Diese Test-E-Mail kommt über Brevo von ' + sender.email + '. Erinnerungen und Hinweise an Kunden werden genauso verschickt.' }) }).catch((e) => ({ ok: false, status: e.message }));
+    ok('Test-E-Mail über Brevo verschickt', r.ok, r.status);
+    const rc = await call('/auth/v1/recover', { method: 'POST', body: JSON.stringify({ email: env.OPERATOR_EMAIL }) });
+    ok('Test-Anmelde-Mail (Passwort zurücksetzen) über eigene Domain verschickt', rc.s === 200, rc);
+  }
+}
 const job = await sql(`select count(*)::int as n from cron.job where jobname = 'eoffis-morgen'`);
 ok('Täglicher Lauf vorhanden', Array.isArray(job) && job[0]?.n === 1, job);
 if (missing.length) log('Noch offen (optional bzw. für KI nötig): ' + missing.join(', '));
