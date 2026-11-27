@@ -20,6 +20,7 @@ Server: GitHub → Actions → „Server einrichten“ → *Run workflow* (erset
 ### 27.11.2026 – E-Mail über Brevo und Anmeldung mit Google
 - Brevo: Domain eoffis.de authentifiziert (mail.eoffis.de), Absender info@eoffis.de, Anmelde- und Erinnerungs-Mails live (Test-Mail angekommen).
 - Google-Anmeldung eingeschaltet (Google Cloud Projekt „eoffis“, Status „Test“; veröffentlichen erst nach Startseite + Datenschutzerklärung auf eoffis.de). „Server einrichten“ 11/11.
+- Google meldet manche Gmail-Konten als @googlemail.com: Betreiber-Freischaltung behandelt @googlemail.com und @gmail.com gleich (`eoffis_mailkey`, Test in tests/db/test.sql). Hinweis: Google-Anmeldung mit @googlemail.com legt ein eigenes Konto an, getrennt von einem früheren E-Mail-Konto @gmail.com.
 
 ### 27.11.2026 – Entscheidungen von Dogan umgesetzt
 - **Feiertage je Bundesland:** Auswahl bei der Einrichtung und in den Einstellungen (`profile.bundesland`); Fristen am Feiertag rücken auf den nächsten Werktag. Gezählt werden nur landesweite Feiertage (nicht örtliche wie Fronleichnam in Teilen Sachsens/Thüringens oder Mariä Himmelfahrt in Bayern), damit eine Frist nie zu spät berechnet wird.

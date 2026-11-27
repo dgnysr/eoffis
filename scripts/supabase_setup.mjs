@@ -58,7 +58,7 @@ log('Datenbank: schema.sql eingespielt');
 if (fs.existsSync(path.join(root, 'supabase/duties.sql'))) { await sql(fs.readFileSync(path.join(root, 'supabase/duties.sql'), 'utf8')); log('Datenbank: Pflichtenlisten (duties.sql) eingespielt'); }
 if (env.OPERATOR_EMAIL) {
   await sql(`insert into public.operators (email) values (lower(${lit(env.OPERATOR_EMAIL)})) on conflict do nothing`);
-  const r = await sql(`insert into public.subscriptions (owner, status) select id, 'active' from auth.users where lower(email) = lower(${lit(env.OPERATOR_EMAIL)})
+  const r = await sql(`insert into public.subscriptions (owner, status) select id, 'active' from auth.users where public.eoffis_mailkey(email) = public.eoffis_mailkey(${lit(env.OPERATOR_EMAIL)})
     on conflict (owner) do update set status = 'active' returning owner`);
   log(Array.isArray(r) && r.length ? 'Betreiber-Konto dauerhaft freigeschaltet' : 'Betreiber-Adresse vorgemerkt: wird beim Anlegen des Kontos automatisch freigeschaltet');
 }

@@ -451,10 +451,13 @@ create table if not exists public.operators (email text primary key check (email
 alter table public.operators enable row level security;
 revoke all on public.operators from anon, authenticated;
 grant select, insert, update, delete on public.operators to service_role;
+-- Google meldet manche Gmail-Konten als @googlemail.com (Deutschland): gilt als dieselbe Adresse wie @gmail.com (27.11.2026)
+create or replace function public.eoffis_mailkey(m text) returns text language sql immutable set search_path = public as $$
+  select regexp_replace(lower(trim(m)), '@googlemail\.com$', '@gmail.com') $$;
 create or replace function public.operator_activate() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  if new.email is not null and exists (select 1 from public.operators where email = lower(new.email)) then
+  if new.email is not null and exists (select 1 from public.operators where public.eoffis_mailkey(email) = public.eoffis_mailkey(new.email)) then
     insert into public.subscriptions (owner, status) values (new.id, 'active')
     on conflict (owner) do update set status = 'active', updated_at = now();
   end if;
