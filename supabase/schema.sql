@@ -170,9 +170,11 @@ create policy "eigene Freigabe-Dateien" on storage.objects for all to authentica
 
 -- ===== Sicherheit & Probezeit (Paket A/B, 08.11.2026) =====
 -- Zeiträume an EINER Stelle: 28 Tage voller Umfang + 7 Tage Verlängerung (Nachricht „endet in 7 Tagen“),
--- danach 30 Tage nur lesen, dann Löschung (Warnung 7 Tage vorher). Speicher: 200 MB je Konto, 20 MB ohne E-Mail.
+-- danach 12 Monate Archiv (nur lesen + „Alles herunterladen“, Erinnerung alle 90 Tage mit Hinweis auf die
+-- Aufbewahrungspflicht 8/10 Jahre), dann Löschung (letzte Warnung 30 Tage vorher; Entscheidung 27.11.2026, Art. 28/5 DSGVO).
+-- Auf ausdrücklichen Wunsch löscht der Kunde sofort selbst (Aktion account_delete). Speicher: 200 MB je Konto, 20 MB ohne E-Mail.
 create or replace function public.eoffis_plan() returns jsonb language sql immutable as $$
-  select jsonb_build_object('warn_days', 28, 'trial_days', 35, 'readonly_days', 30, 'delete_warn_days', 7,
+  select jsonb_build_object('warn_days', 28, 'trial_days', 35, 'readonly_days', 365, 'delete_warn_days', 30, 'remind_days', 90,
     'quota_bytes', 200 * 1024 * 1024, 'quota_anon_bytes', 20 * 1024 * 1024)
 $$;
 
@@ -186,6 +188,7 @@ create table if not exists public.subscriptions (
   notified_warn timestamptz, notified_end timestamptz, notified_delwarn timestamptz,
   updated_at timestamptz not null default now()
 );
+alter table public.subscriptions add column if not exists notified_remind timestamptz;
 alter table public.subscriptions enable row level security;
 drop policy if exists "eigenes Abo lesen" on public.subscriptions;
 create policy "eigenes Abo lesen" on public.subscriptions for select to authenticated using (owner = (select auth.uid()));
@@ -301,26 +304,37 @@ alter table public.secrets enable row level security;
 revoke all on public.secrets from anon, authenticated;
 
 -- Täglicher Lauf: wer bekommt welche Nachricht, wer wird gelöscht (nur Server)
-create or replace function public.eoffis_trial_due() returns table (owner uuid, email text, anon boolean, stage text)
+drop function if exists public.eoffis_trial_due();
+create or replace function public.eoffis_trial_due() returns table (owner uuid, email text, anon boolean, stage text, delete_at timestamptz)
 language sql stable security definer set search_path = public, auth as $$
   with a as (
-    select u.id, u.email, coalesce(u.is_anonymous, false) as anon, s.notified_warn, s.notified_end, s.notified_delwarn, s.abo_requested_at,
-      public.eoffis_account(u.id) as acc
+    select u.id, u.email, coalesce(u.is_anonymous, false) as anon, s.notified_end, s.notified_remind, s.notified_warn, s.abo_requested_at,
+      public.eoffis_account(u.id) as acc, s.notified_delwarn
     from auth.users u left join public.subscriptions s on s.owner = u.id
     where coalesce(s.status, 'trial') <> 'active'
+  ), b as (
+    select a.*, (acc->>'delete_at')::timestamptz as del_at,
+      make_interval(days => (public.eoffis_plan()->>'delete_warn_days')::int) as dw,
+      make_interval(days => (public.eoffis_plan()->>'remind_days')::int) as rd
+    from a
+  ), c as (
+    -- Eine Löschwarnung zählt nur, wenn sie im letzten Zeitfenster vor der Löschung verschickt wurde (alte Warnungen nach früheren Regeln nicht)
+    select b.*, (notified_delwarn is not null and notified_delwarn >= del_at - dw - interval '1 day') as warned from b
   )
-  -- Gelöscht wird nur, wenn die Warnung wirklich mindestens 7 Tage vorher verschickt wurde (auch nach Ausfall des täglichen Laufs)
+  -- Gelöscht wird nur, wenn die letzte Warnung wirklich mindestens 30 Tage vorher verschickt wurde (auch nach Ausfall des täglichen Laufs)
   -- und nie, solange eine Abo-Anfrage vorliegt (Bezahlsystem fehlt noch: Betreiber schaltet frei).
   select id, email, anon, case
       when abo_requested_at is not null and (acc->>'state') in ('readonly', 'expired') then null
-      when (acc->>'state') = 'expired' and notified_delwarn is null then 'delete_warn'
-      when (acc->>'state') = 'expired' and notified_delwarn <= now() - make_interval(days => (public.eoffis_plan()->>'delete_warn_days')::int) then 'delete'
+      when (acc->>'state') = 'expired' and not warned then 'delete_warn'
+      when (acc->>'state') = 'expired' and notified_delwarn <= now() - dw then 'delete'
       when (acc->>'state') = 'expired' then null
-      when (acc->>'state') = 'readonly' and now() >= (acc->>'delete_at')::timestamptz - make_interval(days => (public.eoffis_plan()->>'delete_warn_days')::int) and notified_delwarn is null then 'delete_warn'
+      when (acc->>'state') = 'readonly' and now() >= del_at - dw and not warned then 'delete_warn'
+      when (acc->>'state') = 'readonly' and now() >= del_at - dw then null
       when (acc->>'state') = 'readonly' and notified_end is null then 'end'
+      when (acc->>'state') = 'readonly' and now() >= greatest(notified_end, coalesce(notified_remind, notified_end)) + rd then 'remind'
       when (acc->>'state') = 'trial' and now() >= (acc->>'warn_at')::timestamptz and notified_warn is null then 'warn'
-    end as stage
-  from a
+    end as stage, del_at
+  from c
 $$;
 revoke all on function public.eoffis_trial_due() from public, anon, authenticated;
 grant execute on function public.eoffis_trial_due() to service_role;

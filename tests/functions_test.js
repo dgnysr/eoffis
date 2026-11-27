@@ -138,12 +138,16 @@ const ENV = { SUPABASE_URL: 'https://p.test', SUPABASE_ANON_KEY: 'ANON', SUPABAS
   // Täglicher Lauf
   world.tables.push_subs = [{ endpoint: 'https://push/u3', p256dh: 'k', auth: 'a', lang: 'de', space: 'main', owner: 'u3' }, { endpoint: 'https://push/u4', p256dh: 'k', auth: 'a', lang: 'tr', space: 'main', owner: 'u4' }];
   world.due = [{ owner: 'u3', email: 'u3@test.de', anon: false, stage: 'warn' }, { owner: 'u4', email: null, anon: true, stage: 'end' },
-    { owner: 'u5', email: 'u5@test.de', anon: false, stage: 'delete_warn' }, { owner: 'u7', email: 'u7@test.de', anon: false, stage: 'delete' }, { owner: 'u8', email: 'u8@test.de', anon: false, stage: null }];
+    { owner: 'u5', email: 'u5@test.de', anon: false, stage: 'delete_warn', delete_at: '2027-12-01T10:00:00Z' }, { owner: 'u6', email: 'u6@test.de', anon: false, stage: 'remind', delete_at: '2027-12-01T10:00:00Z' }, { owner: 'u7', email: 'u7@test.de', anon: false, stage: 'delete' }, { owner: 'u8', email: 'u8@test.de', anon: false, stage: null }];
   r = await api({ action: 'daily' }, null); ok(r.status === 401, 'Täglicher Lauf: ohne Kennwort abgelehnt');
   r = await api({ action: 'daily' }, null, { 'x-cron-secret': 'falsch' }); ok(r.status === 401, 'Täglicher Lauf: falsches Kennwort abgelehnt');
   r = await api({ action: 'daily' }, null, { 'x-cron-secret': 'cron-geheim' }); j = await r.json();
-  ok(j.trial && j.trial.warn === 1 && j.trial.end === 1 && j.trial.delete_warn === 1 && j.trial.deleted === 1, 'Täglicher Lauf: Nachrichten und Löschung ' + JSON.stringify(j.trial));
-  ok(world.mails.length === 2 && world.mails.some((m) => m.to[0].email === 'u3@test.de' && /endet in 7 Tagen/.test(m.subject) && /\?abo=1/.test(m.htmlContent)), 'E-Mail „endet in 7 Tagen“ mit Abo-Link');
+  ok(j.trial && j.trial.warn === 1 && j.trial.end === 1 && j.trial.delete_warn === 1 && j.trial.remind === 1 && j.trial.deleted === 1, 'Täglicher Lauf: Nachrichten und Löschung ' + JSON.stringify(j.trial));
+  const m5 = world.mails.find((m) => m.to[0].email === 'u5@test.de'), m6 = world.mails.find((m) => m.to[0].email === 'u6@test.de');
+  ok(m5 && /in 30 Tagen gelöscht/.test(m5.subject) && /01\.12\.2027/.test(m5.textContent) && /Aufbewahrungspflicht/.test(m5.textContent) && /Alles herunterladen/.test(m5.htmlContent) && /\?export=1/.test(m5.htmlContent), 'Letzte Warnung 30 Tage vorher: Datum, Aufbewahrungspflicht, „Alles herunterladen“');
+  ok(m6 && /im Archiv/.test(m6.subject) && /Bis 01\.12\.2027/.test(m6.textContent), 'Archiv-Erinnerung mit Löschdatum');
+  ok(world.tables.subscriptions.find((s) => s.owner === 'u6').notified_remind, 'Archiv-Erinnerung vermerkt');
+  ok(world.mails.length === 3 && world.mails.some((m) => m.to[0].email === 'u3@test.de' && /endet in 7 Tagen/.test(m.subject) && /\?abo=1/.test(m.htmlContent)), 'E-Mail „endet in 7 Tagen“ mit Abo-Link');
   ok(!world.mails.some((m) => m.to[0].email === 'u8@test.de'), 'Keine E-Mail ohne fälligen Schritt');
   ok(world.pushes.some(([e, pl]) => e === 'https://push/u4' && /Deneme süreniz sona erdi/.test(pl.title) && pl.url === './?abo=1'), 'Push ohne E-Mail, in der Sprache des Kunden (Türkisch)');
   ok(world.deleted.includes('u7') && world.removed.includes('u7/x.bin') && world.removed.includes('u7/y.bin'), 'Löschung: Konto und Freigabe-Dateien');
@@ -162,5 +166,11 @@ const ENV = { SUPABASE_URL: 'https://p.test', SUPABASE_ANON_KEY: 'ANON', SUPABAS
   world.removed = []; world.due = []; world.tables.push_subs = [];
   r = await api({ action: 'daily' }, null, { 'x-cron-secret': 'cron-geheim' }); j = await r.json();
   ok(j.shares && j.shares.removed === 1 && world.removed.includes('u1/alt.bin') && !world.removed.includes('u1/a.bin') && world.tables.shares.find((x) => x.id === 'b'.repeat(32)).path === '', 'Abgelaufene Freigabe: Datei gelöscht, gültige bleibt');
+  // Löschen auf ausdrücklichen Wunsch
+  world.deleted = [];
+  r = await api({ action: 'account_delete' }, 't2'); ok(r.status === 400 && !world.deleted.length, 'Konto löschen: ohne Bestätigung abgelehnt');
+  r = await api({ action: 'account_delete', confirm: 'LÖSCHEN' }, 't2'); ok(r.status === 400 && !world.deleted.length, 'Konto löschen: ohne Hinweis auf Aufbewahrungspflicht abgelehnt');
+  r = await api({ action: 'account_delete', confirm: 'LÖSCHEN', retention_ack: true }, null); ok(r.status === 401 && !world.deleted.length, 'Konto löschen: ohne Anmeldung abgelehnt');
+  r = await api({ action: 'account_delete', confirm: 'LÖSCHEN', retention_ack: true }, 't2'); ok(r.status === 200 && world.deleted.join() === 'u2', 'Konto löschen: nur das eigene Konto, sofort');
   r = await api({ action: 'unbekannt' }, 't1'); ok(r.status === 400, 'Unbekannte Aktion abgelehnt');
 })();

@@ -642,6 +642,8 @@ function dutOccAfter(fx, after) {
 }
 function dutFirstDue(d) {
   if (d.recur === 'event') return null;
+  const r = d.due_rule || {};
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(r.date || ''))) return r.date > todayISO() ? r.date : addDays(todayISO(), 14);
   const fx = dutFixed(d); if (fx) return dutOccAfter(fx, addDays(todayISO(), -1));
   const days = Number((d.due_rule || {}).days);
   return addDays(todayISO(), Number.isFinite(days) ? Math.max(0, Math.min(365, days)) : 30);

@@ -1,5 +1,5 @@
 /* =================== Paket B (08.11.2026): Probezeit, Speicher, Konto sichern, Abo =================== */
-// Ablauf: Start ohne E-Mail → 4 Wochen voller Umfang (+ 7 Tage nach der Nachricht „endet in 7 Tagen“) → 30 Tage nur lesen → Löschung.
+// Ablauf: Start ohne E-Mail → 4 Wochen voller Umfang (+ 7 Tage nach der Nachricht „endet in 7 Tagen“) → 12 Monate Archiv (nur lesen) → Löschung.
 // Die Regeln selbst stehen in der Datenbank (supabase/schema.sql: eoffis_plan, eoffis_account); hier nur Anzeige und Hinweise.
 const KTO_TEXT = {
   de: {
@@ -378,3 +378,166 @@ document.addEventListener('click', (e) => {
     <button class="btn sec" data-a="logout" data-sure="1">${esc(t('kto.accYes'))}</button>`);
 }, true);
 document.addEventListener('click', (e) => { if (e.target.closest('[data-a="ktoAccount"]')) ktoAccount(); });
+
+/* ---------- Archiv, „Alles herunterladen“ und Löschen auf Wunsch (27.11.2026) ----------
+   Nach der Probezeit 12 Monate Archiv (nur lesen), Erinnerungen, letzte Warnung 30 Tage vorher, dann Löschung (Server).
+   Jederzeit: alles als ZIP herunterladen (Datenübertragbarkeit) und – nach Hinweis auf die Aufbewahrungspflicht und
+   ausdrücklicher Bestätigung – Konto samt Unterlagen sofort löschen. */
+const KTO_DEL = {
+  de: { dlAll: 'Alles herunterladen', dlBusy: 'Ihr Paket wird erstellt …', dlTitle: 'Alle Unterlagen herunterladen',
+    retention: 'Gesetzliche Aufbewahrungspflicht: Rechnungen und Buchungsbelege müssen in der Regel 8 Jahre, Bücher, Jahresabschlüsse und bestimmte weitere Unterlagen 10 Jahre aufbewahrt werden (§ 147 AO, § 257 HGB). Die Aufbewahrung liegt in Ihrer Verantwortung – laden Sie deshalb alles herunter und bewahren Sie es sicher auf.',
+    dlText: 'Sie erhalten eine ZIP-Datei mit allen Unterlagen als PDF (nach Ordner und Jahr sortiert), einer Übersicht als Tabelle und allen Daten (Fristen, Inventar, Pflichten, Verträge) zum Weiterverwenden.',
+    delBtn: 'Konto und alle Unterlagen löschen', delTitle: 'Konto endgültig löschen',
+    delText: 'Damit werden Ihr Konto und alle Unterlagen sofort und endgültig gelöscht. Das lässt sich nicht rückgängig machen.',
+    delAck: 'Ich habe meine Unterlagen heruntergeladen oder muss sie nicht mehr aufbewahren.', delWord: 'LÖSCHEN', delType: 'Zur Bestätigung bitte {{w}} eingeben:',
+    delGo: 'Endgültig löschen', cancel: 'Abbrechen', delFail: 'Löschen hat nicht geklappt: {{msg}}', delDone: 'Ihr Konto und alle Unterlagen wurden gelöscht.',
+    readme: 'eOffis – alle Ihre Unterlagen, Stand {{date}}\r\n\r\nUnterlagen/  Ihre Schreiben und Belege als PDF bzw. E-Rechnung (XML), nach Ordner und Jahr sortiert\r\nUebersicht.csv  Liste aller Unterlagen (öffnen mit Excel, Numbers oder LibreOffice)\r\nDaten/eoffis_daten.json  alle Daten (Fristen, Inventar, Pflichten, Verträge, Einstellungen) zum Weiterverwenden\r\n\r\n{{ret}}\r\n\r\nHinweis: Keine Rechtsberatung. Fragen zur Aufbewahrung klären Sie bitte mit Ihrem Steuerberater.' },
+  tr: { dlAll: 'Her şeyi indir', dlBusy: 'Paketiniz hazırlanıyor …', dlTitle: 'Tüm belgeleri indir',
+    retention: 'Yasal saklama yükümlülüğü (Almanya): Faturalar ve muhasebe belgeleri genellikle 8 yıl, defterler, yıllık mali tablolar ve bazı diğer belgeler 10 yıl saklanmalıdır (§ 147 AO, § 257 HGB). Saklama sizin sorumluluğunuzdadır – bu yüzden her şeyi indirip güvenli bir yerde saklayın.',
+    dlText: 'Tüm belgeleri PDF olarak (klasör ve yıla göre), bir tablo halinde genel bakışı ve tüm verileri (süreler, envanter, yükümlülükler, sözleşmeler) içeren bir ZIP dosyası alırsınız.',
+    delBtn: 'Hesabı ve tüm belgeleri sil', delTitle: 'Hesabı kalıcı olarak sil', delText: 'Hesabınız ve tüm belgeleriniz hemen ve kalıcı olarak silinir. Bu geri alınamaz.',
+    delAck: 'Belgelerimi indirdim veya artık saklamam gerekmiyor.', delWord: 'SİL', delType: 'Onaylamak için {{w}} yazın:',
+    delGo: 'Kalıcı olarak sil', cancel: 'Vazgeç', delFail: 'Silme başarısız: {{msg}}', delDone: 'Hesabınız ve tüm belgeleriniz silindi.',
+    readme: 'eOffis – tüm belgeleriniz, tarih {{date}}\r\n\r\nUnterlagen/  Belgeleriniz PDF veya e-fatura (XML) olarak, klasör ve yıla göre\r\nUebersicht.csv  Tüm belgelerin listesi\r\nDaten/eoffis_daten.json  Tüm veriler\r\n\r\n{{ret}}\r\n\r\nNot: Hukuki danışmanlık değildir.' },
+  pl: { dlAll: 'Pobierz wszystko', dlBusy: 'Paczka jest przygotowywana …', dlTitle: 'Pobierz wszystkie dokumenty',
+    retention: 'Ustawowy obowiązek przechowywania (Niemcy): faktury i dowody księgowe zwykle 8 lat, księgi, sprawozdania roczne i niektóre inne dokumenty 10 lat (§ 147 AO, § 257 HGB). Za przechowywanie odpowiadają Państwo – dlatego proszę pobrać wszystko i bezpiecznie przechowywać.',
+    dlText: 'Otrzymają Państwo plik ZIP ze wszystkimi dokumentami w PDF (wg folderu i roku), zestawieniem w tabeli i wszystkimi danymi (terminy, inwentarz, obowiązki, umowy).',
+    delBtn: 'Usuń konto i wszystkie dokumenty', delTitle: 'Trwale usuń konto', delText: 'Konto i wszystkie dokumenty zostaną natychmiast i trwale usunięte. Tego nie można cofnąć.',
+    delAck: 'Pobrałem/-am dokumenty lub nie muszę ich już przechowywać.', delWord: 'USUŃ', delType: 'Aby potwierdzić, wpisz {{w}}:',
+    delGo: 'Usuń trwale', cancel: 'Anuluj', delFail: 'Usuwanie nie powiodło się: {{msg}}', delDone: 'Konto i wszystkie dokumenty zostały usunięte.',
+    readme: 'eOffis – wszystkie dokumenty, stan {{date}}\r\n\r\nUnterlagen/  dokumenty jako PDF lub e-faktura (XML), wg folderu i roku\r\nUebersicht.csv  lista wszystkich dokumentów\r\nDaten/eoffis_daten.json  wszystkie dane\r\n\r\n{{ret}}\r\n\r\nUwaga: to nie jest porada prawna.' },
+  ru: { dlAll: 'Скачать всё', dlBusy: 'Пакет создаётся …', dlTitle: 'Скачать все документы',
+    retention: 'Законная обязанность хранения (Германия): счета и бухгалтерские документы, как правило, 8 лет, книги, годовые отчёты и некоторые другие документы 10 лет (§ 147 AO, § 257 HGB). За хранение отвечаете вы – поэтому скачайте всё и надёжно сохраните.',
+    dlText: 'Вы получите ZIP-файл со всеми документами в PDF (по папкам и годам), обзором в виде таблицы и всеми данными (сроки, инвентарь, обязанности, договоры).',
+    delBtn: 'Удалить аккаунт и все документы', delTitle: 'Удалить аккаунт навсегда', delText: 'Ваш аккаунт и все документы будут удалены сразу и навсегда. Отменить это нельзя.',
+    delAck: 'Я скачал(а) документы или мне больше не нужно их хранить.', delWord: 'УДАЛИТЬ', delType: 'Для подтверждения введите {{w}}:',
+    delGo: 'Удалить навсегда', cancel: 'Отмена', delFail: 'Не удалось удалить: {{msg}}', delDone: 'Ваш аккаунт и все документы удалены.',
+    readme: 'eOffis – все ваши документы, на {{date}}\r\n\r\nUnterlagen/  документы в PDF или e-счёт (XML), по папкам и годам\r\nUebersicht.csv  список всех документов\r\nDaten/eoffis_daten.json  все данные\r\n\r\n{{ret}}\r\n\r\nПримечание: это не юридическая консультация.' },
+  ar: { dlAll: 'تنزيل الكل', dlBusy: 'جارٍ إعداد الملف …', dlTitle: 'تنزيل جميع المستندات',
+    retention: 'واجب الحفظ القانوني (ألمانيا): تُحفظ الفواتير ومستندات المحاسبة عادةً 8 سنوات، والدفاتر والحسابات الختامية وبعض المستندات الأخرى 10 سنوات (§ 147 AO، § 257 HGB). الحفظ مسؤوليتك – لذلك نزّل كل شيء واحفظه بأمان.',
+    dlText: 'ستحصل على ملف ZIP يضم جميع المستندات بصيغة PDF (حسب المجلد والسنة) وجدولًا عامًا وجميع البيانات (المواعيد، الجرد، الالتزامات، العقود).',
+    delBtn: 'حذف الحساب وجميع المستندات', delTitle: 'حذف الحساب نهائيًا', delText: 'سيُحذف حسابك وجميع مستنداتك فورًا ونهائيًا. لا يمكن التراجع عن ذلك.',
+    delAck: 'لقد نزّلت مستنداتي أو لم أعد ملزمًا بحفظها.', delWord: 'حذف', delType: 'للتأكيد اكتب {{w}}:',
+    delGo: 'حذف نهائي', cancel: 'إلغاء', delFail: 'تعذّر الحذف: {{msg}}', delDone: 'تم حذف حسابك وجميع المستندات.',
+    readme: 'eOffis – جميع مستنداتك، بتاريخ {{date}}\r\n\r\nUnterlagen/  المستندات بصيغة PDF أو فاتورة إلكترونية (XML)\r\nUebersicht.csv  قائمة بجميع المستندات\r\nDaten/eoffis_daten.json  جميع البيانات\r\n\r\n{{ret}}\r\n\r\nملاحظة: ليست استشارة قانونية.' },
+  ro: { dlAll: 'Descărcați tot', dlBusy: 'Pachetul se pregătește …', dlTitle: 'Descărcați toate documentele',
+    retention: 'Obligația legală de păstrare (Germania): facturile și documentele contabile de regulă 8 ani, registrele, situațiile anuale și alte documente 10 ani (§ 147 AO, § 257 HGB). Păstrarea este responsabilitatea dumneavoastră – de aceea descărcați tot și păstrați în siguranță.',
+    dlText: 'Primiți un fișier ZIP cu toate documentele în PDF (pe dosare și ani), o listă sub formă de tabel și toate datele (termene, inventar, obligații, contracte).',
+    delBtn: 'Ștergeți contul și toate documentele', delTitle: 'Ștergeți definitiv contul', delText: 'Contul și toate documentele vor fi șterse imediat și definitiv. Acest lucru nu poate fi anulat.',
+    delAck: 'Am descărcat documentele sau nu mai trebuie să le păstrez.', delWord: 'ȘTERGE', delType: 'Pentru confirmare, introduceți {{w}}:',
+    delGo: 'Ștergeți definitiv', cancel: 'Anulare', delFail: 'Ștergerea nu a reușit: {{msg}}', delDone: 'Contul și toate documentele au fost șterse.',
+    readme: 'eOffis – toate documentele, la {{date}}\r\n\r\nUnterlagen/  documentele ca PDF sau e-factură (XML), pe dosare și ani\r\nUebersicht.csv  lista tuturor documentelor\r\nDaten/eoffis_daten.json  toate datele\r\n\r\n{{ret}}\r\n\r\nNotă: nu reprezintă consultanță juridică.' },
+};
+for (const l of Object.keys(KTO_DEL)) { I18N[l] = I18N[l] || {}; I18N[l].kto = Object.assign({}, I18N[l].kto || {}, KTO_DEL[l]); }
+Object.assign(I18N.de.kto, {
+  roBanner: 'Testzeitraum abgelaufen – Ihre Unterlagen liegen im Archiv: ansehen und herunterladen bis {{date}}.',
+  roText: 'Ihr Testzeitraum ist abgelaufen. Ihre Unterlagen bleiben bis {{date}} im Archiv: ansehen und herunterladen, aber nicht ändern. Neues scannen und auswerten können Sie mit einem Abo.',
+});
+
+/** Alles als ZIP: Unterlagen/<Ordner>/<Jahr>/…, Uebersicht.csv, Daten/eoffis_daten.json, LIESMICH.txt */
+async function ktoExportAll() {
+  if (S.ktoDl) return; S.ktoDl = true; toast(t('kto.dlBusy'));
+  try {
+    const zip = new JSZip(), data = { exported_at: new Date().toISOString(), profile: await store.getProfile() };
+    for (const c of COLS) if (c !== 'pages') data[c] = await store.all(c);
+    const cell = (v) => `"${csvSafe(v).replace(/"/g, '""')}"`, nf = (n) => (n == null || n === '' || isNaN(Number(n)) ? '' : Number(n).toFixed(2).replace('.', ','));
+    const rows = [['Nr', 'Ordner', 'Datei', 'Titel', 'Art', 'Absender', 'Rechnungsnr', 'Netto', 'USt', 'Brutto', 'Währung', 'Fällig', 'Bezahlt', 'Erfasst', 'Archiviert', 'SHA-256'].map(cell).join(';')];
+    const docs = (data.docs || []).slice().sort((a, b) => String(a.folder || '').localeCompare(String(b.folder || '')) || String(a.created_at || '').localeCompare(String(b.created_at || '')));
+    const used = new Set();
+    for (const [i, d] of docs.entries()) {
+      let file = '';
+      if (d.page_count || d.file_kind === 'xml') {
+        const pages = (await store.where('pages', 'docId', d.id)).sort((a, b) => a.idx - b.idx);
+        if (pages.length) {
+          const year = (String(d.doc_date || d.invoice_date || d.created_at || '').match(/^\d{4}/) || ['ohne_Jahr'])[0];
+          const folder = safeName(t('docs.folder_' + d.folder) || d.folder || 'Sonstiges') || 'Sonstiges';
+          file = `Unterlagen/${folder}/${year}/${String(i + 1).padStart(4, '0')}_${safeName(d.title || 'Dokument') || 'Dokument'}.${d.file_kind === 'xml' ? 'xml' : 'pdf'}`;
+          while (used.has(file)) file = file.replace(/(\.\w+)$/, '_2$1');
+          used.add(file);
+          zip.file(file, d.file_kind === 'xml' ? (pages[0] && pages[0].xml) || '' : pagesToPdf(pages));
+        }
+      }
+      rows.push([i + 1, t('docs.folder_' + d.folder), file, d.title, d.doc_type, d.sender, d.invoice_number, nf(d.amount_net), nf(d.vat_amount), nf(d.amount_gross), normCur(d.currency) || '', fmtDate(d.due_date), d.paid ? 'ja' : 'nein', fmtDate(d.created_at), d.archived ? 'ja' : 'nein', d.sha256].map(cell).join(';'));
+    }
+    zip.file('Uebersicht.csv', '﻿' + rows.join('\r\n'));
+    zip.file('Daten/eoffis_daten.json', JSON.stringify(data, null, 1));
+    zip.file('LIESMICH.txt', t('kto.readme', { date: fmtDate(todayISO()), ret: t('kto.retention') }));
+    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+    await saveFile(`eOffis_Alles_${todayISO()}.zip`, blob);
+  } catch (e) { console.error(e); toast(t('web.saveFailed', { msg: errText(e) })); }
+  finally { S.ktoDl = false; }
+}
+function ktoDlDialog() {
+  const H = KH();
+  showModal(`<h2>${esc(t('kto.dlTitle'))}</h2><p>${esc(t('kto.dlText'))}</p><p class="banner">${esc(t('kto.retention'))}</p>
+    <button class="btn" data-a="ktoDl">${esc(t('kto.dlAll'))}</button>
+    ${H ? `<button class="btn sec" data-a="ktoDel">${esc(t('kto.delBtn'))}</button>` : ''}`);
+}
+function ktoDelDialog() {
+  showModal(`<h2>${esc(t('kto.delTitle'))}</h2><p>${esc(t('kto.delText'))}</p><p class="banner">${esc(t('kto.retention'))}</p>
+    <button class="btn sec" data-a="ktoDl">${esc(t('kto.dlAll'))}</button>
+    <label class="small" style="display:flex;gap:8px;align-items:flex-start;margin:12px 0"><input type="checkbox" id="kto_ack"> <span>${esc(t('kto.delAck'))}</span></label>
+    <label class="small" for="kto_word">${esc(t('kto.delType', { w: t('kto.delWord') }))}</label>
+    <input id="kto_word" autocomplete="off" autocapitalize="characters">
+    <p class="small" id="kto_derr" role="alert"></p>
+    <button class="btn" data-a="ktoDelGo" style="background:#c62828">${esc(t('kto.delGo'))}</button>
+    <button class="btn sec" data-a="ktoClose">${esc(t('kto.cancel'))}</button>`);
+}
+async function ktoDelGo(btn) {
+  const H = KH(), err = $('#kto_derr');
+  const ack = $('#kto_ack') && $('#kto_ack').checked, word = (val('kto_word') || '').trim().toLocaleUpperCase();
+  if (!ack) { err.textContent = t('kto.delAck'); return; }
+  if (word !== t('kto.delWord').toLocaleUpperCase() && word !== 'LÖSCHEN') { err.textContent = t('kto.delType', { w: t('kto.delWord') }); $('#kto_word').focus(); return; }
+  btn.disabled = true;
+  try {
+    await H.fn('eoffis-api', { action: 'account_delete', confirm: 'LÖSCHEN', retention_ack: true });
+    $('#layer').innerHTML = ''; toast(t('kto.delDone'));
+    await H.logout();
+  } catch (x) { err.textContent = t('kto.delFail', { msg: errText(x) }); btn.disabled = false; }
+}
+// Archiv-Hinweis oben: zusätzlich „Alles herunterladen“
+{
+  const orig = banners;
+  banners = function () {
+    const h = orig.apply(this, arguments);
+    if (!KH() || !ktoRO()) return h;
+    return h.replace(/(<div class="banner warn kto-b">[\s\S]*?)(<\/div>)/, `$1<button class="btn sm sec" data-a="ktoDlDlg">${esc(t('kto.dlAll'))}</button>$2`);
+  };
+  // Konto-Fenster: Herunterladen und Löschen für jedes Konto
+  const origAcc = ktoAccount;
+  ktoAccount = function () {
+    origAcc.apply(this, arguments);
+    const m = $('#layer [data-a="logout"]');
+    if (m) m.insertAdjacentHTML('beforebegin', `<button class="btn sec" data-a="ktoDlDlg">${esc(t('kto.dlAll'))}</button>`);
+    const box = m && m.parentElement;
+    if (box) box.insertAdjacentHTML('beforeend', `<p class="small" style="margin-top:14px"><a href="#" data-a="ktoDel">${esc(t('kto.delBtn'))}</a></p>`);
+  };
+  // Nur-lesen-Hinweis: auch dort herunterladen
+  const origBl = ktoBlocked;
+  ktoBlocked = function (code) {
+    origBl.apply(this, arguments);
+    if (code === 'read_only') { const b = $('#layer [data-go="abo"]'); if (b) b.insertAdjacentHTML('afterend', `<button class="btn sec" data-a="ktoDlDlg">${esc(t('kto.dlAll'))}</button>`); }
+  };
+  // ?export=1 aus der E-Mail öffnet das Herunterladen
+  const origR = render;
+  let done = false;
+  render = function () {
+    const r = origR.apply(this, arguments);
+    if (!done && S.loaded && S.profile && /[?&]export=1\b/.test(location.search)) {
+      done = true; try { history.replaceState(null, '', location.pathname); } catch { /* egal */ }
+      setTimeout(ktoDlDialog, 0);
+    }
+    return r;
+  };
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('[data-a]');
+  if (!a || a.disabled) return;
+  switch (a.dataset.a) {
+    case 'ktoDlDlg': e.preventDefault(); return ktoDlDialog();
+    case 'ktoDl': e.preventDefault(); return ktoExportAll();
+    case 'ktoDel': e.preventDefault(); return ktoDelDialog();
+    case 'ktoDelGo': e.preventDefault(); return ktoDelGo(a);
+    case 'ktoClose': e.preventDefault(); $('#layer').innerHTML = ''; return undefined;
+  }
+});

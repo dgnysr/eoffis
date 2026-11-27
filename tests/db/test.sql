@@ -145,9 +145,9 @@ reset role;
 insert into auth.users (id, is_anonymous, email, created_at) values
   ('44444444-4444-4444-4444-444444444444', false, 'd@test.de', now() - interval '28 days 1 hour'),
   ('55555555-5555-5555-5555-555555555555', true, null, now() - interval '36 days'),
-  ('66666666-6666-6666-6666-666666666666', false, 'f@test.de', now() - interval '59 days'),
-  ('77777777-7777-7777-7777-777777777777', false, 'g@test.de', now() - interval '66 days'),
-  ('88888888-8888-8888-8888-888888888888', false, 'h@test.de', now() - interval '400 days'),
+  ('66666666-6666-6666-6666-666666666666', false, 'f@test.de', now() - interval '371 days'),
+  ('77777777-7777-7777-7777-777777777777', false, 'g@test.de', now() - interval '401 days'),
+  ('88888888-8888-8888-8888-888888888888', false, 'h@test.de', now() - interval '500 days'),
   ('99999999-9999-9999-9999-999999999999', false, 'i@test.de', now() - interval '27 days');
 insert into subscriptions (owner, status) values ('88888888-8888-8888-8888-888888888888', 'active');
 set role service_role;
@@ -156,14 +156,32 @@ do $$ declare got text; begin
   perform t_ok('Täglicher Lauf: richtige Nachrichten, ohne Warnung keine Löschung', got = '4:warn,5:end,6:delete_warn,7:delete_warn', got);
   insert into subscriptions (owner, notified_delwarn) values ('77777777-7777-7777-7777-777777777777', now() - interval '3 days') on conflict (owner) do update set notified_delwarn = now() - interval '3 days';
   select string_agg(left(owner::text, 1) || ':' || stage, ',' order by owner) into got from eoffis_trial_due() where stage is not null;
-  perform t_ok('Löschung frühestens 7 Tage nach der Warnung', got = '4:warn,5:end,6:delete_warn', got);
-  update subscriptions set notified_delwarn = now() - interval '8 days' where owner = '77777777-7777-7777-7777-777777777777';
+  perform t_ok('Löschung frühestens 30 Tage nach der Warnung', got = '4:warn,5:end,6:delete_warn', got);
+  update subscriptions set notified_delwarn = now() - interval '31 days' where owner = '77777777-7777-7777-7777-777777777777';
   select string_agg(left(owner::text, 1) || ':' || stage, ',' order by owner) into got from eoffis_trial_due() where stage is not null;
   perform t_ok('Täglicher Lauf: Löschung nach Warnung', got = '4:warn,5:end,6:delete_warn,7:delete', got);
   insert into subscriptions (owner, notified_warn) values ('44444444-4444-4444-4444-444444444444', now()) on conflict (owner) do update set notified_warn = now();
   insert into subscriptions (owner, notified_end) values ('55555555-5555-5555-5555-555555555555', now()) on conflict (owner) do update set notified_end = now();
   select string_agg(left(owner::text, 1) || ':' || stage, ',' order by owner) into got from eoffis_trial_due() where stage is not null;
   perform t_ok('Jede Nachricht nur einmal', got = '6:delete_warn,7:delete', got);
+end $$;
+reset role;
+-- Archiv 12 Monate: Erinnerung alle 90 Tage; alte Löschwarnung (frühere Regel) zählt nicht
+insert into auth.users (id, is_anonymous, email, created_at) values
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', false, 'k@test.de', now() - interval '200 days'),
+  ('cccccccc-cccc-cccc-cccc-cccccccccccc', false, 'l@test.de', now() - interval '402 days');
+insert into subscriptions (owner, notified_end) values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', now() - interval '91 days');
+insert into subscriptions (owner, notified_end, notified_delwarn) values ('cccccccc-cccc-cccc-cccc-cccccccccccc', now() - interval '360 days', now() - interval '300 days');
+set role service_role;
+do $$ declare b text; c text; begin
+  select stage into b from eoffis_trial_due() where owner = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+  select stage into c from eoffis_trial_due() where owner = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+  perform t_ok('Archiv: Erinnerung nach 90 Tagen', b = 'remind', coalesce(b, 'null'));
+  perform t_ok('Alte Löschwarnung zählt nicht: erst neue Warnung', c = 'delete_warn', coalesce(c, 'null'));
+  update subscriptions set notified_remind = now() - interval '10 days' where owner = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+  select stage into b from eoffis_trial_due() where owner = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+  perform t_ok('Archiv: Erinnerung nicht täglich', b is null, coalesce(b, 'null'));
+  perform t_ok('Archiv 12 Monate', (eoffis_plan()->>'readonly_days')::int = 365 and (eoffis_plan()->>'delete_warn_days')::int = 30, '');
 end $$;
 reset role;
 insert into auth.users (id, is_anonymous, email, created_at) values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', false, 'j@test.de', now() - interval '90 days');
@@ -196,6 +214,9 @@ do $$ begin
   perform t_ok('Pflichtenlisten: jede Vorlage mit Titel, Nachweis/Grundlage und gültiger Regel', not exists (select 1 from duty_templates where coalesce(title->>'de', '') = '' or (proof is null and legal_ref is null)
     or (recur = 'every_n_months' and every_months is null) or (recur = 'yearly' and not (due_rule ? 'month' or due_rule ? 'days' or due_rule ? 'months'))));
   perform t_ok('Juwelier: Geldwäsche (goAML, Risikoanalyse) + Einzelhandel + Allgemein', (select count(*) from duty_list(array['juwelier']) where id in ('juwelier.goaml','juwelier.gwg_risiko','einzelhandel.waage','alle.steuererklaerung')) = 4);
+  perform t_ok('EU-Geldwäscheverordnung ab 10.07.2027 bei Juwelier und Makler (Stichtag fest)', (select count(*) from duty_list(array['juwelier','immobilienmakler']) where id in ('juwelier.amlr_2027','immobilienmakler.amlr_2027') and applies and description->>'de' like '%10. Juli 2027%') = 2
+    and not exists (select 1 from duty_list(array['friseur']) where id like '%amlr%') and (select due_rule->>'date' from duty_templates where id = 'juwelier.amlr_2027') = '2027-06-01');
+  perform t_ok('MaBV: Prüfbericht oder Negativerklärung für jeden Makler, Form bestätigt die IHK', (select applies and description->>'de' like '%Negativerklärung%IHK%' from duty_list(array['immobilienmakler']) where id = 'immobilienmakler.mabv_pruefung'));
   perform t_ok('Makler: § 34c, Weiterbildung, Energieausweis', (select count(*) from duty_list(array['immobilienmakler']) where id in ('immobilienmakler.erlaubnis','immobilienmakler.weiterbildung','immobilienmakler.energieausweis')) = 3);
   perform t_ok('Friseur mit 2 Mitarbeitern: Hautschutz trifft zu, Juwelier-Pflichten nicht dabei', (select applies from duty_list(array['friseur'], '{"employees":2}') where id = 'friseur.hautschutz')
     and not exists (select 1 from duty_list(array['friseur']) where id like 'juwelier.%'));

@@ -1059,6 +1059,7 @@ function docStep1(d, st) {
     ${d.explanation ? `<div class="card"><h2>${esc(t('doc.explanation'))}</h2><p class="prose">${esc(d.explanation)}</p>
       ${d.page_count && S.sample && d.file_kind !== 'xml' ? `<button class="btn sm ghost" data-a="analyze">${esc(t('doc.reanalyze'))}</button>` : ''}</div>` : ''}
     ${(d.invoice_checks || []).length ? `<div class="sec-h">${esc(t('web.checksTitle'))}</div><div class="group">${d.invoice_checks.map((c) => `<div class="cell noicon" style="cursor:default"><span class="pill c-${c.status === 'present' ? 'green' : c.status === 'missing' ? 'red' : 'orange'}">${esc(t('web.st_' + c.status))}</span><span class="cx"><span class="ct">${esc(c.label)}</span>${c.detail ? `<span class="cs" style="display:block">${esc(c.detail)}</span>` : ''}</span></div>`).join('')}</div><p class="muted small">${esc(t('web.checksNote'))}</p>` : ''}
+    ${(d.legal_hints || []).length ? `<div class="sec-h">${esc(t('unt.legalTitle'))}</div><div class="group">${d.legal_hints.map((x) => `<div class="cell noicon" style="cursor:default"><span class="pill c-orange">§</span><span class="cx"><span class="ct">${esc(x.hint)}</span>${x.law ? `<span class="cs" style="display:block">${esc(x.law)}</span>` : ''}</span></div>`).join('')}</div><p class="muted small">${esc(t('unt.legalNote'))}</p>` : ''}
     ${d.is_contract || d.contract_end || d.cancellation_date || d.contract_number || d.contract_terms ? `<div class="card"><h2>${esc(t('web.contract'))}</h2><dl class="kv">
       ${d.contract_number ? `<dt>${esc(t('web.contractNo'))}</dt><dd class="mono">${esc(d.contract_number)}</dd>` : ''}
       ${d.contract_end ? `<dt>${esc(t('web.contractEnd'))}</dt><dd class="num">${esc(fmtDate(d.contract_end))}</dd>` : ''}
@@ -1169,13 +1170,15 @@ Schreibe "explanation" (2–5 Sätze, ohne Fachjargon) und "next_steps" (1–5 k
 Verträge: "contract_end" (Vertragsende), "cancellation_date" (letzter Tag, an dem eine Kündigung zugehen muss – NICHT Vertragsende), "contract_number", "contract_terms" (Laufzeit, Verlängerung, Kündigungsform, Frist), "contract_party" (Vertragspartner/Versicherer), "contract_start", "notice_period" (z. B. "3 Monate zum Laufzeitende"), "auto_renew" (true/false), "cost_amount" (Beitrag/Kosten je Zahlung, Zahl), "cost_interval" ("monthly"|"quarterly"|"yearly"|"once"), "coverage" (Leistung/Versicherungsschutz in einem kurzen Satz) – nur wenn belegt, sonst null.
 Skonto: "discount_date", "discount_percent" (Zahl), "discount_terms" – nur wenn genannt.
 Rechnungen: "invoice_checks" prüft die Pflichtangaben nach § 14 Abs. 4 UStG (Name/Anschrift beider Parteien, Steuernummer oder USt-IdNr., Ausstellungsdatum, Rechnungsnummer, Menge/Art der Leistung, Leistungsdatum, Entgelt nach Steuersätzen, Steuersatz und Steuerbetrag oder Befreiungshinweis) und rechnet die Summen nach. Kleinbetragsrechnung bis 250 € nach § 33 UStDV vereinfacht. Rechnungen ohne Umsatzsteuer sind korrekt, wenn ein Grund genannt ist – Kleinunternehmer (§ 19 UStG), „Steuerschuldnerschaft des Leistungsempfängers“ (Reverse-Charge, § 13b UStG; bei EU-Leistungen mit USt-IdNr. beider Seiten), steuerfreie innergemeinschaftliche Lieferung oder Ausfuhr: dann "vat_amount" 0 und den Hinweis als "present" werten; fehlt der Grund, "missing". Bei Rechnungen in fremder Währung muss der Steuerbetrag auch in Euro angegeben sein (§ 16 Abs. 6 UStG). Stornorechnungen und Gutschriften/Korrekturen, die eine frühere Rechnung an den Betrieb mindern: Beträge negativ angeben, "payment_required" false. Jeder Eintrag {"label","status":"present"|"missing"|"unclear","detail"} auf ${LANG_NAMES[lang]}. Bei Nicht-Rechnungen leere Liste. Das ist keine rechtsverbindliche Freigabe.
+"legal_hints": gesetzliche Auffälligkeiten, die der Betrieb kennen sollte (höchstens 5, sonst leere Liste) – nur wenn das Dokument selbst Anlass gibt, z. B.: Barzahlung ab 10.000 € oder beim An-/Verkauf von Edelmetallen ab 2.000 € (Identifizierungspflicht nach GwG; ab 10.07.2027 EU-weit keine Barzahlung ab 10.000 €), Barzahlung beim Immobilienkauf (in Deutschland verboten), Mahn-/Inkassokosten oder Verzugszinsen auffällig hoch, gesetzte Frist kürzer als die gesetzliche (z. B. Einspruch gegen Steuerbescheide 1 Monat), Bescheid ohne Rechtsbehelfsbelehrung, Verbrauchervertrag ohne Widerrufsbelehrung oder mit unzulässig langer Laufzeit/Verlängerung, Arbeitsvertrag möglicherweise unter Mindestlohn oder ohne wesentliche Angaben (Nachweisgesetz), Kassenbeleg ohne Pflichtangaben, Datenschutz (z. B. unnötige Ausweiskopie). Fehlende Rechnungsangaben stehen schon in "invoice_checks" – hier nicht wiederholen. Jeder Eintrag {"hint": ein bis zwei Sätze auf ${LANG_NAMES[lang]}: was auffällt und was der Betrieb tun kann, "law": Vorschrift oder null}. Vorsichtig formulieren („möglicherweise“, „bitte prüfen lassen“), nichts erfinden, keine Rechtsberatung.
+"renewal_months": bei Verträgen, die sich automatisch verlängern, um wie viele Monate (Zahl, z. B. 12) – sonst null.
 "ocr_text": der vollständig lesbare Originaltext (höchstens 15000 Zeichen) für die Volltextsuche.
 "folder" ist einer von: ${FOLDERS.join(', ')} – firma = Firmen-Stammdaten (Gewerbeanmeldung, Handelsregisterauszug, Ausweis des Inhabers, Zuteilung Steuernummer/USt-IdNr., Gesellschaftsvertrag), finanzamt = Steuerbescheide und Schreiben des Finanzamts, buchhaltung = Buchhaltungsbelege (Eingangsrechnungen, Quittungen/Kassenbons, Lieferscheine, Kontoauszüge, Gutschriften), bank = Bank- und Kreditverträge, Schreiben der Bank (außer Kontoauszügen), versicherungen = Versicherungspolicen und -schreiben, personal = Arbeitsverträge/Lohn/Sozialversicherung, behoerden = sonstige Behörden/Kammern, mietvertraege = Miete/Pacht. "dates[].kind" ist einer von: payment, reply, contract, cancellation, skonto, other; "date" ist null, wenn kein eindeutiges Datum genannt ist.
 Vorauszahlungsbescheid des Finanzamts oder der Gemeinde (Einkommensteuer, Gewerbesteuer, Körperschaftsteuer, Kirchensteuer, Solidaritätszuschlag): "prepayments" listet jede künftige Vorauszahlung {"tax": Steuerart auf Deutsch, "due_date": "YYYY-MM-DD", "amount": Zahl}; diese Termine NICHT zusätzlich in "dates". Sonst leere Liste.
 Buchhaltung: "acc_type" ist "rechnung" (Eingangsrechnung an den Betrieb), "quittung" (Quittung, Kassenbon, Tank-/Bewirtungsbeleg), "lieferschein", "kontoauszug", "gutschrift" oder "none" (kein Buchhaltungsbeleg, z. B. Behördenschreiben, Vertrag, Mahnung ohne neue Rechnung). "document_number": Nummer dieses Belegs (Rechnungs-, Lieferschein-, Quittungsnummer) oder null. "reference_numbers": im Beleg genannte andere Nummern, mit denen er zu anderen Belegen gehört (Lieferschein-, Auftrags-, Bestell-, Rechnungsnummern), sonst leere Liste.
 ${INV_PROMPT}
 Antworte nur mit einem JSON-Objekt dieser Form:
-{"title":string,"assets":[{"name":string,"category":string,"manufacturer":string|null,"model":string|null,"serial_number":string|null,"quantity":number,"unit_price_net":number|null,"unit_price_gross":number|null,"warranty_months":number|null,"electrical":boolean}],"prepayments":[{"tax":string,"due_date":string,"amount":number}],"acc_type":string,"document_number":string|null,"reference_numbers":[string],"doc_type":string,"sender":string|null,"sender_address":string|null,"recipient":string|null,"recipient_address":string|null,"invoice_number":string|null,"amount_gross":number|null,"amount_net":number|null,"vat_amount":number|null,"currency":string|null,"payment_required":boolean,"payment_due_date":string|null,"iban":string|null,"bic":string|null,"payment_reference":string|null,"is_contract":boolean,"is_incoming_invoice":boolean,"folder":string,"explanation":string,"next_steps":[string],"dates":[{"kind":string,"date":string|null,"description":string}],"document_date":string|null,"suggested_action":{"type":string,"question":string},"action_needed":boolean,"suggested_task":string,"response_recipient":string|null,"response_address":string|null,"response_reference":string|null,"response_subject":string|null,"recipient_email":string|null,"contract_end":string|null,"cancellation_date":string|null,"contract_number":string|null,"contract_terms":string|null,"contract_party":string|null,"contract_start":string|null,"notice_period":string|null,"auto_renew":boolean|null,"cost_amount":number|null,"cost_interval":string|null,"coverage":string|null,"discount_date":string|null,"discount_percent":number|null,"discount_terms":string|null,"invoice_checks":[{"label":string,"status":string,"detail":string}],"ocr_text":string}`;
+{"title":string,"assets":[{"name":string,"category":string,"manufacturer":string|null,"model":string|null,"serial_number":string|null,"quantity":number,"unit_price_net":number|null,"unit_price_gross":number|null,"warranty_months":number|null,"electrical":boolean}],"prepayments":[{"tax":string,"due_date":string,"amount":number}],"acc_type":string,"document_number":string|null,"reference_numbers":[string],"doc_type":string,"sender":string|null,"sender_address":string|null,"recipient":string|null,"recipient_address":string|null,"invoice_number":string|null,"amount_gross":number|null,"amount_net":number|null,"vat_amount":number|null,"currency":string|null,"payment_required":boolean,"payment_due_date":string|null,"iban":string|null,"bic":string|null,"payment_reference":string|null,"is_contract":boolean,"is_incoming_invoice":boolean,"folder":string,"explanation":string,"next_steps":[string],"dates":[{"kind":string,"date":string|null,"description":string}],"document_date":string|null,"suggested_action":{"type":string,"question":string},"action_needed":boolean,"suggested_task":string,"response_recipient":string|null,"response_address":string|null,"response_reference":string|null,"response_subject":string|null,"recipient_email":string|null,"contract_end":string|null,"cancellation_date":string|null,"contract_number":string|null,"contract_terms":string|null,"contract_party":string|null,"contract_start":string|null,"notice_period":string|null,"auto_renew":boolean|null,"cost_amount":number|null,"cost_interval":string|null,"coverage":string|null,"discount_date":string|null,"discount_percent":number|null,"discount_terms":string|null,"invoice_checks":[{"label":string,"status":string,"detail":string}],"legal_hints":[{"hint":string,"law":string|null}],"renewal_months":number|null,"ocr_text":string}`;
     const r = await aiJson(prompt, inp.images);
     if (!r || typeof r !== 'object') throw { code: 'invalid_json' };
     const docDate = (r.document_date && parseDate(r.document_date)) || todayISO();
@@ -1213,6 +1216,8 @@ Antworte nur mit einem JSON-Objekt dieser Form:
       cost_amount: typeof r.cost_amount === 'number' ? r.cost_amount : null, cost_interval: ['monthly', 'quarterly', 'yearly', 'once'].includes(r.cost_interval) ? r.cost_interval : null, coverage: r.coverage || null,
       discount_date: iso(r.discount_date), discount_percent: num(r.discount_percent), discount_terms: r.discount_terms || null,
       invoice_checks: Array.isArray(r.invoice_checks) ? r.invoice_checks.slice(0, 15).map((c) => ({ label: String(c.label || ''), status: ['present', 'missing', 'unclear'].includes(c.status) ? c.status : 'unclear', detail: String(c.detail || '') })) : [],
+      legal_hints: Array.isArray(r.legal_hints) ? r.legal_hints.filter((x) => x && (x.hint || typeof x === 'string')).slice(0, 5).map((x) => ({ hint: String(x.hint || x).slice(0, 400), law: x.law ? String(x.law).slice(0, 80) : null })) : [],
+      renewal_months: Number.isInteger(num(r.renewal_months)) && num(r.renewal_months) >= 1 && num(r.renewal_months) <= 120 ? num(r.renewal_months) : null,
       ocr_text: String(r.ocr_text || '').slice(0, 15000), assets_found: Array.isArray(r.assets) ? r.assets.slice(0, 30) : [],
       analyzed_at: nowIso(),
     }, 'KI-Analyse');
@@ -3652,12 +3657,13 @@ VIEWS.contract = {
   render() {
     const d = getDoc(S.params.id); if (!d) return '';
     const dl = d.cancellation_date ? daysUntil(d.cancellation_date) : null;
-    return `${dl !== null && dl >= 0 && dl <= 60 ? `<div class="banner warn">${esc(t('unt.ctrSoon', { count: dl }))}</div>` : ''}
+    return `${d.cancel_missed ? `<div class="banner warn">${esc(t('unt.ctrMissed', { old: fmtDate(d.cancel_missed), date: fmtDate(d.cancellation_date) }))}</div>` : ''}${dl !== null && dl >= 0 && dl <= 60 ? `<div class="banner warn">${esc(t('unt.ctrSoon', { count: dl }))}</div>` : ''}
       <div class="card">${field('ct_party', t('unt.ctrParty'), d.contract_party || d.sender || '')}${field('ct_no', t('unt.ctrNo'), d.contract_number || '')}
       <div class="grid2">${field('ct_start', t('unt.ctrStart'), d.contract_start ? fmtDate(d.contract_start) : '', `placeholder="${esc(t('common.dateHint'))}"`)}${field('ct_end', t('unt.ctrEnd'), d.contract_end ? fmtDate(d.contract_end) : '', `placeholder="${esc(t('common.dateHint'))}"`)}</div>
       ${field('ct_cancel', t('unt.ctrCancelDate'), d.cancellation_date ? fmtDate(d.cancellation_date) : '', `placeholder="${esc(t('common.dateHint'))}"`)}
       ${field('ct_notice', t('unt.ctrNotice'), d.notice_period || '', `placeholder="${esc(t('unt.ctrNoticeH'))}"`)}
       <label class="check"><input type="checkbox" id="ct_renew" ${d.auto_renew ? 'checked' : ''}>${esc(t('unt.ctrRenew'))}</label>
+      ${field('ct_renewm', t('unt.ctrRenewM'), d.renewal_months ? String(d.renewal_months) : '', 'inputmode="numeric" placeholder="12"')}
       <div class="grid2">${field('ct_cost', t('unt.ctrCost') + ' (€)', numStr(d.cost_amount), 'inputmode="decimal"')}<label class="f" for="ct_iv">${esc(t('unt.ctrInterval'))}<select class="in" id="ct_iv">${IV.map((k) => `<option value="${k}" ${(d.cost_interval || 'monthly') === k ? 'selected' : ''}>${esc(t('unt.iv_' + k))}</option>`).join('')}</select></label></div>
       ${area('ct_cov', t('unt.ctrCoverage'), d.coverage || '', 'style="min-height:60px"')}
       <button class="btn" data-a="ctrSave">${esc(t('common.save'))}</button></div>
@@ -3669,7 +3675,7 @@ async function ctrSave() {
   const d = getDoc(S.params.id);
   const dates = {}; for (const [k, f] of [['contract_start', 'ct_start'], ['contract_end', 'ct_end'], ['cancellation_date', 'ct_cancel']]) { const v = val(f).trim(); if (v && !parseDate(v)) { $('#' + f).focus(); return toast(t('common.invalidDate')); } dates[k] = v ? parseDate(v) : null; }
   const patch = Object.assign(dates, { contract_party: val('ct_party').trim() || null, contract_number: val('ct_no').trim() || null, notice_period: val('ct_notice').trim() || null,
-    auto_renew: $('#ct_renew').checked, cost_amount: parseMoney(val('ct_cost')), cost_interval: val('ct_iv'), coverage: val('ct_cov').trim() || null, is_contract: true });
+    auto_renew: $('#ct_renew').checked, renewal_months: (() => { const n = parseInt(val('ct_renewm'), 10); return n >= 1 && n <= 120 ? n : null; })(), cancel_missed: dates.cancellation_date && dates.cancellation_date === d.cancellation_date ? d.cancel_missed || null : null, cost_amount: parseMoney(val('ct_cost')), cost_interval: val('ct_iv'), coverage: val('ct_cov').trim() || null, is_contract: true });
   const saved = await persistDoc(d, patch, t('unt.ctrEdit'));
   // Kündigungsfrist als Frist pflegen (eine offene je Vertrag)
   const open = S.tasks.find((x) => x.document_id === d.id && x.kind === 'cancellation' && x.status !== 'done');
@@ -3853,6 +3859,52 @@ document.addEventListener('click', (e) => {
   guard(() => saveFile(`Verfahrensdokumentation_${safeName((S.profile && S.profile.company_name) || '')}_${(d.created_at || '').slice(0, 10)}.pdf`, vdPdf(d.vdoc_answers || {}, d.vdoc_kind, d.created_at)));
 });
 
+/* =================== Gesetzliche Hinweise beim Scannen + verpasste Kündigungsfrist (27.11.2026) =================== */
+// Hinweise kommen aus der KI-Auswertung (legal_hints, immer „kein Rechtsrat“). Verpasste Kündigungsfrist bei Verträgen,
+// die sich automatisch verlängern: nächste Kündigungsmöglichkeit wird von selbst berechnet und als Frist angelegt.
+const UNT_LEGAL = {
+  de: { legalTitle: 'Gesetzliche Hinweise', legalNote: 'Automatischer Hinweis, keine Rechtsberatung. Bitte von Steuerberater, Kammer oder Anwalt prüfen lassen.', ctrRenewM: 'Verlängert sich um (Monate)', ctrMissed: 'Kündigungsfrist am {{old}} verpasst – der Vertrag hat sich verlängert. Nächste Möglichkeit: {{date}} (als Frist eingetragen).', ctrNext: 'nächste Kündigung bis {{date}}' },
+  tr: { legalTitle: 'Yasal uyarılar', legalNote: 'Otomatik uyarı, hukuki danışmanlık değildir. Lütfen mali müşavir, oda veya avukata kontrol ettirin.', ctrRenewM: 'Uzama süresi (ay)', ctrMissed: '{{old}} tarihli iptal süresi kaçırıldı – sözleşme uzadı. Sonraki imkân: {{date}} (süre olarak eklendi).', ctrNext: 'sonraki iptal {{date}} tarihine kadar' },
+  pl: { legalTitle: 'Wskazówki prawne', legalNote: 'Automatyczna wskazówka, nie porada prawna. Prosimy o sprawdzenie przez doradcę podatkowego, izbę lub prawnika.', ctrRenewM: 'Przedłuża się o (miesiące)', ctrMissed: 'Termin wypowiedzenia {{old}} minął – umowa się przedłużyła. Następna możliwość: {{date}} (dodano jako termin).', ctrNext: 'następne wypowiedzenie do {{date}}' },
+  ru: { legalTitle: 'Правовые указания', legalNote: 'Автоматическое указание, не юридическая консультация. Пожалуйста, проверьте у налогового консультанта, в палате или у юриста.', ctrRenewM: 'Продлевается на (месяцев)', ctrMissed: 'Срок расторжения {{old}} пропущен – договор продлён. Следующая возможность: {{date}} (добавлено как срок).', ctrNext: 'следующее расторжение до {{date}}' },
+  ar: { legalTitle: 'تنبيهات قانونية', legalNote: 'تنبيه تلقائي وليس استشارة قانونية. يرجى التحقق لدى المستشار الضريبي أو الغرفة أو المحامي.', ctrRenewM: 'يتجدد لمدة (أشهر)', ctrMissed: 'فات موعد الإلغاء في {{old}} – تجدد العقد. الفرصة التالية: {{date}} (أُضيفت كموعد).', ctrNext: 'الإلغاء التالي حتى {{date}}' },
+  ro: { legalTitle: 'Indicații legale', legalNote: 'Indicație automată, nu consultanță juridică. Vă rugăm să verificați cu consultantul fiscal, camera sau un avocat.', ctrRenewM: 'Se prelungește cu (luni)', ctrMissed: 'Termenul de reziliere din {{old}} a fost ratat – contractul s-a prelungit. Următoarea posibilitate: {{date}} (adăugată ca termen).', ctrNext: 'următoarea reziliere până la {{date}}' },
+};
+for (const l of Object.keys(UNT_LEGAL)) { I18N[l] = I18N[l] || {}; I18N[l].unt = Object.assign({}, I18N[l].unt || {}, UNT_LEGAL[l]); }
+/** Monate zu YYYY-MM-DD addieren (Monatsende bleibt gültig: 31.01. + 1 Monat = 28./29.02.) */
+function untAddMonths(iso, n) {
+  const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number);
+  const last = new Date(y, m - 1 + n + 1, 0).getDate();
+  return toISO(new Date(y, m - 1 + n, Math.min(d, last)));
+}
+/** Nächste Kündigungsmöglichkeit nach einer verpassten Frist (null = nichts zu tun) */
+function ctrNextCancel(d, today = todayISO()) {
+  if (!d || d.archived || !d.auto_renew || !d.cancellation_date || d.cancellation_date >= today) return null;
+  const n = d.renewal_months >= 1 && d.renewal_months <= 120 ? d.renewal_months : 12;
+  let c = d.cancellation_date, e = d.contract_end || null;
+  for (let i = 0; i < 200 && c < today; i++) { c = untAddMonths(c, n); if (e) e = untAddMonths(e, n); }
+  return c >= today ? { cancellation_date: c, contract_end: e } : null;
+}
+async function ctrRollover() {
+  if (typeof ktoRO === 'function' && ktoRO()) return 0;
+  let n = 0;
+  for (const d of S.docs.filter(isContractDoc)) {
+    const nx = ctrNextCancel(d); if (!nx) continue;
+    try {
+      const saved = await persistDoc(d, Object.assign({ cancel_missed: d.cancellation_date }, nx), t('unt.ctrNext', { date: fmtDate(nx.cancellation_date) }));
+      const open = S.tasks.find((x) => x.document_id === d.id && x.kind === 'cancellation' && x.status !== 'done');
+      if (open) { const u = await saveVersioned('tasks', Object.assign({}, open, { due_date: nx.cancellation_date })); S.tasks[S.tasks.findIndex((k) => k.id === open.id)] = u; }
+      else S.tasks.push(await saveVersioned('tasks', taskFromDate(saved, { kind: 'cancellation', date: nx.cancellation_date, description: t('web.cancelBy') })));
+      n++;
+    } catch (e) { console.warn(e); }
+  }
+  return n;
+}
+{
+  const orig = reloadAll;
+  reloadAll = async function () { const r = await orig.apply(this, arguments); try { if (await ctrRollover()) { if (typeof ktoSafeRender === "function") ktoSafeRender(); else render(); } } catch (e) { console.warn(e); } return r; };
+}
+
 /* =================== Design 2026 (08.11.2026): Navigationsleiste, große Titel, Start mit Begrüßung und Überblick, Willkommensseite =================== */
 const DS_TEXT = {
   de: { gM: 'Guten Morgen', gD: 'Guten Tag', gE: 'Guten Abend', sDue: 'Fristen in 7 Tagen', sRev: 'Zu prüfen', sAcc: 'Nicht übertragen', wT: 'Willkommen bei eOffis', wS: 'Ihr digitaler Büroassistent – eingerichtet in einer Minute.', w1: 'Post fotografieren – die KI erklärt sie', w2: 'Keine Frist mehr verpassen', w3: 'Belege an Buchhaltung und Steuerberater', allDone: 'Alles erledigt' },
@@ -3917,7 +3969,7 @@ for (const k of LARGE_TITLE) {
 }
 
 /* =================== Paket B (08.11.2026): Probezeit, Speicher, Konto sichern, Abo =================== */
-// Ablauf: Start ohne E-Mail → 4 Wochen voller Umfang (+ 7 Tage nach der Nachricht „endet in 7 Tagen“) → 30 Tage nur lesen → Löschung.
+// Ablauf: Start ohne E-Mail → 4 Wochen voller Umfang (+ 7 Tage nach der Nachricht „endet in 7 Tagen“) → 12 Monate Archiv (nur lesen) → Löschung.
 // Die Regeln selbst stehen in der Datenbank (supabase/schema.sql: eoffis_plan, eoffis_account); hier nur Anzeige und Hinweise.
 const KTO_TEXT = {
   de: {
@@ -4296,6 +4348,169 @@ document.addEventListener('click', (e) => {
     <button class="btn sec" data-a="logout" data-sure="1">${esc(t('kto.accYes'))}</button>`);
 }, true);
 document.addEventListener('click', (e) => { if (e.target.closest('[data-a="ktoAccount"]')) ktoAccount(); });
+
+/* ---------- Archiv, „Alles herunterladen“ und Löschen auf Wunsch (27.11.2026) ----------
+   Nach der Probezeit 12 Monate Archiv (nur lesen), Erinnerungen, letzte Warnung 30 Tage vorher, dann Löschung (Server).
+   Jederzeit: alles als ZIP herunterladen (Datenübertragbarkeit) und – nach Hinweis auf die Aufbewahrungspflicht und
+   ausdrücklicher Bestätigung – Konto samt Unterlagen sofort löschen. */
+const KTO_DEL = {
+  de: { dlAll: 'Alles herunterladen', dlBusy: 'Ihr Paket wird erstellt …', dlTitle: 'Alle Unterlagen herunterladen',
+    retention: 'Gesetzliche Aufbewahrungspflicht: Rechnungen und Buchungsbelege müssen in der Regel 8 Jahre, Bücher, Jahresabschlüsse und bestimmte weitere Unterlagen 10 Jahre aufbewahrt werden (§ 147 AO, § 257 HGB). Die Aufbewahrung liegt in Ihrer Verantwortung – laden Sie deshalb alles herunter und bewahren Sie es sicher auf.',
+    dlText: 'Sie erhalten eine ZIP-Datei mit allen Unterlagen als PDF (nach Ordner und Jahr sortiert), einer Übersicht als Tabelle und allen Daten (Fristen, Inventar, Pflichten, Verträge) zum Weiterverwenden.',
+    delBtn: 'Konto und alle Unterlagen löschen', delTitle: 'Konto endgültig löschen',
+    delText: 'Damit werden Ihr Konto und alle Unterlagen sofort und endgültig gelöscht. Das lässt sich nicht rückgängig machen.',
+    delAck: 'Ich habe meine Unterlagen heruntergeladen oder muss sie nicht mehr aufbewahren.', delWord: 'LÖSCHEN', delType: 'Zur Bestätigung bitte {{w}} eingeben:',
+    delGo: 'Endgültig löschen', cancel: 'Abbrechen', delFail: 'Löschen hat nicht geklappt: {{msg}}', delDone: 'Ihr Konto und alle Unterlagen wurden gelöscht.',
+    readme: 'eOffis – alle Ihre Unterlagen, Stand {{date}}\r\n\r\nUnterlagen/  Ihre Schreiben und Belege als PDF bzw. E-Rechnung (XML), nach Ordner und Jahr sortiert\r\nUebersicht.csv  Liste aller Unterlagen (öffnen mit Excel, Numbers oder LibreOffice)\r\nDaten/eoffis_daten.json  alle Daten (Fristen, Inventar, Pflichten, Verträge, Einstellungen) zum Weiterverwenden\r\n\r\n{{ret}}\r\n\r\nHinweis: Keine Rechtsberatung. Fragen zur Aufbewahrung klären Sie bitte mit Ihrem Steuerberater.' },
+  tr: { dlAll: 'Her şeyi indir', dlBusy: 'Paketiniz hazırlanıyor …', dlTitle: 'Tüm belgeleri indir',
+    retention: 'Yasal saklama yükümlülüğü (Almanya): Faturalar ve muhasebe belgeleri genellikle 8 yıl, defterler, yıllık mali tablolar ve bazı diğer belgeler 10 yıl saklanmalıdır (§ 147 AO, § 257 HGB). Saklama sizin sorumluluğunuzdadır – bu yüzden her şeyi indirip güvenli bir yerde saklayın.',
+    dlText: 'Tüm belgeleri PDF olarak (klasör ve yıla göre), bir tablo halinde genel bakışı ve tüm verileri (süreler, envanter, yükümlülükler, sözleşmeler) içeren bir ZIP dosyası alırsınız.',
+    delBtn: 'Hesabı ve tüm belgeleri sil', delTitle: 'Hesabı kalıcı olarak sil', delText: 'Hesabınız ve tüm belgeleriniz hemen ve kalıcı olarak silinir. Bu geri alınamaz.',
+    delAck: 'Belgelerimi indirdim veya artık saklamam gerekmiyor.', delWord: 'SİL', delType: 'Onaylamak için {{w}} yazın:',
+    delGo: 'Kalıcı olarak sil', cancel: 'Vazgeç', delFail: 'Silme başarısız: {{msg}}', delDone: 'Hesabınız ve tüm belgeleriniz silindi.',
+    readme: 'eOffis – tüm belgeleriniz, tarih {{date}}\r\n\r\nUnterlagen/  Belgeleriniz PDF veya e-fatura (XML) olarak, klasör ve yıla göre\r\nUebersicht.csv  Tüm belgelerin listesi\r\nDaten/eoffis_daten.json  Tüm veriler\r\n\r\n{{ret}}\r\n\r\nNot: Hukuki danışmanlık değildir.' },
+  pl: { dlAll: 'Pobierz wszystko', dlBusy: 'Paczka jest przygotowywana …', dlTitle: 'Pobierz wszystkie dokumenty',
+    retention: 'Ustawowy obowiązek przechowywania (Niemcy): faktury i dowody księgowe zwykle 8 lat, księgi, sprawozdania roczne i niektóre inne dokumenty 10 lat (§ 147 AO, § 257 HGB). Za przechowywanie odpowiadają Państwo – dlatego proszę pobrać wszystko i bezpiecznie przechowywać.',
+    dlText: 'Otrzymają Państwo plik ZIP ze wszystkimi dokumentami w PDF (wg folderu i roku), zestawieniem w tabeli i wszystkimi danymi (terminy, inwentarz, obowiązki, umowy).',
+    delBtn: 'Usuń konto i wszystkie dokumenty', delTitle: 'Trwale usuń konto', delText: 'Konto i wszystkie dokumenty zostaną natychmiast i trwale usunięte. Tego nie można cofnąć.',
+    delAck: 'Pobrałem/-am dokumenty lub nie muszę ich już przechowywać.', delWord: 'USUŃ', delType: 'Aby potwierdzić, wpisz {{w}}:',
+    delGo: 'Usuń trwale', cancel: 'Anuluj', delFail: 'Usuwanie nie powiodło się: {{msg}}', delDone: 'Konto i wszystkie dokumenty zostały usunięte.',
+    readme: 'eOffis – wszystkie dokumenty, stan {{date}}\r\n\r\nUnterlagen/  dokumenty jako PDF lub e-faktura (XML), wg folderu i roku\r\nUebersicht.csv  lista wszystkich dokumentów\r\nDaten/eoffis_daten.json  wszystkie dane\r\n\r\n{{ret}}\r\n\r\nUwaga: to nie jest porada prawna.' },
+  ru: { dlAll: 'Скачать всё', dlBusy: 'Пакет создаётся …', dlTitle: 'Скачать все документы',
+    retention: 'Законная обязанность хранения (Германия): счета и бухгалтерские документы, как правило, 8 лет, книги, годовые отчёты и некоторые другие документы 10 лет (§ 147 AO, § 257 HGB). За хранение отвечаете вы – поэтому скачайте всё и надёжно сохраните.',
+    dlText: 'Вы получите ZIP-файл со всеми документами в PDF (по папкам и годам), обзором в виде таблицы и всеми данными (сроки, инвентарь, обязанности, договоры).',
+    delBtn: 'Удалить аккаунт и все документы', delTitle: 'Удалить аккаунт навсегда', delText: 'Ваш аккаунт и все документы будут удалены сразу и навсегда. Отменить это нельзя.',
+    delAck: 'Я скачал(а) документы или мне больше не нужно их хранить.', delWord: 'УДАЛИТЬ', delType: 'Для подтверждения введите {{w}}:',
+    delGo: 'Удалить навсегда', cancel: 'Отмена', delFail: 'Не удалось удалить: {{msg}}', delDone: 'Ваш аккаунт и все документы удалены.',
+    readme: 'eOffis – все ваши документы, на {{date}}\r\n\r\nUnterlagen/  документы в PDF или e-счёт (XML), по папкам и годам\r\nUebersicht.csv  список всех документов\r\nDaten/eoffis_daten.json  все данные\r\n\r\n{{ret}}\r\n\r\nПримечание: это не юридическая консультация.' },
+  ar: { dlAll: 'تنزيل الكل', dlBusy: 'جارٍ إعداد الملف …', dlTitle: 'تنزيل جميع المستندات',
+    retention: 'واجب الحفظ القانوني (ألمانيا): تُحفظ الفواتير ومستندات المحاسبة عادةً 8 سنوات، والدفاتر والحسابات الختامية وبعض المستندات الأخرى 10 سنوات (§ 147 AO، § 257 HGB). الحفظ مسؤوليتك – لذلك نزّل كل شيء واحفظه بأمان.',
+    dlText: 'ستحصل على ملف ZIP يضم جميع المستندات بصيغة PDF (حسب المجلد والسنة) وجدولًا عامًا وجميع البيانات (المواعيد، الجرد، الالتزامات، العقود).',
+    delBtn: 'حذف الحساب وجميع المستندات', delTitle: 'حذف الحساب نهائيًا', delText: 'سيُحذف حسابك وجميع مستنداتك فورًا ونهائيًا. لا يمكن التراجع عن ذلك.',
+    delAck: 'لقد نزّلت مستنداتي أو لم أعد ملزمًا بحفظها.', delWord: 'حذف', delType: 'للتأكيد اكتب {{w}}:',
+    delGo: 'حذف نهائي', cancel: 'إلغاء', delFail: 'تعذّر الحذف: {{msg}}', delDone: 'تم حذف حسابك وجميع المستندات.',
+    readme: 'eOffis – جميع مستنداتك، بتاريخ {{date}}\r\n\r\nUnterlagen/  المستندات بصيغة PDF أو فاتورة إلكترونية (XML)\r\nUebersicht.csv  قائمة بجميع المستندات\r\nDaten/eoffis_daten.json  جميع البيانات\r\n\r\n{{ret}}\r\n\r\nملاحظة: ليست استشارة قانونية.' },
+  ro: { dlAll: 'Descărcați tot', dlBusy: 'Pachetul se pregătește …', dlTitle: 'Descărcați toate documentele',
+    retention: 'Obligația legală de păstrare (Germania): facturile și documentele contabile de regulă 8 ani, registrele, situațiile anuale și alte documente 10 ani (§ 147 AO, § 257 HGB). Păstrarea este responsabilitatea dumneavoastră – de aceea descărcați tot și păstrați în siguranță.',
+    dlText: 'Primiți un fișier ZIP cu toate documentele în PDF (pe dosare și ani), o listă sub formă de tabel și toate datele (termene, inventar, obligații, contracte).',
+    delBtn: 'Ștergeți contul și toate documentele', delTitle: 'Ștergeți definitiv contul', delText: 'Contul și toate documentele vor fi șterse imediat și definitiv. Acest lucru nu poate fi anulat.',
+    delAck: 'Am descărcat documentele sau nu mai trebuie să le păstrez.', delWord: 'ȘTERGE', delType: 'Pentru confirmare, introduceți {{w}}:',
+    delGo: 'Ștergeți definitiv', cancel: 'Anulare', delFail: 'Ștergerea nu a reușit: {{msg}}', delDone: 'Contul și toate documentele au fost șterse.',
+    readme: 'eOffis – toate documentele, la {{date}}\r\n\r\nUnterlagen/  documentele ca PDF sau e-factură (XML), pe dosare și ani\r\nUebersicht.csv  lista tuturor documentelor\r\nDaten/eoffis_daten.json  toate datele\r\n\r\n{{ret}}\r\n\r\nNotă: nu reprezintă consultanță juridică.' },
+};
+for (const l of Object.keys(KTO_DEL)) { I18N[l] = I18N[l] || {}; I18N[l].kto = Object.assign({}, I18N[l].kto || {}, KTO_DEL[l]); }
+Object.assign(I18N.de.kto, {
+  roBanner: 'Testzeitraum abgelaufen – Ihre Unterlagen liegen im Archiv: ansehen und herunterladen bis {{date}}.',
+  roText: 'Ihr Testzeitraum ist abgelaufen. Ihre Unterlagen bleiben bis {{date}} im Archiv: ansehen und herunterladen, aber nicht ändern. Neues scannen und auswerten können Sie mit einem Abo.',
+});
+
+/** Alles als ZIP: Unterlagen/<Ordner>/<Jahr>/…, Uebersicht.csv, Daten/eoffis_daten.json, LIESMICH.txt */
+async function ktoExportAll() {
+  if (S.ktoDl) return; S.ktoDl = true; toast(t('kto.dlBusy'));
+  try {
+    const zip = new JSZip(), data = { exported_at: new Date().toISOString(), profile: await store.getProfile() };
+    for (const c of COLS) if (c !== 'pages') data[c] = await store.all(c);
+    const cell = (v) => `"${csvSafe(v).replace(/"/g, '""')}"`, nf = (n) => (n == null || n === '' || isNaN(Number(n)) ? '' : Number(n).toFixed(2).replace('.', ','));
+    const rows = [['Nr', 'Ordner', 'Datei', 'Titel', 'Art', 'Absender', 'Rechnungsnr', 'Netto', 'USt', 'Brutto', 'Währung', 'Fällig', 'Bezahlt', 'Erfasst', 'Archiviert', 'SHA-256'].map(cell).join(';')];
+    const docs = (data.docs || []).slice().sort((a, b) => String(a.folder || '').localeCompare(String(b.folder || '')) || String(a.created_at || '').localeCompare(String(b.created_at || '')));
+    const used = new Set();
+    for (const [i, d] of docs.entries()) {
+      let file = '';
+      if (d.page_count || d.file_kind === 'xml') {
+        const pages = (await store.where('pages', 'docId', d.id)).sort((a, b) => a.idx - b.idx);
+        if (pages.length) {
+          const year = (String(d.doc_date || d.invoice_date || d.created_at || '').match(/^\d{4}/) || ['ohne_Jahr'])[0];
+          const folder = safeName(t('docs.folder_' + d.folder) || d.folder || 'Sonstiges') || 'Sonstiges';
+          file = `Unterlagen/${folder}/${year}/${String(i + 1).padStart(4, '0')}_${safeName(d.title || 'Dokument') || 'Dokument'}.${d.file_kind === 'xml' ? 'xml' : 'pdf'}`;
+          while (used.has(file)) file = file.replace(/(\.\w+)$/, '_2$1');
+          used.add(file);
+          zip.file(file, d.file_kind === 'xml' ? (pages[0] && pages[0].xml) || '' : pagesToPdf(pages));
+        }
+      }
+      rows.push([i + 1, t('docs.folder_' + d.folder), file, d.title, d.doc_type, d.sender, d.invoice_number, nf(d.amount_net), nf(d.vat_amount), nf(d.amount_gross), normCur(d.currency) || '', fmtDate(d.due_date), d.paid ? 'ja' : 'nein', fmtDate(d.created_at), d.archived ? 'ja' : 'nein', d.sha256].map(cell).join(';'));
+    }
+    zip.file('Uebersicht.csv', '﻿' + rows.join('\r\n'));
+    zip.file('Daten/eoffis_daten.json', JSON.stringify(data, null, 1));
+    zip.file('LIESMICH.txt', t('kto.readme', { date: fmtDate(todayISO()), ret: t('kto.retention') }));
+    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+    await saveFile(`eOffis_Alles_${todayISO()}.zip`, blob);
+  } catch (e) { console.error(e); toast(t('web.saveFailed', { msg: errText(e) })); }
+  finally { S.ktoDl = false; }
+}
+function ktoDlDialog() {
+  const H = KH();
+  showModal(`<h2>${esc(t('kto.dlTitle'))}</h2><p>${esc(t('kto.dlText'))}</p><p class="banner">${esc(t('kto.retention'))}</p>
+    <button class="btn" data-a="ktoDl">${esc(t('kto.dlAll'))}</button>
+    ${H ? `<button class="btn sec" data-a="ktoDel">${esc(t('kto.delBtn'))}</button>` : ''}`);
+}
+function ktoDelDialog() {
+  showModal(`<h2>${esc(t('kto.delTitle'))}</h2><p>${esc(t('kto.delText'))}</p><p class="banner">${esc(t('kto.retention'))}</p>
+    <button class="btn sec" data-a="ktoDl">${esc(t('kto.dlAll'))}</button>
+    <label class="small" style="display:flex;gap:8px;align-items:flex-start;margin:12px 0"><input type="checkbox" id="kto_ack"> <span>${esc(t('kto.delAck'))}</span></label>
+    <label class="small" for="kto_word">${esc(t('kto.delType', { w: t('kto.delWord') }))}</label>
+    <input id="kto_word" autocomplete="off" autocapitalize="characters">
+    <p class="small" id="kto_derr" role="alert"></p>
+    <button class="btn" data-a="ktoDelGo" style="background:#c62828">${esc(t('kto.delGo'))}</button>
+    <button class="btn sec" data-a="ktoClose">${esc(t('kto.cancel'))}</button>`);
+}
+async function ktoDelGo(btn) {
+  const H = KH(), err = $('#kto_derr');
+  const ack = $('#kto_ack') && $('#kto_ack').checked, word = (val('kto_word') || '').trim().toLocaleUpperCase();
+  if (!ack) { err.textContent = t('kto.delAck'); return; }
+  if (word !== t('kto.delWord').toLocaleUpperCase() && word !== 'LÖSCHEN') { err.textContent = t('kto.delType', { w: t('kto.delWord') }); $('#kto_word').focus(); return; }
+  btn.disabled = true;
+  try {
+    await H.fn('eoffis-api', { action: 'account_delete', confirm: 'LÖSCHEN', retention_ack: true });
+    $('#layer').innerHTML = ''; toast(t('kto.delDone'));
+    await H.logout();
+  } catch (x) { err.textContent = t('kto.delFail', { msg: errText(x) }); btn.disabled = false; }
+}
+// Archiv-Hinweis oben: zusätzlich „Alles herunterladen“
+{
+  const orig = banners;
+  banners = function () {
+    const h = orig.apply(this, arguments);
+    if (!KH() || !ktoRO()) return h;
+    return h.replace(/(<div class="banner warn kto-b">[\s\S]*?)(<\/div>)/, `$1<button class="btn sm sec" data-a="ktoDlDlg">${esc(t('kto.dlAll'))}</button>$2`);
+  };
+  // Konto-Fenster: Herunterladen und Löschen für jedes Konto
+  const origAcc = ktoAccount;
+  ktoAccount = function () {
+    origAcc.apply(this, arguments);
+    const m = $('#layer [data-a="logout"]');
+    if (m) m.insertAdjacentHTML('beforebegin', `<button class="btn sec" data-a="ktoDlDlg">${esc(t('kto.dlAll'))}</button>`);
+    const box = m && m.parentElement;
+    if (box) box.insertAdjacentHTML('beforeend', `<p class="small" style="margin-top:14px"><a href="#" data-a="ktoDel">${esc(t('kto.delBtn'))}</a></p>`);
+  };
+  // Nur-lesen-Hinweis: auch dort herunterladen
+  const origBl = ktoBlocked;
+  ktoBlocked = function (code) {
+    origBl.apply(this, arguments);
+    if (code === 'read_only') { const b = $('#layer [data-go="abo"]'); if (b) b.insertAdjacentHTML('afterend', `<button class="btn sec" data-a="ktoDlDlg">${esc(t('kto.dlAll'))}</button>`); }
+  };
+  // ?export=1 aus der E-Mail öffnet das Herunterladen
+  const origR = render;
+  let done = false;
+  render = function () {
+    const r = origR.apply(this, arguments);
+    if (!done && S.loaded && S.profile && /[?&]export=1\b/.test(location.search)) {
+      done = true; try { history.replaceState(null, '', location.pathname); } catch { /* egal */ }
+      setTimeout(ktoDlDialog, 0);
+    }
+    return r;
+  };
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('[data-a]');
+  if (!a || a.disabled) return;
+  switch (a.dataset.a) {
+    case 'ktoDlDlg': e.preventDefault(); return ktoDlDialog();
+    case 'ktoDl': e.preventDefault(); return ktoExportAll();
+    case 'ktoDel': e.preventDefault(); return ktoDelDialog();
+    case 'ktoDelGo': e.preventDefault(); return ktoDelGo(a);
+    case 'ktoClose': e.preventDefault(); $('#layer').innerHTML = ''; return undefined;
+  }
+});
 
 /* =================== Betriebs-Akte A (21.11.2026): Inventar direkt aus Rechnungen =================== */
 // Gegenstände kommen aus der KI-Auswertung (assets_found, siehe INV_PROMPT in app.js), aus E-Rechnungen und aus früher
@@ -4941,6 +5156,8 @@ function dutOccAfter(fx, after) {
 }
 function dutFirstDue(d) {
   if (d.recur === 'event') return null;
+  const r = d.due_rule || {};
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(r.date || ''))) return r.date > todayISO() ? r.date : addDays(todayISO(), 14);
   const fx = dutFixed(d); if (fx) return dutOccAfter(fx, addDays(todayISO(), -1));
   const days = Number((d.due_rule || {}).days);
   return addDays(todayISO(), Number.isFinite(days) ? Math.max(0, Math.min(365, days)) : 30);

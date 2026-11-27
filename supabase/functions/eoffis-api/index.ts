@@ -158,38 +158,60 @@ async function pushDaily(admin: ReturnType<typeof createClient>) {
 }
 
 /* ---------- Probezeit: Nachrichten (Push + E-Mail) und Löschung ---------- */
-type Stage = 'warn' | 'end' | 'delete_warn';
-const TRIAL_TEXT: Record<string, Record<Stage, [string, string]> & { cta: string }> = {
+type Stage = 'warn' | 'end' | 'remind' | 'delete_warn';
+// Nach der Probezeit: 12 Monate Archiv (nur lesen), Erinnerung alle 90 Tage, letzte Warnung 30 Tage vor der Löschung.
+// Jede Nachricht nach der Probezeit nennt die gesetzliche Aufbewahrungspflicht (8/10 Jahre) und „Alles herunterladen“. {{date}} = Löschtag.
+const TRIAL_TEXT: Record<string, Record<Stage, [string, string]> & { cta: string; dl: string }> = {
   de: { warn: ['Ihr Testzugang endet in 7 Tagen', 'Möchten Sie eOffis weiter nutzen? Schließen Sie jetzt ein Abo ab – Ihre Unterlagen bleiben vollständig erhalten.'],
-    end: ['Ihr Testzugang ist abgelaufen', 'Ihre Unterlagen können Sie noch 30 Tage ansehen und herunterladen. Mit einem Abo geht es sofort weiter.'],
-    delete_warn: ['Ihre Unterlagen werden in 7 Tagen gelöscht', 'Laden Sie wichtige Unterlagen herunter oder schließen Sie ein Abo ab, damit nichts verloren geht.'], cta: 'Jetzt Abo abschließen' },
+    end: ['Ihr Testzugang ist abgelaufen', 'Ihre Unterlagen bleiben 12 Monate im Archiv: ansehen und herunterladen, aber nicht ändern. Bitte beachten Sie die gesetzliche Aufbewahrungspflicht (meist 8 bzw. 10 Jahre) und laden Sie alles herunter. Mit einem Abo geht es sofort weiter.'],
+    remind: ['Ihre Unterlagen liegen im Archiv', 'Bis {{date}} können Sie Ihre Unterlagen noch ansehen und herunterladen. Denken Sie an die gesetzliche Aufbewahrungspflicht (meist 8 bzw. 10 Jahre): Laden Sie jetzt alles herunter oder schließen Sie ein Abo ab.'],
+    delete_warn: ['Ihre Unterlagen werden in 30 Tagen gelöscht', 'Am {{date}} werden Ihre Unterlagen endgültig gelöscht. Wegen der gesetzlichen Aufbewahrungspflicht (meist 8 bzw. 10 Jahre): Laden Sie jetzt alles herunter oder schließen Sie ein Abo ab.'],
+    cta: 'Jetzt Abo abschließen', dl: 'Alles herunterladen' },
   tr: { warn: ['Deneme süreniz 7 gün içinde bitiyor', 'eOffis’i kullanmaya devam etmek ister misiniz? Şimdi abone olun – belgeleriniz eksiksiz korunur.'],
-    end: ['Deneme süreniz sona erdi', 'Belgelerinizi 30 gün daha görüntüleyip indirebilirsiniz. Abonelikle hemen devam edersiniz.'],
-    delete_warn: ['Belgeleriniz 7 gün içinde silinecek', 'Önemli belgeleri indirin veya abone olun, böylece hiçbir şey kaybolmaz.'], cta: 'Şimdi abone ol' },
+    end: ['Deneme süreniz sona erdi', 'Belgeleriniz 12 ay arşivde kalır: görüntüleyebilir ve indirebilirsiniz, ancak değiştiremezsiniz. Yasal saklama yükümlülüğüne (genellikle 8 veya 10 yıl) dikkat edin ve her şeyi indirin. Abonelikle hemen devam edersiniz.'],
+    remind: ['Belgeleriniz arşivde', '{{date}} tarihine kadar belgelerinizi görüntüleyip indirebilirsiniz. Yasal saklama yükümlülüğünü (genellikle 8 veya 10 yıl) unutmayın: Şimdi her şeyi indirin veya abone olun.'],
+    delete_warn: ['Belgeleriniz 30 gün içinde silinecek', 'Belgeleriniz {{date}} tarihinde kalıcı olarak silinecek. Yasal saklama yükümlülüğü (genellikle 8 veya 10 yıl) nedeniyle: Şimdi her şeyi indirin veya abone olun.'],
+    cta: 'Şimdi abone ol', dl: 'Her şeyi indir' },
   pl: { warn: ['Okres testowy kończy się za 7 dni', 'Chcesz dalej korzystać z eOffis? Wykup teraz abonament – Twoje dokumenty pozostaną w całości.'],
-    end: ['Okres testowy dobiegł końca', 'Dokumenty możesz jeszcze przez 30 dni przeglądać i pobierać. Z abonamentem działasz dalej od razu.'],
-    delete_warn: ['Twoje dokumenty zostaną usunięte za 7 dni', 'Pobierz ważne dokumenty lub wykup abonament, aby nic nie przepadło.'], cta: 'Wykup abonament' },
+    end: ['Okres testowy dobiegł końca', 'Twoje dokumenty pozostają 12 miesięcy w archiwum: możesz je przeglądać i pobierać, ale nie zmieniać. Pamiętaj o ustawowym obowiązku przechowywania (zwykle 8 lub 10 lat) i pobierz wszystko. Z abonamentem działasz dalej od razu.'],
+    remind: ['Twoje dokumenty są w archiwum', 'Do {{date}} możesz jeszcze przeglądać i pobierać dokumenty. Pamiętaj o ustawowym obowiązku przechowywania (zwykle 8 lub 10 lat): pobierz teraz wszystko lub wykup abonament.'],
+    delete_warn: ['Twoje dokumenty zostaną usunięte za 30 dni', 'Dnia {{date}} Twoje dokumenty zostaną trwale usunięte. Ze względu na ustawowy obowiązek przechowywania (zwykle 8 lub 10 lat): pobierz teraz wszystko lub wykup abonament.'],
+    cta: 'Wykup abonament', dl: 'Pobierz wszystko' },
   ru: { warn: ['Пробный период закончится через 7 дней', 'Хотите и дальше пользоваться eOffis? Оформите подписку сейчас – все документы сохранятся.'],
-    end: ['Пробный период закончился', 'Ещё 30 дней вы можете просматривать и скачивать документы. С подпиской работа продолжится сразу.'],
-    delete_warn: ['Ваши документы будут удалены через 7 дней', 'Скачайте важные документы или оформите подписку, чтобы ничего не потерять.'], cta: 'Оформить подписку' },
+    end: ['Пробный период закончился', 'Ваши документы 12 месяцев хранятся в архиве: их можно просматривать и скачивать, но не изменять. Помните о законной обязанности хранения (обычно 8 или 10 лет) и скачайте всё. С подпиской работа продолжится сразу.'],
+    remind: ['Ваши документы в архиве', 'До {{date}} вы можете просматривать и скачивать документы. Помните о законной обязанности хранения (обычно 8 или 10 лет): скачайте всё сейчас или оформите подписку.'],
+    delete_warn: ['Ваши документы будут удалены через 30 дней', '{{date}} ваши документы будут окончательно удалены. Из-за законной обязанности хранения (обычно 8 или 10 лет): скачайте всё сейчас или оформите подписку.'],
+    cta: 'Оформить подписку', dl: 'Скачать всё' },
   ar: { warn: ['تنتهي فترتك التجريبية خلال 7 أيام', 'هل تريد مواصلة استخدام eOffis؟ اشترك الآن – تبقى مستنداتك محفوظة بالكامل.'],
-    end: ['انتهت فترتك التجريبية', 'يمكنك عرض مستنداتك وتنزيلها لمدة 30 يومًا أخرى. مع الاشتراك تتابع فورًا.'],
-    delete_warn: ['سيتم حذف مستنداتك خلال 7 أيام', 'نزّل المستندات المهمة أو اشترك حتى لا يضيع شيء.'], cta: 'اشترك الآن' },
-  ro: { warn: ['Perioada de test se încheie în 7 zile', 'Vrei să folosești în continuare eOffis? Abonează-te acum – documentele tale rămân complet păstrate.'],
-    end: ['Perioada de test a expirat', 'Îți poți vedea și descărca documentele încă 30 de zile. Cu un abonament continui imediat.'],
-    delete_warn: ['Documentele tale vor fi șterse în 7 zile', 'Descarcă documentele importante sau abonează-te, ca să nu se piardă nimic.'], cta: 'Abonează-te acum' },
+    end: ['انتهت فترتك التجريبية', 'تبقى مستنداتك 12 شهرًا في الأرشيف: يمكنك عرضها وتنزيلها دون تعديلها. انتبه إلى واجب الحفظ القانوني (عادةً 8 أو 10 سنوات) ونزّل كل شيء. مع الاشتراك تتابع فورًا.'],
+    remind: ['مستنداتك في الأرشيف', 'حتى {{date}} يمكنك عرض مستنداتك وتنزيلها. تذكّر واجب الحفظ القانوني (عادةً 8 أو 10 سنوات): نزّل كل شيء الآن أو اشترك.'],
+    delete_warn: ['سيتم حذف مستنداتك خلال 30 يومًا', 'في {{date}} ستُحذف مستنداتك نهائيًا. بسبب واجب الحفظ القانوني (عادةً 8 أو 10 سنوات): نزّل كل شيء الآن أو اشترك.'],
+    cta: 'اشترك الآن', dl: 'تنزيل الكل' },
+  ro: { warn: ['Perioada de test se încheie în 7 zile', 'Doriți să folosiți în continuare eOffis? Abonați-vă acum – documentele dumneavoastră rămân complet păstrate.'],
+    end: ['Perioada de test a expirat', 'Documentele rămân 12 luni în arhivă: le puteți vedea și descărca, dar nu le puteți modifica. Țineți cont de obligația legală de păstrare (de obicei 8 sau 10 ani) și descărcați tot. Cu un abonament continuați imediat.'],
+    remind: ['Documentele dumneavoastră sunt în arhivă', 'Până la {{date}} puteți vedea și descărca documentele. Gândiți-vă la obligația legală de păstrare (de obicei 8 sau 10 ani): descărcați acum tot sau abonați-vă.'],
+    delete_warn: ['Documentele vor fi șterse în 30 de zile', 'La {{date}} documentele vor fi șterse definitiv. Din cauza obligației legale de păstrare (de obicei 8 sau 10 ani): descărcați acum tot sau abonați-vă.'],
+    cta: 'Abonați-vă acum', dl: 'Descărcați tot' },
 };
+const LOCALE: Record<string, string> = { de: 'de-DE', tr: 'tr-TR', pl: 'pl-PL', ru: 'ru-RU', ar: 'ar', ro: 'ro-RO' };
+/** Konto samt allem löschen: Freigabe-Dateien zuerst, dann das Konto (alle Tabellen hängen per „on delete cascade“ daran) */
+async function deleteAccount(admin: ReturnType<typeof createClient>, owner: string) {
+  const { data: files } = await admin.storage.from('shares').list(owner, { limit: 1000 });
+  if (files && files.length) await admin.storage.from('shares').remove(files.map((f: { name: string }) => `${owner}/${f.name}`));
+  const { error } = await admin.auth.admin.deleteUser(owner);
+  return !error;
+}
 const SITE = () => (Deno.env.get('SITE_URL') || 'https://dgnysr.github.io/eoffis/').replace(/\/?$/, '/');
 const escHtml = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
-async function sendMail(to: string, subject: string, text: string, cta: string, url: string) {
+async function sendMail(to: string, subject: string, text: string, cta: string, url: string, cta2?: string, url2?: string) {
   const key = Deno.env.get('BREVO_API_KEY'), from = Deno.env.get('MAIL_FROM');
   if (!key || !from) return false;
   const m = from.match(/^(.*)<(.+)>$/);
   const sender = m ? { name: m[1].trim(), email: m[2].trim() } : { name: 'eOffis', email: from.trim() };
-  const html = `<div style="font:16px/1.5 system-ui,sans-serif;max-width:520px;margin:auto;padding:24px;color:#1c1c1e"><h2 style="margin:0 0 12px">${escHtml(subject)}</h2><p>${escHtml(text)}</p><p style="margin:24px 0"><a href="${url}" style="background:#0a66d8;color:#fff;padding:14px 22px;border-radius:12px;text-decoration:none;font-weight:600">${escHtml(cta)}</a></p><p style="color:#6e6e73;font-size:13px">eOffis – Ihr digitaler Büroassistent</p></div>`;
+  const html = `<div style="font:16px/1.5 system-ui,sans-serif;max-width:520px;margin:auto;padding:24px;color:#1c1c1e"><h2 style="margin:0 0 12px">${escHtml(subject)}</h2><p>${escHtml(text)}</p><p style="margin:24px 0"><a href="${url}" style="background:#0a66d8;color:#fff;padding:14px 22px;border-radius:12px;text-decoration:none;font-weight:600">${escHtml(cta)}</a>${cta2 && url2 ? ` &nbsp; <a href="${url2}" style="color:#0a66d8;font-weight:600">${escHtml(cta2)}</a>` : ''}</p><p style="color:#6e6e73;font-size:13px">eOffis – Ihr digitaler Büroassistent</p></div>`;
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST', headers: { 'api-key': key, 'content-type': 'application/json', accept: 'application/json' },
-    body: JSON.stringify({ sender, to: [{ email: to }], subject, htmlContent: html, textContent: `${text}\n\n${cta}: ${url}` }),
+    body: JSON.stringify({ sender, to: [{ email: to }], subject, htmlContent: html, textContent: `${text}\n\n${cta}: ${url}${cta2 && url2 ? `\n${cta2}: ${url2}` : ''}` }),
   });
   return res.ok;
 }
@@ -201,23 +223,19 @@ async function userLang(admin: ReturnType<typeof createClient>, owner: string) {
 async function trialDaily(admin: ReturnType<typeof createClient>) {
   const { data: due, error } = await admin.rpc('eoffis_trial_due');
   if (error) throw error;
-  const rows = ((due || []) as { owner: string; email: string | null; anon: boolean; stage: string | null }[]).filter((r) => r.stage);
-  const stats = { warn: 0, end: 0, delete_warn: 0, deleted: 0, mails: 0, pushes: 0 };
+  const rows = ((due || []) as { owner: string; email: string | null; anon: boolean; stage: string | null; delete_at: string | null }[]).filter((r) => r.stage);
+  const stats = { warn: 0, end: 0, remind: 0, delete_warn: 0, deleted: 0, mails: 0, pushes: 0 };
   await pool(rows, 10, async (r) => {
-    if (r.stage === 'delete') {
-      // Freigabe-Dateien zuerst, dann das Konto (alle Tabellen hängen per „on delete cascade“ daran)
-      const { data: files } = await admin.storage.from('shares').list(r.owner, { limit: 1000 });
-      if (files && files.length) await admin.storage.from('shares').remove(files.map((f: { name: string }) => `${r.owner}/${f.name}`));
-      const { error: delErr } = await admin.auth.admin.deleteUser(r.owner);
-      if (!delErr) stats.deleted++;
-      return;
-    }
+    if (r.stage === 'delete') { if (await deleteAccount(admin, r.owner)) stats.deleted++; return; }
+    if (!(r.stage in TRIAL_TEXT.de)) return;
     const stage = r.stage as Stage, lang = await userLang(admin, r.owner), T = TRIAL_TEXT[lang];
-    const [title, body] = T[stage], url = SITE() + '?abo=1';
+    const date = r.delete_at ? new Date(r.delete_at).toLocaleDateString(LOCALE[lang] || 'de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Berlin' }) : '';
+    const title = T[stage][0], body = T[stage][1].replace('{{date}}', date), url = SITE() + '?abo=1';
+    const dl = stage === 'warn' ? undefined : T.dl, dlUrl = stage === 'warn' ? undefined : SITE() + '?export=1';
     const { data: subs } = await admin.from('push_subs').select('endpoint,p256dh,auth,lang,space,owner').eq('owner', r.owner);
     if (vapid()) for (const s of (subs || []) as Sub[]) { if (await sendTo(admin, s, { title, body, lang, tag: 'eoffis-abo', url: './?abo=1' })) stats.pushes++; }
-    if (r.email) { try { if (await sendMail(r.email, title, body, T.cta, url)) stats.mails++; } catch { /* nächster Versuch nicht nötig */ } }
-    const col = stage === 'warn' ? 'notified_warn' : stage === 'end' ? 'notified_end' : 'notified_delwarn';
+    if (r.email) { try { if (await sendMail(r.email, title, body, T.cta, url, dl, dlUrl)) stats.mails++; } catch { /* nächster Versuch nicht nötig */ } }
+    const col = { warn: 'notified_warn', end: 'notified_end', remind: 'notified_remind', delete_warn: 'notified_delwarn' }[stage];
     await admin.from('subscriptions').upsert({ owner: r.owner, [col]: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: 'owner' });
     stats[stage]++;
   });
@@ -303,6 +321,12 @@ Deno.serve(async (req) => {
         const admin = adminClient();
         const ok = await sendTo(admin, s as Sub, await summary(admin, s as Sub));
         return ok ? json({ ok: true }) : json({ error: 'Senden fehlgeschlagen', code: 'push_failed' }, 502);
+      }
+      case 'account_delete': {
+        // Nur auf ausdrücklichen Wunsch: der Kunde tippt das Bestätigungswort und hat den Hinweis auf die Aufbewahrungspflicht bestätigt.
+        if (body.confirm !== 'LÖSCHEN' || body.retention_ack !== true) return json({ error: 'Bestätigung fehlt', code: 'confirm_required' }, 400);
+        const ok = await deleteAccount(adminClient(), u.user.id);
+        return ok ? json({ ok: true }) : json({ error: 'Löschen fehlgeschlagen', code: 'unavailable' }, 502);
       }
       default: return json({ error: 'Unbekannte Aktion', code: 'unknown_action' }, 400);
     }

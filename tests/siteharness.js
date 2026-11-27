@@ -36,7 +36,7 @@ class KvStore {
     const used = this.account.used != null ? this.account.used : [...this.rows.values()].filter((r) => r.owner === uid).reduce((n, r) => n + r.path.length + Buffer.byteLength(JSON.stringify(r.data)), 0);
     const day = 86400000, start = Date.now() - (this.account.day || 1) * day;
     return { state: this.account.state || 'trial', anon: !!anon, has_email: !anon, trial_start: new Date(start).toISOString(),
-      warn_at: new Date(start + 28 * day).toISOString(), trial_end: new Date(start + 35 * day).toISOString(), delete_at: new Date(start + 65 * day).toISOString(),
+      warn_at: new Date(start + 28 * day).toISOString(), trial_end: new Date(start + 35 * day).toISOString(), delete_at: new Date(start + 400 * day).toISOString(),
       used_bytes: used, quota_bytes: this.account.quota || (anon ? 20 : 200) * 1048576, abo_requested: !!this.account.abo_requested };
   }
   mine(uid, p) { const s = p.split('/'); return s[0] === 'data' && s[1] === 'users' && s[2] === uid; }

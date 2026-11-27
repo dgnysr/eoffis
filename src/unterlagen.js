@@ -319,12 +319,13 @@ VIEWS.contract = {
   render() {
     const d = getDoc(S.params.id); if (!d) return '';
     const dl = d.cancellation_date ? daysUntil(d.cancellation_date) : null;
-    return `${dl !== null && dl >= 0 && dl <= 60 ? `<div class="banner warn">${esc(t('unt.ctrSoon', { count: dl }))}</div>` : ''}
+    return `${d.cancel_missed ? `<div class="banner warn">${esc(t('unt.ctrMissed', { old: fmtDate(d.cancel_missed), date: fmtDate(d.cancellation_date) }))}</div>` : ''}${dl !== null && dl >= 0 && dl <= 60 ? `<div class="banner warn">${esc(t('unt.ctrSoon', { count: dl }))}</div>` : ''}
       <div class="card">${field('ct_party', t('unt.ctrParty'), d.contract_party || d.sender || '')}${field('ct_no', t('unt.ctrNo'), d.contract_number || '')}
       <div class="grid2">${field('ct_start', t('unt.ctrStart'), d.contract_start ? fmtDate(d.contract_start) : '', `placeholder="${esc(t('common.dateHint'))}"`)}${field('ct_end', t('unt.ctrEnd'), d.contract_end ? fmtDate(d.contract_end) : '', `placeholder="${esc(t('common.dateHint'))}"`)}</div>
       ${field('ct_cancel', t('unt.ctrCancelDate'), d.cancellation_date ? fmtDate(d.cancellation_date) : '', `placeholder="${esc(t('common.dateHint'))}"`)}
       ${field('ct_notice', t('unt.ctrNotice'), d.notice_period || '', `placeholder="${esc(t('unt.ctrNoticeH'))}"`)}
       <label class="check"><input type="checkbox" id="ct_renew" ${d.auto_renew ? 'checked' : ''}>${esc(t('unt.ctrRenew'))}</label>
+      ${field('ct_renewm', t('unt.ctrRenewM'), d.renewal_months ? String(d.renewal_months) : '', 'inputmode="numeric" placeholder="12"')}
       <div class="grid2">${field('ct_cost', t('unt.ctrCost') + ' (€)', numStr(d.cost_amount), 'inputmode="decimal"')}<label class="f" for="ct_iv">${esc(t('unt.ctrInterval'))}<select class="in" id="ct_iv">${IV.map((k) => `<option value="${k}" ${(d.cost_interval || 'monthly') === k ? 'selected' : ''}>${esc(t('unt.iv_' + k))}</option>`).join('')}</select></label></div>
       ${area('ct_cov', t('unt.ctrCoverage'), d.coverage || '', 'style="min-height:60px"')}
       <button class="btn" data-a="ctrSave">${esc(t('common.save'))}</button></div>
@@ -336,7 +337,7 @@ async function ctrSave() {
   const d = getDoc(S.params.id);
   const dates = {}; for (const [k, f] of [['contract_start', 'ct_start'], ['contract_end', 'ct_end'], ['cancellation_date', 'ct_cancel']]) { const v = val(f).trim(); if (v && !parseDate(v)) { $('#' + f).focus(); return toast(t('common.invalidDate')); } dates[k] = v ? parseDate(v) : null; }
   const patch = Object.assign(dates, { contract_party: val('ct_party').trim() || null, contract_number: val('ct_no').trim() || null, notice_period: val('ct_notice').trim() || null,
-    auto_renew: $('#ct_renew').checked, cost_amount: parseMoney(val('ct_cost')), cost_interval: val('ct_iv'), coverage: val('ct_cov').trim() || null, is_contract: true });
+    auto_renew: $('#ct_renew').checked, renewal_months: (() => { const n = parseInt(val('ct_renewm'), 10); return n >= 1 && n <= 120 ? n : null; })(), cancel_missed: dates.cancellation_date && dates.cancellation_date === d.cancellation_date ? d.cancel_missed || null : null, cost_amount: parseMoney(val('ct_cost')), cost_interval: val('ct_iv'), coverage: val('ct_cov').trim() || null, is_contract: true });
   const saved = await persistDoc(d, patch, t('unt.ctrEdit'));
   // Kündigungsfrist als Frist pflegen (eine offene je Vertrag)
   const open = S.tasks.find((x) => x.document_id === d.id && x.kind === 'cancellation' && x.status !== 'done');
@@ -519,3 +520,49 @@ document.addEventListener('click', (e) => {
   const d = getDoc(a.dataset.v); if (!d) return;
   guard(() => saveFile(`Verfahrensdokumentation_${safeName((S.profile && S.profile.company_name) || '')}_${(d.created_at || '').slice(0, 10)}.pdf`, vdPdf(d.vdoc_answers || {}, d.vdoc_kind, d.created_at)));
 });
+
+/* =================== Gesetzliche Hinweise beim Scannen + verpasste Kündigungsfrist (27.11.2026) =================== */
+// Hinweise kommen aus der KI-Auswertung (legal_hints, immer „kein Rechtsrat“). Verpasste Kündigungsfrist bei Verträgen,
+// die sich automatisch verlängern: nächste Kündigungsmöglichkeit wird von selbst berechnet und als Frist angelegt.
+const UNT_LEGAL = {
+  de: { legalTitle: 'Gesetzliche Hinweise', legalNote: 'Automatischer Hinweis, keine Rechtsberatung. Bitte von Steuerberater, Kammer oder Anwalt prüfen lassen.', ctrRenewM: 'Verlängert sich um (Monate)', ctrMissed: 'Kündigungsfrist am {{old}} verpasst – der Vertrag hat sich verlängert. Nächste Möglichkeit: {{date}} (als Frist eingetragen).', ctrNext: 'nächste Kündigung bis {{date}}' },
+  tr: { legalTitle: 'Yasal uyarılar', legalNote: 'Otomatik uyarı, hukuki danışmanlık değildir. Lütfen mali müşavir, oda veya avukata kontrol ettirin.', ctrRenewM: 'Uzama süresi (ay)', ctrMissed: '{{old}} tarihli iptal süresi kaçırıldı – sözleşme uzadı. Sonraki imkân: {{date}} (süre olarak eklendi).', ctrNext: 'sonraki iptal {{date}} tarihine kadar' },
+  pl: { legalTitle: 'Wskazówki prawne', legalNote: 'Automatyczna wskazówka, nie porada prawna. Prosimy o sprawdzenie przez doradcę podatkowego, izbę lub prawnika.', ctrRenewM: 'Przedłuża się o (miesiące)', ctrMissed: 'Termin wypowiedzenia {{old}} minął – umowa się przedłużyła. Następna możliwość: {{date}} (dodano jako termin).', ctrNext: 'następne wypowiedzenie do {{date}}' },
+  ru: { legalTitle: 'Правовые указания', legalNote: 'Автоматическое указание, не юридическая консультация. Пожалуйста, проверьте у налогового консультанта, в палате или у юриста.', ctrRenewM: 'Продлевается на (месяцев)', ctrMissed: 'Срок расторжения {{old}} пропущен – договор продлён. Следующая возможность: {{date}} (добавлено как срок).', ctrNext: 'следующее расторжение до {{date}}' },
+  ar: { legalTitle: 'تنبيهات قانونية', legalNote: 'تنبيه تلقائي وليس استشارة قانونية. يرجى التحقق لدى المستشار الضريبي أو الغرفة أو المحامي.', ctrRenewM: 'يتجدد لمدة (أشهر)', ctrMissed: 'فات موعد الإلغاء في {{old}} – تجدد العقد. الفرصة التالية: {{date}} (أُضيفت كموعد).', ctrNext: 'الإلغاء التالي حتى {{date}}' },
+  ro: { legalTitle: 'Indicații legale', legalNote: 'Indicație automată, nu consultanță juridică. Vă rugăm să verificați cu consultantul fiscal, camera sau un avocat.', ctrRenewM: 'Se prelungește cu (luni)', ctrMissed: 'Termenul de reziliere din {{old}} a fost ratat – contractul s-a prelungit. Următoarea posibilitate: {{date}} (adăugată ca termen).', ctrNext: 'următoarea reziliere până la {{date}}' },
+};
+for (const l of Object.keys(UNT_LEGAL)) { I18N[l] = I18N[l] || {}; I18N[l].unt = Object.assign({}, I18N[l].unt || {}, UNT_LEGAL[l]); }
+/** Monate zu YYYY-MM-DD addieren (Monatsende bleibt gültig: 31.01. + 1 Monat = 28./29.02.) */
+function untAddMonths(iso, n) {
+  const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number);
+  const last = new Date(y, m - 1 + n + 1, 0).getDate();
+  return toISO(new Date(y, m - 1 + n, Math.min(d, last)));
+}
+/** Nächste Kündigungsmöglichkeit nach einer verpassten Frist (null = nichts zu tun) */
+function ctrNextCancel(d, today = todayISO()) {
+  if (!d || d.archived || !d.auto_renew || !d.cancellation_date || d.cancellation_date >= today) return null;
+  const n = d.renewal_months >= 1 && d.renewal_months <= 120 ? d.renewal_months : 12;
+  let c = d.cancellation_date, e = d.contract_end || null;
+  for (let i = 0; i < 200 && c < today; i++) { c = untAddMonths(c, n); if (e) e = untAddMonths(e, n); }
+  return c >= today ? { cancellation_date: c, contract_end: e } : null;
+}
+async function ctrRollover() {
+  if (typeof ktoRO === 'function' && ktoRO()) return 0;
+  let n = 0;
+  for (const d of S.docs.filter(isContractDoc)) {
+    const nx = ctrNextCancel(d); if (!nx) continue;
+    try {
+      const saved = await persistDoc(d, Object.assign({ cancel_missed: d.cancellation_date }, nx), t('unt.ctrNext', { date: fmtDate(nx.cancellation_date) }));
+      const open = S.tasks.find((x) => x.document_id === d.id && x.kind === 'cancellation' && x.status !== 'done');
+      if (open) { const u = await saveVersioned('tasks', Object.assign({}, open, { due_date: nx.cancellation_date })); S.tasks[S.tasks.findIndex((k) => k.id === open.id)] = u; }
+      else S.tasks.push(await saveVersioned('tasks', taskFromDate(saved, { kind: 'cancellation', date: nx.cancellation_date, description: t('web.cancelBy') })));
+      n++;
+    } catch (e) { console.warn(e); }
+  }
+  return n;
+}
+{
+  const orig = reloadAll;
+  reloadAll = async function () { const r = await orig.apply(this, arguments); try { if (await ctrRollover()) { if (typeof ktoSafeRender === "function") ktoSafeRender(); else render(); } } catch (e) { console.warn(e); } return r; };
+}

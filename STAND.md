@@ -1,6 +1,6 @@
 # Entwicklungsstand eOffis Web-App
 
-**Aktueller Stand:** Stand 21.11.2026 (Extremfall-Prüfung) – Paket 1–3, Design 2026, Sicherheit (A), Probezeit (B), Server-Einrichtung per Knopfdruck, Betriebs-Akte: Inventar und Pflichten-Kalender (Branch `main`) – live unter https://dgnysr.github.io/eoffis/
+**Aktueller Stand:** Stand 27.11.2026 (Entscheidungen Archiv/Löschung, Geldwäsche 2027, MaBV, gesetzliche Hinweise, Kündigungsfristen) – Paket 1–3, Design 2026, Sicherheit (A), Probezeit (B), Server-Einrichtung per Knopfdruck, Betriebs-Akte: Inventar und Pflichten-Kalender (Branch `main`) – live unter https://dgnysr.github.io/eoffis/
 
 ## Weiterentwickeln (Ausgangspunkt für jede neue Sitzung)
 1. Repository `dgnysr/eoffis` klonen – **immer auf dem neuesten Stand von `main` aufbauen**.
@@ -13,10 +13,18 @@
 Backend: Supabase-Projekt `lqohxlxemawzrtdqjnci` (`supabase/schema.sql`), KI-Funktion `smooth-processor` (Code: `supabase/functions/ai/index.ts`, „Verify JWT“ aus), Server-Funktion `eoffis-api` (Code: `supabase/functions/eoffis-api/index.ts`, „Verify JWT“ aus). Schlüssel: nur der öffentliche Publishable Key steht in `config.js`. Einrichtungsschritte siehe `README.md` → „Einrichtung Sicherheit & Probezeit“.
 
 ## Nächste Sitzung
-**Einstieg: `UEBERGABE.md`** (Stand 21.11.2026, 15:57 Uhr – was fertig ist, wo was liegt, offene Schritte in Reihenfolge).
+**Einstieg: `UEBERGABE.md`** (Stand 27.11.2026 – was fertig ist, wo was liegt, offene Schritte in Reihenfolge).
 Server: GitHub → Actions → „Server einrichten“ → *Run workflow* (ersetzt die Handarbeit aus `README.md`; offen bleiben nur Brevo-SMTP, Turnstile, Apple/Google).
 
 ## Änderungsverlauf
+### 27.11.2026 – Entscheidungen von Dogan umgesetzt
+- **Nach der Probezeit 12 Monate Archiv** (nur lesen + herunterladen) statt 30 Tage; Erinnerung alle 90 Tage, letzte Warnung 30 Tage vor der Löschung (`eoffis_plan`: readonly_days 365, delete_warn_days 30, remind_days 90; neue Spalte `subscriptions.notified_remind`, Stufe `remind` in `eoffis_trial_due`). Jede Nachricht nennt die Aufbewahrungspflicht (8/10 Jahre, § 147 AO, § 257 HGB) und hat den Link „Alles herunterladen“ (`?export=1`). Eine Löschwarnung zählt nur, wenn sie im letzten Zeitfenster verschickt wurde (alte Warnungen nach der 7-Tage-Regel lösen keine Löschung aus). Begründung: gesetzestreueste Lösung (Art. 28 Abs. 3 g, Art. 5 Abs. 1 e DSGVO); später in AGB/AVV aufnehmen.
+- **„Alles herunterladen“** (Konto-Fenster, Archiv-Hinweis, Nur-lesen-Hinweis, E-Mail-Link): ZIP mit `Unterlagen/<Ordner>/<Jahr>/…pdf|xml`, `Uebersicht.csv` (Formelschutz), `Daten/eoffis_daten.json` (alle Sammlungen außer Seitenbildern) und `LIESMICH.txt` mit Aufbewahrungshinweis (`ktoExportAll` in `src/konto.js`).
+- **Konto sofort löschen auf ausdrücklichen Wunsch:** Hinweis auf die Aufbewahrungspflicht, Häkchen „heruntergeladen / muss nicht mehr aufbewahren“ und Bestätigungswort (LÖSCHEN, in jeder Sprache das eigene Wort); Server-Aktion `account_delete` in `eoffis-api` prüft `confirm` + `retention_ack`, löscht Freigabe-Dateien und Konto.
+- **Pflichtenlisten:** Juwelier und Makler „Ab 10.07.2027: EU-Geldwäscheverordnung umsetzen“ (fester Stichtag 01.06.2027, neue Regel `{"date":…}`); Makler: „MaBV: Prüfbericht oder Negativerklärung einreichen“ für jeden Makler, Form bestätigt die IHK (61 Vorlagen).
+- **Gesetzliche Hinweise beim Scannen:** KI meldet Auffälligkeiten (`legal_hints`: hohe Barzahlung/GwG, Barzahlung beim Immobilienkauf, zu kurze Fristen, fehlende Rechtsbehelfs-/Widerrufsbelehrung, Mindestlohn/Nachweisgesetz, Kassenbeleg, Datenschutz …), Anzeige „Gesetzliche Hinweise“ mit „keine Rechtsberatung“.
+- **Verpasste Kündigungsfrist:** Verträge mit automatischer Verlängerung springen beim Öffnen auf die nächste Kündigungsmöglichkeit (Verlängerungszeitraum aus dem Vertrag, sonst 12 Monate; Monatsende korrekt), offene Frist wird verschoben, Hinweis „Frist verpasst – nächste Möglichkeit …“. Neues Feld „Verlängert sich um (Monate)“.
+- Tests: `tests/archiv_loeschen.js`, `tests/paket8.js`, Ergänzungen in `tests/db/test.sql` und `tests/functions_test.js`.
 ### 21.11.2026 – Extremfall-Prüfung (fachlich und technisch)
 - **Probezeit-Löschung:** gelöscht wird nur, wenn die Warnung „in 7 Tagen gelöscht“ wirklich mindestens 7 Tage vorher verschickt wurde (auch nach Ausfall des täglichen Laufs), und nie, solange eine Abo-Anfrage vorliegt (`eoffis_trial_due`).
 - **Freigabe-Links:** abgelaufene verschlüsselte Dateien löscht der tägliche Lauf automatisch (Datensparsamkeit); der Eintrag bleibt als „abgelaufen“.

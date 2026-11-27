@@ -3,6 +3,7 @@
 -- vorhandene Vorlagen werden aktualisiert, bei inhaltlicher Änderung steigt „version“ automatisch (App zeigt „aktualisiert“).
 -- Inhalt: Hilfe zur Orientierung, keine Rechtsberatung. Fälligkeitsregeln (due_rule):
 --   {"month":2,"day":16} jährlich fester Tag · {"months":[1,7],"day":31} feste Monate · {"day":10} monatlich
+--   {"date":"2027-06-01"} fester einmaliger Stichtag (schon vorbei: in 14 Tagen)
 --   {"days":30} erster Termin X Tage nach dem Anlegen, danach Abstand nach recur/every_months ab Erledigung
 -- Bedingungen (conditions): {"min_employees":1} und/oder {"facts":{"has_vehicle":true}} – nicht erfüllt = „trifft evtl. zu“.
 
@@ -161,6 +162,10 @@ insert into public.duty_templates as d (id, industry, sort, priority, category, 
  '{"de":"Mitarbeiter zum Geldwäschegesetz schulen"}',
  '{"de":"Mitarbeiter mit Kundenkontakt regelmäßig über Pflichten und Anzeichen für Geldwäsche unterrichten."}',
  'Teilnahmeliste', '§ 6 Abs. 2 Nr. 6 GwG', null),
+('juwelier.amlr_2027', 'juwelier', 17, 1, 'geldwaesche', 'once', null, '{"date":"2027-06-01"}', '{}',
+ '{"de":"Ab 10.07.2027: EU-Geldwäscheverordnung umsetzen"}',
+ '{"de":"Ab 10. Juli 2027 gilt die EU-Geldwäscheverordnung (AMLR) unmittelbar in allen EU-Ländern. Barzahlungen ab 10.000 € sind dann EU-weit unzulässig (Deutschland darf eine niedrigere Grenze festlegen). Für Händler mit Edelmetallen, Edelsteinen, Schmuck und Uhren werden die Pflichten zur Identifizierung und die Schwellenwerte teilweise neu gefasst. Vor dem Stichtag Kassenregeln, Risikoanalyse und Formulare anpassen und mit Kammer oder Berater abstimmen."}',
+ 'Aktualisierte Risikoanalyse und Kassenregel', 'VO (EU) 2024/1624 (AMLR), Art. 80', 'https://eur-lex.europa.eu/eli/reg/2024/1624/oj'),
 ('juwelier.waage', 'juwelier', 15, 1, 'geraete', 'every_n_months', 24, '{"days":30}', '{}',
  '{"de":"Feinwaage eichen lassen"}',
  '{"de":"Waagen für den Verkauf oder Ankauf nach Gewicht müssen geeicht sein (Eichfrist meist 2 Jahre)."}',
@@ -198,10 +203,14 @@ insert into public.duty_templates as d (id, industry, sort, priority, category, 
  '{"de":"Energieausweis-Angaben in jeder Anzeige"}',
  '{"de":"In Immobilienanzeigen Art des Energieausweises, Energiekennwert, Energieträger, Baujahr und Effizienzklasse angeben. Den Ausweis spätestens bei der Besichtigung vorlegen."}',
  'Kopie des Energieausweises je Objekt', '§§ 80, 87 GEG', 'https://www.gesetze-im-internet.de/geg/__87.html'),
-('immobilienmakler.mabv_pruefung', 'immobilienmakler', 17, 1, 'firma', 'yearly', null, '{"month":12,"day":31}', '{"facts":{"handles_client_money":true}}',
- '{"de":"MaBV-Prüfungsbericht einreichen"}',
- '{"de":"Wer Vermögenswerte von Auftraggebern entgegennimmt oder verwendet, lässt die Einhaltung der MaBV jährlich prüfen und reicht den Bericht bis 31.12. des Folgejahres ein. Ohne Kundengelder: bei der Behörde nachfragen, ob eine Erklärung genügt."}',
- 'Prüfungsbericht mit Eingangsbestätigung', '§ 16 MaBV', 'https://www.gesetze-im-internet.de/mabv/__16.html'),
+('immobilienmakler.mabv_pruefung', 'immobilienmakler', 17, 1, 'firma', 'yearly', null, '{"month":12,"day":31}', '{}',
+ '{"de":"MaBV: Prüfbericht oder Negativerklärung einreichen"}',
+ '{"de":"Jährlich bis 31.12. für das Vorjahr: Prüfbericht oder Negativerklärung bei der Gewerbebehörde. Wer Geld oder Vermögenswerte von Auftraggebern entgegennimmt oder verwendet, braucht einen Prüfbericht; wer das nicht tut, gibt in der Regel eine Negativerklärung ab. Welche Form für Sie gilt, bestätigt Ihre IHK."}',
+ 'Prüfbericht oder Negativerklärung mit Eingangsbestätigung', '§ 16 MaBV', 'https://www.gesetze-im-internet.de/mabv/__16.html'),
+('immobilienmakler.amlr_2027', 'immobilienmakler', 19, 1, 'geldwaesche', 'once', null, '{"date":"2027-06-01"}', '{}',
+ '{"de":"Ab 10.07.2027: EU-Geldwäscheverordnung umsetzen"}',
+ '{"de":"Ab 10. Juli 2027 gilt die EU-Geldwäscheverordnung (AMLR) unmittelbar in allen EU-Ländern. Barzahlungen ab 10.000 € sind dann EU-weit unzulässig; beim Immobilienkauf sind Barzahlungen in Deutschland schon seit 01.04.2023 verboten. Pflichten zur Identifizierung, Risikoanalyse und Aufbewahrung werden teilweise neu gefasst. Vor dem Stichtag Risikoanalyse, interne Regeln und Formulare anpassen und mit Kammer oder Berater abstimmen."}',
+ 'Aktualisierte Risikoanalyse und interne Regeln', 'VO (EU) 2024/1624 (AMLR), Art. 80; § 16a GwG', 'https://eur-lex.europa.eu/eli/reg/2024/1624/oj'),
 ('immobilienmakler.verwalter_haftpflicht', 'immobilienmakler', 18, 1, 'versicherung', 'yearly', null, '{"days":30}', '{"facts":{"wohnimmobilienverwalter":true}}',
  '{"de":"Berufshaftpflicht für die Wohnungsverwaltung"}',
  '{"de":"Wohnimmobilienverwalter brauchen eine Berufshaftpflicht (mindestens 500.000 € je Schaden und 1 Mio. € im Jahr). Bestehen jährlich prüfen; die Weiterbildungspflicht gilt ebenso."}',
