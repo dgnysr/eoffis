@@ -14,9 +14,14 @@ Backend: Supabase-Projekt `lqohxlxemawzrtdqjnci` (`supabase/schema.sql`), KI-Fun
 
 ## Nächste Sitzung
 **Einstieg: `UEBERGABE.md`** (Stand 27.11.2026 – was fertig ist, wo was liegt, offene Schritte in Reihenfolge).
-Server: GitHub → Actions → „Server einrichten“ → *Run workflow* (ersetzt die Handarbeit aus `README.md`; offen bleiben nur Turnstile und Apple).
+Server: GitHub → Actions → „Server einrichten“ → *Run workflow* (ersetzt die Handarbeit aus `README.md`; offen bleibt nur Apple).
 
 ## Änderungsverlauf
+### 27.11.2026 – Lücken aus dem Konzept, Roboter-Prüfung
+- **Garantie-Ende als Frist:** Jeder Gegenstand in Betrieb mit „Garantie bis“ in der Zukunft bekommt genau eine Frist unter „Fristen“, 30 Tage vor Ablauf (läuft sie früher ab: heute), mit Hinweis „Mängel vor Ablauf melden“ (`warrSync` in `src/betriebsakte.js`, Felder `asset_id`, `warranty_until` an der Frist). Garantie geändert → Frist neu; verkauft/ausgemustert/gelöscht/Garantie entfernt → offene Frist entfernt; erledigte oder verschobene Fristen bleiben. 6 Sprachen.
+- **Inventarliste im Steuerberater-ZIP:** `advisorZip` legt `Inventar.csv` bei, sobald es Inventar gibt.
+- **Roboter-Prüfung (Cloudflare Turnstile):** Widget „eOffis Anmeldung“ (Domains dgnysr.github.io, eoffis.de, eoffis.com mit www), Site Key in `config.js`. „Server einrichten“ schaltet die Prüfung in Supabase ein, sobald das GitHub-Secret `TURNSTILE_SECRET` gesetzt ist – und nur, wenn die App den Site Key kennt.
+- Tests: neu `tests/paket9.js` (7), `tests/setup_test.js` +3. Gesamtlauf 383 Prüfungen, 0 Fehler.
 ### 27.11.2026 – E-Mail über Brevo und Anmeldung mit Google
 - Brevo: Domain eoffis.de authentifiziert (mail.eoffis.de), Absender info@eoffis.de, Anmelde- und Erinnerungs-Mails live (Test-Mail angekommen).
 - Google-Anmeldung eingeschaltet (Google Cloud Projekt „eoffis“, Status „Test“; veröffentlichen erst nach Startseite + Datenschutzerklärung auf eoffis.de). „Server einrichten“ 11/11.

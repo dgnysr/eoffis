@@ -45,13 +45,13 @@ async function run(name, opts, check) {
   const cfg = path.join(dir, 'config.js');
   fs.writeFileSync(cfg, fs.readFileSync(path.join(root, 'config.js'), 'utf8')
     .replace(/supabaseUrl:\s*'[^']*'/, "supabaseUrl: 'https://ref.supabase.co'").replace(/supabaseAnonKey:\s*'[^']*'/, "supabaseAnonKey: 'ANON'")
-    .replace(/vapidPublicKey:\s*'[^']*'/, `vapidPublicKey: '${opts.vapid || ''}'`).replace(/oauth:\s*\[[^\]]*\]/, 'oauth: []'));
+    .replace(/vapidPublicKey:\s*'[^']*'/, `vapidPublicKey: '${opts.vapid || ''}'`).replace(/oauth:\s*\[[^\]]*\]/, 'oauth: []').replace(/turnstileSiteKey:\s*'[^']*'/, `turnstileSiteKey: '${opts.siteKey || ''}'`));
   const cli = path.join(dir, 'cli.sh'), cliLog = path.join(dir, 'cli.log');
   fs.writeFileSync(cli, `#!/bin/sh\n[ "$3" = "--help" ] && { echo "  -y, --yes  confirm"; exit 0; }\necho "$@" >> ${cliLog}\nwd=$(echo "$@" | sed 's/.*--workdir \\([^ ]*\\).*/\\1/')\ncat "$wd/supabase/config.toml" > ${dir}/toml\nls "$wd/supabase/functions/$3/index.ts" >/dev/null || exit 3\n`);
   fs.chmodSync(cli, 0o755);
   const env = { ...process.env, SUPABASE_ACCESS_TOKEN: opts.token || 'good', SUPABASE_API: m.url, PROJECT_URL: m.url, BREVO_API: m.url, CONFIG_PATH: cfg, SUPABASE_CLI: cli, SETUP_WAIT_MS: '10', ...(opts.env || {}) };
   delete env.GITHUB_STEP_SUMMARY;
-  for (const k of ['ANTHROPIC_API_KEY', 'BREVO_API_KEY', 'MAIL_FROM', 'OPERATOR_EMAIL', 'BREVO_SMTP_USER', 'BREVO_SMTP_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'TESTMAIL']) if (!(opts.env || {})[k]) delete env[k];
+  for (const k of ['ANTHROPIC_API_KEY', 'BREVO_API_KEY', 'MAIL_FROM', 'OPERATOR_EMAIL', 'BREVO_SMTP_USER', 'BREVO_SMTP_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'TURNSTILE_SECRET', 'TESTMAIL']) if (!(opts.env || {})[k]) delete env[k];
   const out = await new Promise((r) => { const p = spawn('node', [path.join(root, 'scripts/supabase_setup.mjs')], { env }); let o = ''; p.stdout.on('data', (d) => (o += d)); p.stderr.on('data', (d) => (o += d)); p.on('close', (code) => r({ code, o })); });
   m.srv.close();
   const read = (f) => (fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '');
@@ -94,6 +94,12 @@ async function run(name, opts, check) {
     ok('Test-E-Mail an die Antwort-Adresse info@ (Weiterleitung prüfen)', r.st.mails && r.st.mails.length === 2 && r.st.mails[1].to[0].email === 'info@eoffis.de' && /PASS Test-E-Mail an die Antwort-Adresse/.test(r.o), r.o.slice(-400));
   });
   await run('Brevo-Schlüssel ungültig', { have: ['EOFFIS_ENC_KEY', 'ANTHROPIC_API_KEY'], env: { BREVO_API_KEY: 'abgelaufen' } }, (r) => ok('Ungültiger Brevo-Schlüssel fällt auf', r.code === 1 && /FAIL E-Mail-Schlüssel/.test(r.o), r.o.slice(-300)));
+  await run('Roboter-Prüfung', { have: ['EOFFIS_ENC_KEY', 'ANTHROPIC_API_KEY'], siteKey: '0x4AAAsite', env: { TURNSTILE_SECRET: 'tsec-geheim' } }, (r) => {
+    const a = r.st.auth || {};
+    ok('Turnstile: Roboter-Prüfung in Supabase eingeschaltet', r.code === 0 && a.security_captcha_enabled === true && a.security_captcha_provider === 'turnstile' && a.security_captcha_secret === 'tsec-geheim', r.o);
+    ok('Turnstile-Secret nicht im Protokoll', !/tsec-geheim/.test(r.o));
+  });
+  await run('Roboter-Prüfung ohne Site Key', { have: ['EOFFIS_ENC_KEY', 'ANTHROPIC_API_KEY'], env: { TURNSTILE_SECRET: 'tsec' } }, (r) => ok('Ohne Site Key in der App bleibt die Prüfung aus (sonst scheitert jede Anmeldung)', r.code === 0 && !('security_captcha_enabled' in (r.st.auth || {})) && /Roboter-Prüfung bleibt aus/.test(r.o), r.o));
   await run('falscher Schlüssel', { token: 'bad' }, (r) => ok('Ungültiger Zugangsschlüssel: klare Meldung', r.code === 1 && /SUPABASE_ACCESS_TOKEN\) ungültig/.test(r.o), r.o));
   await run('ohne KI-Schlüssel', { noAi: true }, (r) => ok('Fehlender KI-Schlüssel lässt die Prüfung scheitern', r.code === 1 && /FAIL KI-Funktion: ANTHROPIC_API_KEY fehlt/.test(r.o), r.o));
   await run('Datenbank falsch', { accState: 'readonly' }, (r) => ok('Fehlerhafte Prüfung → Lauf scheitert', r.code === 1 && /FAIL Probezeit-Status/.test(r.o), r.o));

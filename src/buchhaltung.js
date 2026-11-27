@@ -42,7 +42,7 @@ const ACC_TEXT = {
     advisorOpenN: '{{count}} Beleg(e) noch nicht an den Steuerberater gesendet.', advisorAll: 'Alle an Steuerberater senden',
     selected: '{{count}} ausgewählt', selTransfer: 'Übertragen', selAdvisor: 'An Steuerberater', selPc: 'Auf PC', selClear: 'Auswahl aufheben', selMonth: 'Monat auswählen',
     empty: 'Noch keine Buchhaltungsbelege. Scannen Sie eine Rechnung, Quittung oder einen Lieferschein.',
-    advisorTitle: 'An Steuerberater senden', advisorMail: 'E-Mail des Steuerberaters', advisorZip: 'ZIP mit {{count}} Belegen (Jahr / Monat / Belegart) und Übersicht',
+    advisorTitle: 'An Steuerberater senden', advisorMail: 'E-Mail des Steuerberaters', advisorZip: 'ZIP mit {{count}} Belegen (Jahr / Monat / Belegart), Übersicht und Inventarliste',
     advisorTask: 'Belege des Vormonats an Steuerberater senden', advisorOk: 'Als an Steuerberater gesendet markiert.',
     linkAsk: 'Gehört zu {{kind}} „{{title}}“ vom {{date}}?', linkYes: 'Ja, verknüpfen', linkNo: 'Nein', linked: 'Verknüpft mit: {{list}}',
     linkedNote: 'Verknüpfte Lieferscheine werden beim Übertragen der Rechnung mitgeschickt.', unlink: 'Verknüpfung lösen',
@@ -536,6 +536,8 @@ async function advisorZip(docs) {
     rows.push([i + 1, ACC_DIR[accTypeOf(d) || 'rechnung'], fmtDate(accDateOf(d)), d.sender, d.invoice_number || d.document_number, nf(d.amount_net), nf(d.vat_amount), nf(d.amount_gross), normCur(d.currency) || 'EUR', p, lt ? progName(accProfile(), lt.to) : '', d.sha256].map(cellv).join(';'));
   }
   zip.file('Uebersicht.csv', '﻿' + rows.join('\r\n'));
+  // Inventarliste der Betriebs-Akte (Anlagegüter, Garantie, Seriennummern) für den Steuerberater mitgeben
+  if (typeof invCsv === 'function' && Array.isArray(S.assets) && S.assets.length) zip.file('Inventar.csv', invCsv());
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
   const name = (S.profile && S.profile.company_name ? safeName(S.profile.company_name) + '_' : '') + `Belege_${todayISO()}.zip`;
   return new File([blob], name, { type: 'application/zip' });

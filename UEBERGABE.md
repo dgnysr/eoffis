@@ -29,6 +29,7 @@ Jedes Paket: Tests grün (`bash tests/run_all.sh`), Eintrag in `STAND.md`, Verö
 - **Betriebs-Akte B – Pflichten-Kalender (21.11.):** Pflichtenlisten je Branche in der Datenbank (61 Vorlagen, u. a. Juwelier, Makler, Friseur, Gastro), Branche ankreuzen, eigene Punkte, Nachweis scannen, Haftungshinweis.
 - **Anrede „Sie“** in allen deutschen Texten; **Extremfall-Prüfung** (Beträge, Währungen, Daten, Doppelbelege, große Scans, offline, sichere Löschung).
 - **Entscheidungen 27.11.:** nach der Probezeit 12 Monate Archiv (nur lesen), Erinnerungen alle 90 Tage, letzte Warnung 30 Tage vorher, dann Löschung; „Alles herunterladen“ (ZIP) und Löschen auf ausdrücklichen Wunsch mit Hinweis auf die Aufbewahrungspflicht 8/10 Jahre; Geldwäsche-Verordnung ab 10.07.2027 und MaBV (Prüfbericht oder Negativerklärung, IHK bestätigt Form) in den Listen; gesetzliche Hinweise beim Scannen; verpasste Kündigungsfrist → nächster Termin automatisch.
+- **Konzept-Lücken (27.11.):** Garantie-Ende als Frist, Inventarliste im Steuerberater-ZIP. Liste aller offenen Arbeiten: Projektdatei `uebergabe/OFFENE_ARBEITEN_2026-11-27.md`.
 - **Wert-Analyse (27.11.):** https://claude.ai/artifact/1wWiJPbpQwCmgYsX3fhyoJ (Nutzen 160–400 €/Monat je Betrieb, Kosten 2,50–3,50 €/Kunde, Gewinnschwelle 3 Kunden, Empfehlung 29/49 €).
 - Tests: siehe letzter Eintrag in `STAND.md`.
 
@@ -38,5 +39,5 @@ Jedes Paket: Tests grün (`bash tests/run_all.sh`), Eintrag in `STAND.md`, Verö
 3. **Nach dem Praxistest von selbst ansprechen:** Modul C (Vertrags-Check/Angebotsvergleich, Sammlung `offers/` vorbereitet) – ob und wie; Modul D (Verwertung alter Geräte: eBay-API, Kleinanzeigen-Kopierpaket, Awin/AdCell, eBay Partner Network – oder nur ein Link) – ob und wie. eBay-Entwicklerkonto „emfid“ besteht, Schlüssel nur als GitHub-Secret.
 4. **Vor echten Kunden:** Startseite und Datenschutzerklärung auf eoffis.de (IONOS; App dort erreichbar machen), dann Google-Anmeldung in der Google Cloud (Projekt „eoffis“, Google Auth Platform) von „Test“ auf „Veröffentlicht“ stellen – bis dahin nur eingetragene Testnutzer (max. 100) mit Google.
 5. AGB/AVV: Archiv- und Löschregel (12 Monate, Warnungen, Löschen auf Wunsch) aufnehmen.
-6. Server-Reste: Roboter-Prüfung (Cloudflare Turnstile), Anmeldung mit Apple. Brevo-Schlüssel im Nov. 2027 vorsorglich erneuern.
+6. Server-Reste: Anmeldung mit Apple (nur bei Nachfrage). Roboter-Prüfung siehe STAND.md 27.11. Brevo-Schlüssel im Nov. 2027 vorsorglich erneuern.
 7. Später: Leistungsnachweis vor Ort → Lexware. Bezahlsystem ganz am Ende (Abo 29/49 €/Monat).

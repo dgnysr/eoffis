@@ -35,6 +35,7 @@ jobs:
           BREVO_SMTP_KEY: ${{ secrets.BREVO_SMTP_KEY }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          TURNSTILE_SECRET: ${{ secrets.TURNSTILE_SECRET }}
           OPERATOR_EMAIL: ${{ secrets.OPERATOR_EMAIL || vars.OPERATOR_EMAIL }}
           TESTMAIL: ${{ inputs.testmail || 'false' }}
         run: |

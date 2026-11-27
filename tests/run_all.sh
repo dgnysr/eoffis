@@ -27,5 +27,6 @@ run Einrichtung node setup_test.js
 run Kontoanzeige node konto_anzeige.js
 run Archiv node archiv_loeschen.js
 run Paket8 node paket8.js
+run Paket9 node paket9.js
 echo "Gesamt: $total Prüfungen, $failed Fehler"
 [ $failed -eq 0 ]

@@ -2,7 +2,7 @@
 // Projekt aufwecken → Datenbank (schema.sql) → Geheimschlüssel → KI-Funktion + eoffis-api → Anmeldung → täglicher Lauf → Prüfung.
 // Läuft im GitHub-Workflow „Server einrichten“. Benötigt nur SUPABASE_ACCESS_TOKEN (Supabase → Account → Access Tokens).
 // Optional: OPERATOR_EMAIL (eigenes Konto dauerhaft freischalten), ANTHROPIC_API_KEY, BREVO_API_KEY, MAIL_FROM (werden nur gesetzt, wenn übergeben),
-// BREVO_SMTP_USER + BREVO_SMTP_KEY (Anmelde-Mails über Brevo), GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET (Anmeldung mit Google).
+// BREVO_SMTP_USER + BREVO_SMTP_KEY (Anmelde-Mails über Brevo), GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET (Anmeldung mit Google), TURNSTILE_SECRET (Roboter-Prüfung).
 // Für Tests überschreibbar: SUPABASE_API, PROJECT_URL, CONFIG_PATH, SUPABASE_CLI, SETUP_WAIT_MS.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -131,6 +131,13 @@ if (env.BREVO_SMTP_USER && env.BREVO_SMTP_KEY && env.MAIL_FROM) {
 // Anmeldung mit Google – nur wenn Client-ID und Secret übergeben wurden
 const google = !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
 if (google) { Object.assign(authCfg, { external_google_enabled: true, external_google_client_id: env.GOOGLE_CLIENT_ID, external_google_secret: env.GOOGLE_CLIENT_SECRET }); log('Anmeldung mit Google eingeschaltet'); }
+// Roboter-Prüfung (Cloudflare Turnstile) – nur wenn der Secret Key übergeben wurde UND die App den Site Key kennt (sonst würde jede Anmeldung scheitern)
+{
+  let siteKey = '';
+  try { siteKey = (fs.readFileSync(CONFIG, 'utf8').match(/turnstileSiteKey:\s*'([^']*)'/) || [])[1] || ''; } catch { /* keine config.js */ }
+  if (env.TURNSTILE_SECRET && siteKey) { Object.assign(authCfg, { security_captcha_enabled: true, security_captcha_provider: 'turnstile', security_captcha_secret: env.TURNSTILE_SECRET }); log('Roboter-Prüfung (Turnstile) eingeschaltet'); }
+  else if (env.TURNSTILE_SECRET) log('Hinweis: TURNSTILE_SECRET gesetzt, aber turnstileSiteKey in config.js leer – Roboter-Prüfung bleibt aus');
+}
 await api('PATCH', `/v1/projects/${ref}/config/auth`, authCfg);
 log('Anmeldung eingestellt');
 

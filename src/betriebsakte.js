@@ -18,6 +18,7 @@ const INV_TEXT = {
     aName: 'Bezeichnung', aCat: 'Art', aMaker: 'Hersteller', aModel: 'Modell', aSerial: 'Seriennummer', aQty: 'Anzahl', aPrice: 'Preis je Stück netto (€)', aPriceG: 'Preis je Stück brutto (€)',
     aDate: 'Kaufdatum', aSupplier: 'Lieferant', aWarranty: 'Garantie bis', aLoc: 'Standort / Nutzer', aNotes: 'Notiz', aStatus: 'Zustand', aElec: 'Elektrisches Gerät (muss regelmäßig geprüft werden)',
     aDoc: 'Beleg öffnen', aDel: 'Aus dem Inventar löschen', aDelQ: 'Diesen Gegenstand aus dem Inventar löschen?', aSaved: 'Gespeichert.', aWarr: 'Garantie bis {{date}}', aNameMiss: 'Bitte eine Bezeichnung eingeben.',
+    wTask: 'Garantie endet am {{date}}: {{name}}', wNote: 'Mängel bitte vor Ablauf der Garantie beim Händler oder Hersteller melden. Danach tragen Sie die Kosten selbst.',
     st_aktiv: 'in Betrieb', st_defekt: 'defekt', st_ausgemustert: 'ausgemustert', st_verkauft: 'verkauft',
     cat_geraet: 'Gerät', cat_it: 'Computer & Handy', cat_maschine: 'Maschine', cat_werkzeug: 'Werkzeug', cat_moebel: 'Möbel', cat_fahrzeug: 'Fahrzeug', cat_kasse: 'Kasse & Waage', cat_software: 'Software', cat_einrichtung: 'Einrichtung', cat_sonstiges: 'Sonstiges',
     indJuwelier: 'Juwelier', indMakler: 'Immobilienmakler',
@@ -37,6 +38,7 @@ const INV_TEXT = {
     aName: 'Adı', aCat: 'Tür', aMaker: 'Üretici', aModel: 'Model', aSerial: 'Seri numarası', aQty: 'Adet', aPrice: 'Birim fiyat net (€)', aPriceG: 'Birim fiyat brüt (€)',
     aDate: 'Alış tarihi', aSupplier: 'Tedarikçi', aWarranty: 'Garanti bitişi', aLoc: 'Yer / kullanan', aNotes: 'Not', aStatus: 'Durum', aElec: 'Elektrikli cihaz (düzenli kontrol edilmeli)',
     aDoc: 'Belgeyi aç', aDel: 'Envanterden sil', aDelQ: 'Bu kalem envanterden silinsin mi?', aSaved: 'Kaydedildi.', aWarr: 'Garanti {{date}} tarihine kadar', aNameMiss: 'Lütfen bir ad gir.',
+    wTask: 'Garanti {{date}} tarihinde bitiyor: {{name}}', wNote: 'Kusurları garanti bitmeden satıcıya veya üreticiye bildirin.',
     st_aktiv: 'kullanımda', st_defekt: 'arızalı', st_ausgemustert: 'kullanım dışı', st_verkauft: 'satıldı',
     cat_geraet: 'Cihaz', cat_it: 'Bilgisayar ve telefon', cat_maschine: 'Makine', cat_werkzeug: 'Alet', cat_moebel: 'Mobilya', cat_fahrzeug: 'Araç', cat_kasse: 'Kasa ve terazi', cat_software: 'Yazılım', cat_einrichtung: 'Donanım', cat_sonstiges: 'Diğer',
     indJuwelier: 'Kuyumcu', indMakler: 'Emlakçı',
@@ -56,6 +58,7 @@ const INV_TEXT = {
     aName: 'Nazwa', aCat: 'Rodzaj', aMaker: 'Producent', aModel: 'Model', aSerial: 'Numer seryjny', aQty: 'Ilość', aPrice: 'Cena jedn. netto (€)', aPriceG: 'Cena jedn. brutto (€)',
     aDate: 'Data zakupu', aSupplier: 'Dostawca', aWarranty: 'Gwarancja do', aLoc: 'Miejsce / użytkownik', aNotes: 'Notatka', aStatus: 'Stan', aElec: 'Urządzenie elektryczne (wymaga regularnych przeglądów)',
     aDoc: 'Otwórz dokument', aDel: 'Usuń z inwentarza', aDelQ: 'Usunąć tę pozycję z inwentarza?', aSaved: 'Zapisano.', aWarr: 'Gwarancja do {{date}}', aNameMiss: 'Podaj nazwę.',
+    wTask: 'Gwarancja kończy się {{date}}: {{name}}', wNote: 'Wady zgłoś sprzedawcy lub producentowi przed końcem gwarancji.',
     st_aktiv: 'w użyciu', st_defekt: 'uszkodzone', st_ausgemustert: 'wycofane', st_verkauft: 'sprzedane',
     cat_geraet: 'Urządzenie', cat_it: 'Komputer i telefon', cat_maschine: 'Maszyna', cat_werkzeug: 'Narzędzie', cat_moebel: 'Meble', cat_fahrzeug: 'Pojazd', cat_kasse: 'Kasa i waga', cat_software: 'Oprogramowanie', cat_einrichtung: 'Wyposażenie', cat_sonstiges: 'Inne',
     indJuwelier: 'Jubiler', indMakler: 'Pośrednik nieruchomości',
@@ -75,6 +78,7 @@ const INV_TEXT = {
     aName: 'Название', aCat: 'Вид', aMaker: 'Производитель', aModel: 'Модель', aSerial: 'Серийный номер', aQty: 'Количество', aPrice: 'Цена за шт. нетто (€)', aPriceG: 'Цена за шт. брутто (€)',
     aDate: 'Дата покупки', aSupplier: 'Поставщик', aWarranty: 'Гарантия до', aLoc: 'Место / пользователь', aNotes: 'Заметка', aStatus: 'Состояние', aElec: 'Электроприбор (нужна регулярная проверка)',
     aDoc: 'Открыть документ', aDel: 'Удалить из инвентаря', aDelQ: 'Удалить эту позицию из инвентаря?', aSaved: 'Сохранено.', aWarr: 'Гарантия до {{date}}', aNameMiss: 'Введите название.',
+    wTask: 'Гарантия заканчивается {{date}}: {{name}}', wNote: 'Сообщите о дефектах продавцу или производителю до окончания гарантии.',
     st_aktiv: 'в работе', st_defekt: 'неисправно', st_ausgemustert: 'списано', st_verkauft: 'продано',
     cat_geraet: 'Прибор', cat_it: 'Компьютер и телефон', cat_maschine: 'Машина', cat_werkzeug: 'Инструмент', cat_moebel: 'Мебель', cat_fahrzeug: 'Транспорт', cat_kasse: 'Касса и весы', cat_software: 'Программы', cat_einrichtung: 'Оснащение', cat_sonstiges: 'Прочее',
     indJuwelier: 'Ювелир', indMakler: 'Риелтор',
@@ -94,6 +98,7 @@ const INV_TEXT = {
     aName: 'الاسم', aCat: 'النوع', aMaker: 'الشركة المصنّعة', aModel: 'الطراز', aSerial: 'الرقم التسلسلي', aQty: 'العدد', aPrice: 'سعر القطعة صافي (€)', aPriceG: 'سعر القطعة إجمالي (€)',
     aDate: 'تاريخ الشراء', aSupplier: 'المورّد', aWarranty: 'الضمان حتى', aLoc: 'المكان / المستخدم', aNotes: 'ملاحظة', aStatus: 'الحالة', aElec: 'جهاز كهربائي (يجب فحصه بانتظام)',
     aDoc: 'فتح المستند', aDel: 'حذف من الجرد', aDelQ: 'هل تريد حذف هذا العنصر من الجرد؟', aSaved: 'تم الحفظ.', aWarr: 'الضمان حتى {{date}}', aNameMiss: 'يرجى إدخال اسم.',
+    wTask: 'ينتهي الضمان في {{date}}: {{name}}', wNote: 'أبلغ البائع أو المصنّع بالعيوب قبل انتهاء الضمان.',
     st_aktiv: 'قيد الاستخدام', st_defekt: 'معطّل', st_ausgemustert: 'خارج الخدمة', st_verkauft: 'مُباع',
     cat_geraet: 'جهاز', cat_it: 'حاسوب وهاتف', cat_maschine: 'آلة', cat_werkzeug: 'أداة', cat_moebel: 'أثاث', cat_fahrzeug: 'مركبة', cat_kasse: 'صندوق نقد وميزان', cat_software: 'برمجيات', cat_einrichtung: 'تجهيزات', cat_sonstiges: 'أخرى',
     indJuwelier: 'صائغ', indMakler: 'وسيط عقاري',
@@ -113,6 +118,7 @@ const INV_TEXT = {
     aName: 'Denumire', aCat: 'Tip', aMaker: 'Producător', aModel: 'Model', aSerial: 'Număr de serie', aQty: 'Cantitate', aPrice: 'Preț unitar net (€)', aPriceG: 'Preț unitar brut (€)',
     aDate: 'Data cumpărării', aSupplier: 'Furnizor', aWarranty: 'Garanție până la', aLoc: 'Loc / utilizator', aNotes: 'Notă', aStatus: 'Stare', aElec: 'Aparat electric (trebuie verificat regulat)',
     aDoc: 'Deschide documentul', aDel: 'Șterge din inventar', aDelQ: 'Ștergi acest obiect din inventar?', aSaved: 'Salvat.', aWarr: 'Garanție până la {{date}}', aNameMiss: 'Introdu o denumire.',
+    wTask: 'Garanția expiră la {{date}}: {{name}}', wNote: 'Raportați defectele vânzătorului sau producătorului înainte de expirarea garanției.',
     st_aktiv: 'în uz', st_defekt: 'defect', st_ausgemustert: 'scos din uz', st_verkauft: 'vândut',
     cat_geraet: 'Aparat', cat_it: 'Calculator și telefon', cat_maschine: 'Mașină', cat_werkzeug: 'Unealtă', cat_moebel: 'Mobilier', cat_fahrzeug: 'Vehicul', cat_kasse: 'Casă și cântar', cat_software: 'Software', cat_einrichtung: 'Dotări', cat_sonstiges: 'Altele',
     indJuwelier: 'Bijutier', indMakler: 'Agent imobiliar',
@@ -700,6 +706,38 @@ BA_LOAD.push(async () => { S.duties = await store.all('duties'); await dutySync(
     if (col === 'tasks' && rec && rec.duty_id && rec.status === 'done' && !rec.duty_applied) setTimeout(() => dutySync().then(() => render()), 0);
     return out;
   };
+}
+
+/* ---------- Garantie-Ende als Frist (eine offene Frist je Gegenstand in Betrieb, 30 Tage vor Ablauf) ---------- */
+const WARR_LEAD = 30;
+const warrWant = (a) => (a && a.warranty_until && a.status !== 'ausgemustert' && a.status !== 'verkauft' && a.warranty_until >= todayISO() ? a.warranty_until : null);
+async function warrSyncRun() {
+  const today = todayISO();
+  for (const k of S.tasks.filter((x) => x.asset_id && x.status !== 'done')) {
+    const a = S.assets.find((x) => x.id === k.asset_id);
+    if (warrWant(a) !== k.warranty_until) await dutTaskDel(k); // gelöscht, verkauft, Garantie entfernt/geändert/abgelaufen
+  }
+  for (const a of S.assets) {
+    const end = warrWant(a); if (!end) continue;
+    // schon vorhanden (offen oder erledigt) für genau dieses Garantie-Ende → nichts tun (verschobene Termine bleiben)
+    if (S.tasks.some((k) => k.asset_id === a.id && k.warranty_until === end)) continue;
+    const due = addDays(end, -WARR_LEAD) < today ? today : addDays(end, -WARR_LEAD);
+    await dutTaskPut({ id: uid(), asset_id: a.id, warranty_until: end, template_key: 'warranty:' + a.id, title: t('ba.wTask', { date: fmtDate(end), name: a.name }).slice(0, 200),
+      kind: 'other', due_date: due, status: 'open', priority: 'normal', notes: t('ba.wNote'), created_at: nowIso(), version: 0 });
+  }
+}
+let warrQueue = Promise.resolve();
+function warrSync() { warrQueue = warrQueue.then(() => (S.assets.length || S.tasks.some((k) => k.asset_id) ? warrSyncRun() : null)).catch((e) => console.warn(e)); return warrQueue; }
+BA_LOAD.push(async () => { await warrSync(); });
+{
+  const sv = saveVersioned;
+  saveVersioned = async function (col) {
+    const out = await sv.apply(this, arguments);
+    if (col === 'assets') setTimeout(() => warrSync(), 0);
+    return out;
+  };
+  const del = baAssetDel;
+  baAssetDel = async function () { const ok = await del.apply(this, arguments); if (ok) await warrSync(); return ok; };
 }
 
 /* ---------- Einrichtung: Branche → Angaben → Liste → eigene Punkte → Hinweis ---------- */
