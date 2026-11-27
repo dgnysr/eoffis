@@ -77,7 +77,7 @@ async function run(name, opts, check) {
     ok('Beide Funktionen ohne „Verify JWT“ bereitgestellt (ohne Rückfrage)', /--yes/.test(r.cli) && /deploy smooth-processor --project-ref ref --no-verify-jwt/.test(r.cli) && /deploy eoffis-api --project-ref ref --no-verify-jwt/.test(r.cli) && /\[functions\.smooth-processor\]\nverify_jwt = false/.test(r.toml));
     ok('Anmeldung: Testen ohne E-Mail, Konto sichern, Rücksprung', r.st.auth && r.st.auth.external_anonymous_users_enabled && r.st.auth.security_manual_linking_enabled && r.st.auth.site_url === 'https://dgnysr.github.io/eoffis/');
     ok('Kundenprüfung bestanden und Testkonto gelöscht', /Prüfung: 10\/10/.test(r.o) && r.st.sql.some((q) => q.includes(`delete from auth.users where id = '${UID}'`)), r.o);
-    ok('Ohne Brevo-/Google-Angaben: Anmeldung unverändert', !('smtp_host' in r.st.auth) && !('external_google_enabled' in r.st.auth) && /oauth:\s*\[\]/.test(r.cfg));
+    ok('Ohne Brevo-/Google-Angaben: Anmeldung unverändert', !('smtp_host' in r.st.auth) && !('mailer_subjects_recovery' in r.st.auth) && !('external_google_enabled' in r.st.auth) && /oauth:\s*\[\]/.test(r.cfg));
     ok('Fehlende optionale Schlüssel werden genannt', /Noch offen.*BREVO_API_KEY/.test(r.o));
   });
   await run('zweiter Lauf', { have: ['EOFFIS_ENC_KEY', 'ANTHROPIC_API_KEY', 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'BREVO_API_KEY', 'MAIL_FROM'], vapid: 'BEreits' }, (r) => {
@@ -90,6 +90,7 @@ async function run(name, opts, check) {
     ok('Anmeldung mit Google eingeschaltet und in der App sichtbar', a.external_google_enabled === true && a.external_google_client_id === 'gid.apps.googleusercontent.com' && /oauth:\s*\['google'\]/.test(r.cfg));
     ok('Geheimnisse nicht im Protokoll', !/xsmtp|gsec|brevo-ok/.test(r.o));
     ok('Brevo-Schlüssel geprüft, Test-E-Mails an den Betreiber (Brevo + Anmelde-Mail)', /PASS E-Mail-Schlüssel/.test(r.o) && r.st.mails && r.st.mails[0].to[0].email === 'chef@x.de' && r.st.mails[0].sender.email === 'info@eoffis.de' && r.st.recover === 'chef@x.de', r.o.slice(-400));
+    ok('Anmelde-Mails auf Deutsch mit „Sie“ und Link', ['confirmation','email_change','magic_link','recovery','invite'].every((k) => /^eOffis: /.test(r.st.auth['mailer_subjects_' + k] || '') && (r.st.auth['mailer_templates_' + k + '_content'] || '').includes('{{ .ConfirmationURL }}') && / Sie /.test(r.st.auth['mailer_templates_' + k + '_content']) && !/\b(du|dein)\b/i.test(r.st.auth['mailer_templates_' + k + '_content'])));
     ok('Test-E-Mail an die Antwort-Adresse info@ (Weiterleitung prüfen)', r.st.mails && r.st.mails.length === 2 && r.st.mails[1].to[0].email === 'info@eoffis.de' && /PASS Test-E-Mail an die Antwort-Adresse/.test(r.o), r.o.slice(-400));
   });
   await run('Brevo-Schlüssel ungültig', { have: ['EOFFIS_ENC_KEY', 'ANTHROPIC_API_KEY'], env: { BREVO_API_KEY: 'abgelaufen' } }, (r) => ok('Ungültiger Brevo-Schlüssel fällt auf', r.code === 1 && /FAIL E-Mail-Schlüssel/.test(r.o), r.o.slice(-300)));

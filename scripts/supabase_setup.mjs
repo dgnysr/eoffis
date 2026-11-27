@@ -62,6 +62,27 @@ if (env.OPERATOR_EMAIL) {
     on conflict (owner) do update set status = 'active' returning owner`);
   log(Array.isArray(r) && r.length ? 'Betreiber-Konto dauerhaft freigeschaltet' : 'Betreiber-Adresse vorgemerkt: wird beim Anlegen des Kontos automatisch freigeschaltet');
 }
+// Anmelde-Mails auf Deutsch, Anrede „Sie“ (27.11.2026). Nur mit eigener SMTP-Adresse änderbar.
+function authMailTexts() {
+  const box = (title, text, btn) => `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;color:#1f2933">
+<h2 style="color:#0b5d4b">${title}</h2><p>${text}</p>
+<p><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#0b5d4b;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none">${btn}</a></p>
+<p style="font-size:13px;color:#555">Falls der Knopf nicht funktioniert, kopieren Sie diesen Link in Ihren Browser:<br>{{ .ConfirmationURL }}</p>
+<p style="font-size:13px;color:#555">Sie haben das nicht angefordert? Dann können Sie diese E-Mail einfach ignorieren.</p>
+<p style="font-size:13px;color:#555">Ihr eOffis-Team</p></div>`;
+  return {
+    mailer_subjects_confirmation: 'eOffis: Bitte bestätigen Sie Ihre E-Mail-Adresse',
+    mailer_templates_confirmation_content: box('Willkommen bei eOffis', 'Bitte bestätigen Sie Ihre E-Mail-Adresse. Danach ist Ihr Konto gesichert.', 'E-Mail-Adresse bestätigen'),
+    mailer_subjects_email_change: 'eOffis: Bitte bestätigen Sie Ihre E-Mail-Adresse',
+    mailer_templates_email_change_content: box('Konto sichern', 'Bitte bestätigen Sie, dass Sie eOffis mit der Adresse {{ .NewEmail }} nutzen möchten. Danach ist Ihr Konto gesichert und Ihre Unterlagen bleiben erhalten.', 'Jetzt bestätigen'),
+    mailer_subjects_magic_link: 'eOffis: Ihr Anmelde-Link',
+    mailer_templates_magic_link_content: box('Anmelden bei eOffis', 'Tippen Sie auf den Knopf, um sich bei eOffis anzumelden. Der Link gilt nur kurze Zeit.', 'Jetzt anmelden'),
+    mailer_subjects_recovery: 'eOffis: Kennwort zurücksetzen',
+    mailer_templates_recovery_content: box('Kennwort zurücksetzen', 'Sie haben angefordert, Ihr Kennwort zurückzusetzen. Tippen Sie auf den Knopf, um ein neues Kennwort festzulegen.', 'Neues Kennwort festlegen'),
+    mailer_subjects_invite: 'eOffis: Sie wurden eingeladen',
+    mailer_templates_invite_content: box('Einladung zu eOffis', 'Sie wurden zu eOffis eingeladen. Tippen Sie auf den Knopf, um Ihr Konto zu aktivieren.', 'Einladung annehmen'),
+  };
+}
 function lit(s) { return "'" + String(s).replace(/'/g, "''") + "'"; }
 
 // 3) Geheimschlüssel: vorhandene bleiben (EOFFIS_ENC_KEY darf sich nie ändern), fehlende werden erzeugt
@@ -104,7 +125,8 @@ if (env.BREVO_SMTP_USER && env.BREVO_SMTP_KEY && env.MAIL_FROM) {
   const m = env.MAIL_FROM.match(/^(.*)<(.+)>$/);
   Object.assign(authCfg, { smtp_host: 'smtp-relay.brevo.com', smtp_port: '587', smtp_user: env.BREVO_SMTP_USER, smtp_pass: env.BREVO_SMTP_KEY,
     smtp_admin_email: (m ? m[2] : env.MAIL_FROM).trim(), smtp_sender_name: (m && m[1].trim()) || 'eOffis', rate_limit_email_sent: 100 });
-  log('Anmelde-Mails laufen über Brevo (' + authCfg.smtp_admin_email + ')');
+  Object.assign(authCfg, authMailTexts());
+  log('Anmelde-Mails laufen über Brevo (' + authCfg.smtp_admin_email + '), Texte auf Deutsch');
 }
 // Anmeldung mit Google – nur wenn Client-ID und Secret übergeben wurden
 const google = !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
