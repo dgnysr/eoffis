@@ -117,6 +117,7 @@ const ENV = { SUPABASE_URL: 'https://p.test', SUPABASE_ANON_KEY: 'ANON', SUPABAS
   };
   world.webpush = { setVapidDetails() {}, sendNotification: async (sub, payload) => { world.pushes.push([sub.endpoint, JSON.parse(payload)]); } };
   world.fetch = async (u, o) => {
+    if (u.startsWith('https://api.brevo.com/v3/smtp/statistics')) { world.brevoPing = (world.brevoPing || 0) + 1; return new Response('{}', { status: 200 }); }
     if (u.startsWith('https://api.brevo.com')) { world.mails.push(JSON.parse(o.body)); return new Response('{}', { status: 201 }); }
     if (u.startsWith('https://api.lexware.io')) { world.lex.push(o.headers.Authorization); return new Response(JSON.stringify({ id: 'lex-' + world.lex.length }), { status: 202 }); }
     return new Response('nf', { status: 404 });
@@ -153,6 +154,7 @@ const ENV = { SUPABASE_URL: 'https://p.test', SUPABASE_ANON_KEY: 'ANON', SUPABAS
   ok(world.deleted.includes('u7') && world.removed.includes('u7/x.bin') && world.removed.includes('u7/y.bin'), 'Löschung: Konto und Freigabe-Dateien');
   const sub3 = world.tables.subscriptions.find((s) => s.owner === 'u3'); ok(sub3 && sub3.notified_warn, 'Nachricht als „verschickt“ vermerkt (kein zweites Mal)');
   ok(j.push && typeof j.push.sent === 'number', 'Morgen-Erinnerung läuft im selben Aufruf');
+  ok(j.mailKey === 'ok' && world.brevoPing >= 1, 'Brevo-Schlüssel wird täglich genutzt (läuft nicht nach 90 Tagen ab)');
   // Viele Geräte: Seitenweise und parallel ohne Zeitüberschreitung
   world.tables.push_subs = Array.from({ length: 2500 }, (_, i) => ({ endpoint: 'https://push/x' + i, p256dh: 'k', auth: 'a', lang: 'de', space: 'main', owner: 'v' + i }));
   world.due = []; world.pushes = [];

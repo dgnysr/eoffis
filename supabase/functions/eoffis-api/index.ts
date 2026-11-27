@@ -258,6 +258,9 @@ async function daily() {
   try { out.shares = await sharesCleanup(admin); } catch (e) { out.sharesError = (e as Error).message; }
   try { out.trial = await trialDaily(admin); } catch (e) { out.trialError = (e as Error).message; }
   try { out.push = await pushDaily(admin); } catch (e) { out.pushError = (e as Error).message; }
+  // Brevo schaltet API-Schlüssel nach 90 Tagen ohne Nutzung ab: täglich einmal kurz lesen (zugleich Funktionsprüfung)
+  const bk = Deno.env.get('BREVO_API_KEY');
+  if (bk) { try { const r = await fetch('https://api.brevo.com/v3/smtp/statistics/aggregatedReport?days=1', { headers: { 'api-key': bk, accept: 'application/json' } }); out.mailKey = r.ok ? 'ok' : r.status; } catch (e) { out.mailKey = (e as Error).message; } }
   return json(out);
 }
 
