@@ -108,6 +108,29 @@ const ENV = { SUPABASE_URL: 'https://p.test', SUPABASE_ANON_KEY: 'ANON', SUPABAS
     ok(r.status === 502 && world.used.u1 === u0 && world.log.includes('service:rpc:ai_give_back'), 'KI: Fehler bei Claude zählt nicht (Rückgabe über Server)');
   }
 
+  /* ===== KI über Amazon Bedrock (EU) ===== */
+  {
+    const world = { tables: {}, log: [], tokens: { t1: 'u1' }, anon: {}, deleted: [], files: {}, removed: [], state: { u1: 'trial' }, used: {}, urls: [] };
+    world.rpc = {
+      eoffis_account: () => ({ data: { state: 'trial' }, error: null }),
+      ai_take: () => ({ data: { ok: true, limit: 150 }, error: null }),
+      ai_give_back: () => ({ data: null, error: null }),
+    };
+    world.fetch = async (u, o) => { world.urls.push(u); world.last = { u, o, b: JSON.parse(o.body) }; return new Response(JSON.stringify({ content: [{ type: 'text', text: 'Hallo EU' }] }), { status: 200 }); };
+    const E = Object.assign({}, ENV, { BEDROCK_API_KEY: 'br-test', BEDROCK_MODEL_ID: 'eu.anthropic.claude-test-v1:0' });
+    let ai = load('ai/index.ts', world, E);
+    let r = await ai({ prompt: 'Hallo' }, 't1'); const j = await r.json();
+    ok(r.status === 200 && j.text === 'Hallo EU', 'Bedrock: normale Anfrage');
+    ok(world.last.u === 'https://bedrock-runtime.eu-north-1.amazonaws.com/model/eu.anthropic.claude-test-v1%3A0/invoke', 'Bedrock: Stockholm (EU), EU-Modellprofil', world.last.u);
+    ok(world.last.o.headers.authorization === 'Bearer br-test' && !('x-api-key' in world.last.o.headers), 'Bedrock: Schlüssel als Bearer, kein Anthropic-Header');
+    ok(world.last.b.anthropic_version === 'bedrock-2023-05-31' && !('model' in world.last.b) && world.last.b.max_tokens > 0, 'Bedrock: Anfrageformat (Version, kein model-Feld)');
+    ok(world.urls.every((x) => !x.includes('api.anthropic.com')), 'Bedrock: nichts geht an api.anthropic.com');
+    ai = load('ai/index.ts', world, Object.assign({}, ENV, { BEDROCK_API_KEY: 'br-test' }));
+    r = await ai({ prompt: 'x' }, 't1'); const k = await r.json();
+    ok(r.status === 503 && k.code === 'not_configured' && /BEDROCK_MODEL_ID/.test(k.error), 'Bedrock: ohne Modell-ID klare Meldung, kein Rückfall in die USA');
+    ok(world.urls.length === 1, 'Bedrock: ohne Modell-ID kein Aufruf');
+  }
+
   /* ===== Server-Funktion eoffis-api ===== */
   const day = 86400000;
   const world = { tables: { push_subs: [], secrets: [], subscriptions: [], kv: [{ path: 'data/users/u4/main', owner: 'u4', data: { language: 'tr' } }], shares: [{ id: 'a'.repeat(32), path: 'u1/a.bin', filename: 'Belege.zip', count: 2, expires_at: new Date(Date.now() + day).toISOString(), revoked_at: null }] },

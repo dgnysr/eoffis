@@ -1,7 +1,7 @@
 // Richtet das Supabase-Projekt von eOffis vollständig ein bzw. bringt es auf den Stand dieses Repos (beliebig oft ausführbar):
 // Projekt aufwecken → Datenbank (schema.sql) → Geheimschlüssel → KI-Funktion + eoffis-api → Anmeldung → täglicher Lauf → Prüfung.
 // Läuft im GitHub-Workflow „Server einrichten“. Benötigt nur SUPABASE_ACCESS_TOKEN (Supabase → Account → Access Tokens).
-// Optional: OPERATOR_EMAIL (eigenes Konto dauerhaft freischalten), ANTHROPIC_API_KEY, BREVO_API_KEY, MAIL_FROM (werden nur gesetzt, wenn übergeben),
+// Optional: OPERATOR_EMAIL (eigenes Konto dauerhaft freischalten), ANTHROPIC_API_KEY, BEDROCK_API_KEY, BEDROCK_MODEL_ID, BREVO_API_KEY, MAIL_FROM (werden nur gesetzt, wenn übergeben),
 // BREVO_SMTP_USER + BREVO_SMTP_KEY (Anmelde-Mails über Brevo), GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET (Anmeldung mit Google), TURNSTILE_SECRET (Roboter-Prüfung).
 // Für Tests überschreibbar: SUPABASE_API, PROJECT_URL, CONFIG_PATH, SUPABASE_CLI, SETUP_WAIT_MS.
 import fs from 'node:fs';
@@ -98,10 +98,11 @@ if (!have.has('VAPID_PRIVATE_KEY') || !have.has('VAPID_PUBLIC_KEY') || !vapidPub
 }
 const cronSecret = b64u(crypto.randomBytes(24)); // wird bei jedem Lauf erneuert und gleichzeitig im Zeitplan eingetragen
 put.push({ name: 'CRON_SECRET', value: cronSecret }, { name: 'SITE_URL', value: SITE }, { name: 'VAPID_SUBJECT', value: SITE });
-for (const k of ['ANTHROPIC_API_KEY', 'BREVO_API_KEY', 'MAIL_FROM']) if (env[k]) put.push({ name: k, value: env[k] });
+for (const k of ['ANTHROPIC_API_KEY', 'BEDROCK_API_KEY', 'BEDROCK_MODEL_ID', 'BREVO_API_KEY', 'MAIL_FROM']) if (env[k]) put.push({ name: k, value: env[k] });
 await api('POST', `/v1/projects/${ref}/secrets`, put);
 log('Geheimschlüssel gesetzt: ' + put.map((s) => s.name).join(', '));
-const missing = ['ANTHROPIC_API_KEY', 'BREVO_API_KEY', 'MAIL_FROM'].filter((k) => !have.has(k) && !env[k]);
+const aiOk = (have.has('BEDROCK_API_KEY') || env.BEDROCK_API_KEY) && (have.has('BEDROCK_MODEL_ID') || env.BEDROCK_MODEL_ID);
+const missing = [...(aiOk ? [] : ['BEDROCK_API_KEY + BEDROCK_MODEL_ID (oder übergangsweise ANTHROPIC_API_KEY)'].filter(() => !have.has('ANTHROPIC_API_KEY') && !env.ANTHROPIC_API_KEY)), ...['BREVO_API_KEY', 'MAIL_FROM'].filter((k) => !have.has(k) && !env[k])];
 
 // 4) Funktionen (Verify JWT aus – beide prüfen die Anmeldung selbst)
 const wd = fs.mkdtempSync(path.join(os.tmpdir(), 'eoffis-fn-'));
@@ -186,7 +187,7 @@ if (tok) {
   const ea = await call('/functions/v1/eoffis-api', { method: 'POST', body: JSON.stringify({ action: 'lexware_key_status' }) }, tok);
   ok('Server-Funktion eoffis-api', ea.s === 200, ea);
   const ai = await call('/functions/v1/' + aiName, { method: 'POST', body: '{}' }, tok);
-  ok(ai.b?.code === 'not_configured' ? 'KI-Funktion: ANTHROPIC_API_KEY fehlt' : 'KI-Funktion erreichbar', ai.s === 400, ai);
+  ok(ai.b?.code === 'not_configured' ? 'KI-Funktion: KI-Schlüssel (Bedrock oder Anthropic) fehlt' : 'KI-Funktion erreichbar', ai.s === 400, ai);
   const fremd = await call('/rest/v1/kv?select=path&limit=5', {}, tok);
   ok('Nur eigene Daten sichtbar', Array.isArray(fremd.b) && fremd.b.every((x) => x.path.startsWith(`data/users/${uidv}/`)), fremd);
   await sql(`delete from auth.users where id = ${lit(uidv)}`);

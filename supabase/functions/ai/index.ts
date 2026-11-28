@@ -1,5 +1,7 @@
 // Supabase Edge Function „ai“ für die eOffis Web-App – einzige Stelle mit dem Claude-API-Schlüssel.
-// Einrichten: Supabase → Edge Functions → Secrets: ANTHROPIC_API_KEY (Pflicht), optional ANTHROPIC_MODEL,
+// KI-Anbieter (seit 28.11.2026): bevorzugt Claude über Amazon Bedrock in der EU (Stockholm) – Secrets BEDROCK_API_KEY und BEDROCK_MODEL_ID
+// (EU-Inferenzprofil, z. B. eu.anthropic.…), optional BEDROCK_REGION (Standard eu-north-1, Stockholm). Ist BEDROCK_API_KEY gesetzt, geht NICHTS mehr an
+// api.anthropic.com. Nur ohne Bedrock-Schlüssel (Übergang) gilt ANTHROPIC_API_KEY, optional ANTHROPIC_MODEL,
 // AI_DAILY_LIMIT (Standard 150), AI_DEMO_DAILY_LIMIT (Standard 5, Konten ohne E-Mail). Dann Funktion „ai“ mit diesem Code anlegen
 // und „Verify JWT“ AUSschalten – die Funktion prüft die Anmeldung selbst (auth.getUser), das funktioniert auch mit den neuen API-Schlüsseln.
 // Sicherheit (08.11.2026): KI-Zähler nur über den Service-Schlüssel; Anfragen auf den Bedarf von eOffis begrenzt;
@@ -7,7 +9,11 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const MODEL = Deno.env.get('ANTHROPIC_MODEL') ?? 'claude-sonnet-5-5';
-const API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
+const BEDROCK_KEY = Deno.env.get('BEDROCK_API_KEY');
+const BEDROCK_MODEL = Deno.env.get('BEDROCK_MODEL_ID');
+const BEDROCK_REGION = Deno.env.get('BEDROCK_REGION') ?? 'eu-north-1';
+const API_KEY = BEDROCK_KEY ? (BEDROCK_MODEL ? BEDROCK_KEY : undefined) : Deno.env.get('ANTHROPIC_API_KEY');
+const NOT_SET = BEDROCK_KEY ? 'BEDROCK_MODEL_ID fehlt' : 'ANTHROPIC_API_KEY fehlt';
 const MAX_IMAGES = 20;               // eOffis wertet höchstens 20 Seiten je Dokument aus
 const MAX_PROMPT = 100000;           // Zeichen (E-Rechnung bis 60.000 + Anweisungen)
 const MAX_IMAGE_B64 = 1_500_000;     // je Seitenbild (eOffis speichert Seiten unter 240 KB)
@@ -38,11 +44,17 @@ async function callClaude(prompt: string, images: Img[], wantJson: boolean, maxT
     const timer = setTimeout(() => ctrl.abort(), Math.min(90000, end - Date.now()));
     let res: Response;
     try {
-      res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST', signal: ctrl.signal,
-        headers: { 'x-api-key': API_KEY!, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-        body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages: [{ role: 'user', content }] }),
-      });
+      res = BEDROCK_KEY
+        ? await fetch(`https://bedrock-runtime.${BEDROCK_REGION}.amazonaws.com/model/${encodeURIComponent(BEDROCK_MODEL!)}/invoke`, {
+          method: 'POST', signal: ctrl.signal,
+          headers: { 'authorization': `Bearer ${BEDROCK_KEY}`, 'content-type': 'application/json', 'accept': 'application/json' },
+          body: JSON.stringify({ anthropic_version: 'bedrock-2023-05-31', max_tokens: maxTokens, system, messages: [{ role: 'user', content }] }),
+        })
+        : await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST', signal: ctrl.signal,
+          headers: { 'x-api-key': API_KEY!, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+          body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages: [{ role: 'user', content }] }),
+        });
     } catch {
       clearTimeout(timer); await sleep(1000 * 2 ** attempt); continue;
     }
@@ -53,7 +65,7 @@ async function callClaude(prompt: string, images: Img[], wantJson: boolean, maxT
     }
     last = res.status;
     const text = await res.text();
-    if (!RETRY.has(res.status)) throw new Error(`Claude API ${res.status}: ${text.slice(0, 200)}`);
+    if (!RETRY.has(res.status)) throw new Error(`Claude API (${BEDROCK_KEY ? 'Bedrock' : 'Anthropic'}) ${res.status}: ${text.slice(0, 200)}`);
     const ra = Number(res.headers.get('retry-after'));
     await sleep(Math.min(Number.isFinite(ra) && ra > 0 ? ra * 1000 : 1000 * 2 ** attempt, Math.max(0, end - Date.now() - 5000)));
   }
@@ -71,7 +83,7 @@ function parseJson(text: string): unknown {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
-  if (!API_KEY) return json({ error: 'KI ist noch nicht eingerichtet (ANTHROPIC_API_KEY fehlt).', code: 'not_configured' }, 503);
+  if (!API_KEY) return json({ error: 'KI ist noch nicht eingerichtet (' + NOT_SET + ').', code: 'not_configured' }, 503);
   const auth = req.headers.get('Authorization');
   if (!auth) return json({ error: 'Nicht angemeldet', code: 'not_granted' }, 401);
   const supa = createClient(Deno.env.get('SUPABASE_URL')!, (Deno.env.get('SUPABASE_ANON_KEY') ?? Deno.env.get('SUPABASE_PUBLISHABLE_KEY'))!, { global: { headers: { Authorization: auth } } });

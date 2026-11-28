@@ -102,7 +102,7 @@ async function run(name, opts, check) {
   });
   await run('Roboter-Prüfung ohne Site Key', { have: ['EOFFIS_ENC_KEY', 'ANTHROPIC_API_KEY'], env: { TURNSTILE_SECRET: 'tsec' } }, (r) => ok('Ohne Site Key in der App bleibt die Prüfung aus (sonst scheitert jede Anmeldung)', r.code === 0 && !('security_captcha_enabled' in (r.st.auth || {})) && /Roboter-Prüfung bleibt aus/.test(r.o), r.o));
   await run('falscher Schlüssel', { token: 'bad' }, (r) => ok('Ungültiger Zugangsschlüssel: klare Meldung', r.code === 1 && /SUPABASE_ACCESS_TOKEN\) ungültig/.test(r.o), r.o));
-  await run('ohne KI-Schlüssel', { noAi: true }, (r) => ok('Fehlender KI-Schlüssel lässt die Prüfung scheitern', r.code === 1 && /FAIL KI-Funktion: ANTHROPIC_API_KEY fehlt/.test(r.o), r.o));
+  await run('ohne KI-Schlüssel', { noAi: true }, (r) => ok('Fehlender KI-Schlüssel lässt die Prüfung scheitern', r.code === 1 && /FAIL KI-Funktion: KI-Schlüssel/.test(r.o), r.o));
   await run('Datenbank falsch', { accState: 'readonly' }, (r) => ok('Fehlerhafte Prüfung → Lauf scheitert', r.code === 1 && /FAIL Probezeit-Status/.test(r.o), r.o));
   process.exit(failed ? 1 : 0);
 })();
