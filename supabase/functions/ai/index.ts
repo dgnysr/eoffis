@@ -1,6 +1,6 @@
 // Supabase Edge Function „ai“ für die eOffis Web-App – einzige Stelle mit dem Claude-API-Schlüssel.
 // KI-Anbieter (seit 28.11.2026): bevorzugt Claude über Amazon Bedrock in der EU (Stockholm) – Secrets BEDROCK_API_KEY und BEDROCK_MODEL_ID
-// (EU-Inferenzprofil, z. B. eu.anthropic.…), optional BEDROCK_REGION (Standard eu-north-1, Stockholm). Ist BEDROCK_API_KEY gesetzt, geht NICHTS mehr an
+// (EU-Inferenzprofil, z. B. eu.anthropic.…), optional BEDROCK_REGION (Standard eu-north-1, Stockholm). Sind beide gesetzt, geht NICHTS mehr an
 // api.anthropic.com. Nur ohne Bedrock-Schlüssel (Übergang) gilt ANTHROPIC_API_KEY, optional ANTHROPIC_MODEL,
 // AI_DAILY_LIMIT (Standard 150), AI_DEMO_DAILY_LIMIT (Standard 5, Konten ohne E-Mail). Dann Funktion „ai“ mit diesem Code anlegen
 // und „Verify JWT“ AUSschalten – die Funktion prüft die Anmeldung selbst (auth.getUser), das funktioniert auch mit den neuen API-Schlüsseln.
@@ -9,11 +9,12 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const MODEL = Deno.env.get('ANTHROPIC_MODEL') ?? 'claude-sonnet-5-5';
-const BEDROCK_KEY = Deno.env.get('BEDROCK_API_KEY');
 const BEDROCK_MODEL = Deno.env.get('BEDROCK_MODEL_ID');
+// Bedrock gilt erst, wenn Schlüssel UND Modell-ID da sind; bis dahin (Übergang) läuft weiter Anthropic.
+const BEDROCK_KEY = BEDROCK_MODEL ? Deno.env.get('BEDROCK_API_KEY') : undefined;
 const BEDROCK_REGION = Deno.env.get('BEDROCK_REGION') ?? 'eu-north-1';
-const API_KEY = BEDROCK_KEY ? (BEDROCK_MODEL ? BEDROCK_KEY : undefined) : Deno.env.get('ANTHROPIC_API_KEY');
-const NOT_SET = BEDROCK_KEY ? 'BEDROCK_MODEL_ID fehlt' : 'ANTHROPIC_API_KEY fehlt';
+const API_KEY = BEDROCK_KEY ?? Deno.env.get('ANTHROPIC_API_KEY');
+const NOT_SET = 'ANTHROPIC_API_KEY fehlt';
 const MAX_IMAGES = 20;               // eOffis wertet höchstens 20 Seiten je Dokument aus
 const MAX_PROMPT = 100000;           // Zeichen (E-Rechnung bis 60.000 + Anweisungen)
 const MAX_IMAGE_B64 = 1_500_000;     // je Seitenbild (eOffis speichert Seiten unter 240 KB)

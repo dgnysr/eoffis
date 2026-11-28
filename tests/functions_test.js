@@ -126,9 +126,8 @@ const ENV = { SUPABASE_URL: 'https://p.test', SUPABASE_ANON_KEY: 'ANON', SUPABAS
     ok(world.last.b.anthropic_version === 'bedrock-2023-05-31' && !('model' in world.last.b) && world.last.b.max_tokens > 0, 'Bedrock: Anfrageformat (Version, kein model-Feld)');
     ok(world.urls.every((x) => !x.includes('api.anthropic.com')), 'Bedrock: nichts geht an api.anthropic.com');
     ai = load('ai/index.ts', world, Object.assign({}, ENV, { BEDROCK_API_KEY: 'br-test' }));
-    r = await ai({ prompt: 'x' }, 't1'); const k = await r.json();
-    ok(r.status === 503 && k.code === 'not_configured' && /BEDROCK_MODEL_ID/.test(k.error), 'Bedrock: ohne Modell-ID klare Meldung, kein Rückfall in die USA');
-    ok(world.urls.length === 1, 'Bedrock: ohne Modell-ID kein Aufruf');
+    const n0 = world.urls.length; r = await ai({ prompt: 'x' }, 't1');
+    ok(r.status === 200 && world.urls[n0] === 'https://api.anthropic.com/v1/messages', 'Übergang: Bedrock-Schlüssel ohne Modell-ID → KI läuft weiter über Anthropic (nichts bricht)');
   }
 
   /* ===== Server-Funktion eoffis-api ===== */
