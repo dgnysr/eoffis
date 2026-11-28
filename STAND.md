@@ -1,10 +1,10 @@
 # Entwicklungsstand eOffis Web-App
 
-**Aktueller Stand:** Stand 27.11.2026 (Entscheidungen Archiv/Löschung, Geldwäsche 2027, MaBV, gesetzliche Hinweise, Kündigungsfristen) – Paket 1–3, Design 2026, Sicherheit (A), Probezeit (B), Server-Einrichtung per Knopfdruck, Betriebs-Akte: Inventar und Pflichten-Kalender (Branch `main`) – live unter https://dgnysr.github.io/eoffis/
+**Aktueller Stand:** Stand 28.11.2026 (Design 3: ruhige Oberfläche ohne KI-Merkmale; davor 27.11.: Entscheidungen Archiv/Löschung, Geldwäsche 2027, MaBV, gesetzliche Hinweise, Kündigungsfristen) – Paket 1–3, Design 2026, Sicherheit (A), Probezeit (B), Server-Einrichtung per Knopfdruck, Betriebs-Akte: Inventar und Pflichten-Kalender (Branch `main`) – live unter https://dgnysr.github.io/eoffis/
 
 ## Weiterentwickeln (Ausgangspunkt für jede neue Sitzung)
 1. Repository `dgnysr/eoffis` klonen – **immer auf dem neuesten Stand von `main` aufbauen**.
-2. Quellcode ändern in `src/app.js`, `src/buchhaltung.js` (Paket 1), `src/heute.js` (Paket 2), `src/unterlagen.js` (Paket 3), `src/design.js` (Design 2026), `src/konto.js` (Probezeit, Speicher, Abo), `src/betriebsakte.js` (Betriebs-Akte: Inventar, Pflichten-Kalender), `src/shell.html` (CSS), `src/i18n.json` (Texte, 6 Sprachen). Zusatzmodule fügt `build_site.py` vor `boot();` ein.
+2. Quellcode ändern in `src/app.js`, `src/buchhaltung.js` (Paket 1), `src/heute.js` (Paket 2), `src/unterlagen.js` (Paket 3), `src/design.js` (Design 2026), `src/konto.js` (Probezeit, Speicher, Abo), `src/betriebsakte.js` (Betriebs-Akte: Inventar, Pflichten-Kalender), `src/design3.js` (Design 3, wird zuletzt geladen), `src/shell.html` (CSS), `src/i18n.json` (Texte, 6 Sprachen). Zusatzmodule fügt `build_site.py` vor `boot();` ein.
 3. `cd src && python3 build_site.py` erzeugt `index.html` + `eoffis-app.js` (mit Prüfsummen und Sicherheitsrichtlinie).
 4. Tests: **`bash tests/run_all.sh`** (Datenbank, Server-Funktionen, Oberfläche, echte Bibliotheken unter CSP).
 5. Commit + Push auf `main` → GitHub Pages veröffentlicht automatisch (1–2 Min.).
@@ -17,6 +17,17 @@ Backend: Supabase-Projekt `lqohxlxemawzrtdqjnci` (`supabase/schema.sql`), KI-Fun
 Server: GitHub → Actions → „Server einrichten“ → *Run workflow* (ersetzt die Handarbeit aus `README.md`; offen bleibt nur Apple).
 
 ## Änderungsverlauf
+### 28.11.2026 – Design 3: ruhige Oberfläche ohne typische KI-Merkmale (mit Dogan in 4 Vorschau-Runden abgestimmt)
+- Neues Modul `src/design3.js` (zuletzt geladen) und CSS-Ebene „Design 3“ am Ende von `src/shell.html`. Vorschau: https://claude.ai/artifact/Ah6s9aq8oAS57ac3yHkHRF
+- Eine Handlungsfarbe Petrol; Symbole einfarbig Petrol auf hellem Petrol (keine bunten Kästchen mehr); keine Schatten.
+- Feste Statusfarben: Rot = überfällig oder ≤ 3 Tage, Gelborange = ≤ 14 Tage/offen, Grün = erledigt (nur als Schrift oder Fläche hinter dem Symbol).
+- Start: Datum („Samstag, 28. November“) und Betriebsname statt „Guten Morgen“ und Kennzahl-Kacheln; Scan-Karte flach (ohne Verlauf, ca. ein Drittel niedriger) mit schlichter Beleg-Linienzeichnung; „Termin per Sprache eintragen“ bleibt darunter.
+- Fristen (Start und Fristen-Seite): Datumsblock links („01 DEZ“), darunter „noch X Tage“/„heute“/„morgen“/„seit X Tagen überfällig“ farbig; kein doppeltes Datum, keine „·“-Trenner.
+- Beleg: Absender nicht doppelt (steht er im Titel, zeigt die Unterzeile nur das Datum); Ordner-Pille entfällt; Frage ohne „Vorschlag“: „In „Ordner“ ablegen?“ → „Ja, ablegen“ (6 Sprachen).
+- Kopfzeile: Registerstreifen statt App-Kachel, Sprache nur als Kürzel („DE“) ohne Flagge; untere Leiste ohne schwebenden Scan-Knopf.
+- Listenzeilen: „·“ in Untertiteln durch Komma ersetzt.
+- Tests: neuer `tests/design3.js` (8 Extremfall-Prüfungen: überfällig/heute/morgen/3/4/14/15 Tage, ohne/ungültiges Datum, langer Betriebsname, Sonderzeichen im Absender, 6 Sprachen + Arabisch, dunkler Modus mit Kontrast ≥ 4,5:1, keine Konsolenfehler); `paket1.js` P1-09 auf neue Frage angepasst. Gesamtlauf 400/0.
+
 ### 27.11.2026 – Lücken aus dem Konzept, Roboter-Prüfung
 - **Garantie-Ende als Frist:** Jeder Gegenstand in Betrieb mit „Garantie bis“ in der Zukunft bekommt genau eine Frist unter „Fristen“, 30 Tage vor Ablauf (läuft sie früher ab: heute), mit Hinweis „Mängel vor Ablauf melden“ (`warrSync` in `src/betriebsakte.js`, Felder `asset_id`, `warranty_until` an der Frist). Garantie geändert → Frist neu; verkauft/ausgemustert/gelöscht/Garantie entfernt → offene Frist entfernt; erledigte oder verschobene Fristen bleiben. 6 Sprachen.
 - **Inventarliste im Steuerberater-ZIP:** `advisorZip` legt `Inventar.csv` bei, sobald es Inventar gibt.

@@ -458,6 +458,59 @@ input.in:focus, textarea.in:focus, select.in:focus { outline: none; box-shadow: 
 .accbtn.anon { background: #fff3dc; color: #8a5300; } .accbtn.ok svg { color: var(--accent); }
 @media (prefers-color-scheme: dark) { .accbtn.anon { background: #4a3510; color: #ffd38a; } }
 @media (max-width: 380px) { .accbtn .an { max-width: 64px; } }
+/* =================== Design 3 (28.11.2026) – ruhig, eigenes Gesicht, ohne typische KI-Merkmale ===================
+   Eine Handlungsfarbe (Petrol), Symbole einfarbig auf hellem Petrol, keine Schatten, Statusfarben nur als Schrift/Punkt. */
+:root { --shadow: none; --r: 12px; --due-r: #b3261e; --due-o: #a85d00; --dot-o: #e08a00; --st-soft-o: #fdf0dc; --st-soft-r: #fbe4e2; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --due-r: #ff8a80; --due-o: #ffb547; --dot-o: #ffb547; --st-soft-o: #3a2a0d; --st-soft-r: #3d1715; } }
+:root[data-theme="dark"] { --due-r: #ff8a80; --due-o: #ffb547; --dot-o: #ffb547; --st-soft-o: #3a2a0d; --st-soft-r: #3d1715; }
+.card, .group, .item, .stat, .tile, .voicebtn, .sum button { box-shadow: none; }
+.card, .group { border-radius: var(--r); }
+/* Marke: Registerstreifen statt App-Kachel */
+.brand img { display: none; }
+.brand::before { content: ""; width: 5px; height: 24px; border-radius: 1px; background: var(--accent); flex: none; }
+/* Sprache: nur Kürzel, keine Flagge */
+.langbtn span[aria-hidden="true"]:not(.lc) { display: none; }
+.langbtn { background: transparent; box-shadow: inset 0 0 0 1px var(--line); border-radius: 8px; padding: 3px 9px; }
+.cell .flag { display: none; }
+/* Symbole: einfarbig Petrol auf hellem Petrol; Status nur über Farbe der Fläche */
+.cell .ci, .cell .ci[class*="f-"], .cell .ci[class*="h-"] { background: var(--accent-soft); color: var(--accent); border-radius: 8px; }
+.cell .ci.g { background: var(--fill); color: var(--muted); }
+.cell .ci.o { background: var(--st-soft-o); color: var(--due-o); }
+.cell .ci.r { background: var(--st-soft-r); color: var(--due-r); }
+.welcome li i { background: var(--accent-soft) !important; color: var(--accent); }
+.welcome img { display: none; }
+/* Untere Leiste: Scannen als normaler Eintrag, kein schwebender Knopf */
+.tab.scan .sb { width: auto; height: auto; margin-top: 0; border: 0; border-radius: 0; box-shadow: none; background: none; color: inherit; display: block; }
+.tab.scan .sb { line-height: 0; }
+.tab.scan .sb svg { width: 25px; height: 25px; stroke-width: 1.9; }
+.tab.scan > span:last-child { color: inherit; }
+:root[data-theme="dark"] .tab.scan .sb { color: inherit; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tab.scan .sb { color: inherit; } }
+/* Start: Datum + Betriebsname */
+.d3hello b { font-size: 1.7rem; }
+/* Scan-Karte: flach, ohne Verlauf und Schatten, etwa ein Drittel niedriger */
+.scanhero { background: var(--accent); box-shadow: none; min-height: 0; padding: 16px; border-radius: 14px; flex-direction: row; align-items: center; gap: 14px; }
+.scanhero .si { width: 44px; height: 44px; border-radius: 10px; background: rgba(255,255,255,.16); -webkit-backdrop-filter: none; backdrop-filter: none; flex: none; }
+.scanhero .st { padding-inline-end: 0; flex: 1; min-width: 0; }
+.scanhero b { font-size: 1.15rem; }
+.scanhero small { font-size: .86rem; line-height: 1.3; }
+.scanhero .art { position: static; transform: none; width: 30px; height: 38px; opacity: .55; flex: none; color: #fff; }
+[dir="rtl"] .scanhero .art { transform: scaleX(-1); }
+.voicebtn { border-radius: 12px; }
+/* Fristen mit Datumsblock */
+.d3row { align-items: center; }
+.d3date { width: 44px; flex: none; display: flex; flex-direction: column; align-items: center; line-height: 1.1; padding-inline-end: 10px; border-inline-end: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.d3date b { font-size: 1.2rem; font-weight: 700; color: var(--ink); }
+.d3date small { font-size: .7rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.cell.d3row + .cell::before, .cell + .cell.d3row::before { inset-inline-start: 70px; }
+.d3due { font-weight: 600; } .d3due.r { color: var(--due-r); } .d3due.o { color: var(--due-o); }
+.cs .due.c-red { color: var(--due-r); } .cs .due.c-orange, .cs .due.c-yellow { color: var(--due-o); }
+/* Hohe Priorität: kleines rotes Ausrufezeichen ohne Kreisfläche */
+.prio { background: none; color: var(--due-r); width: auto; height: auto; font-size: .95rem; margin-inline-end: 4px; vertical-align: 0; }
+/* Knöpfe in leeren Listen: normale Symbolgröße */
+.empty .btn svg { width: 20px; height: 20px; opacity: 1; stroke-width: 2; }
+/* Beleg-Kopf */
+.dochead h1 { font-size: 1.45rem; }
 </style>
 <header class="top"><div class="top-in" id="top"></div></header>
 <main><div class="wrap" id="main"></div></main>

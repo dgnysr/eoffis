@@ -2256,7 +2256,7 @@ const ACC_TEXT = {
     folderName: 'Buchhaltung (Rechnungen, Lieferscheine)', folderTitle: 'Buchhaltung',
     type_rechnung: 'Rechnung', type_quittung: 'Quittung / Kassenbon', type_lieferschein: 'Lieferschein', type_kontoauszug: 'Kontoauszug', type_gutschrift: 'Gutschrift',
     fileTitleAcc: 'Buchhaltungsbeleg erkannt: {{type}}', fileTarget: 'Ablage', fileTransfer: 'An Buchhaltungsprogramm übertragen', fileToFolder: 'In Ordner „Buchhaltung“ ablegen',
-    fileOther: 'Kein Buchhaltungsbeleg? Anderen Ordner wählen', fileSuggest: 'Vorschlag: im Ordner „{{folder}}“ ablegen?', fileYes: 'Ja, in „{{folder}}“ ablegen',
+    fileOther: 'Kein Buchhaltungsbeleg? Anderen Ordner wählen', fileSuggest: 'In „{{folder}}“ ablegen?', fileYes: 'Ja, ablegen',
     fileAsk: 'Wohin gehört dieses Dokument?', fileAskH: 'Buchhaltungsbelege kommen in den Ordner „Buchhaltung“ und können an Ihr Buchhaltungsprogramm übertragen werden.',
     accGroup: 'Buchhaltungsbeleg', otherFolders: 'Anderer Ordner', filedIn: 'Abgelegt: {{path}}', fileDone: 'Abgelegt in {{path}}',
     transferredTo: 'Übertragen an {{to}} am {{date}}', notTransferred: 'nicht übertragen', advisorSent: 'an Steuerberater gesendet', pcSaved: 'auf PC gespeichert',
@@ -2298,7 +2298,7 @@ const ACC_TEXT = {
     folderName: 'Muhasebe (faturalar, irsaliyeler)', folderTitle: 'Muhasebe',
     type_rechnung: 'Fatura', type_quittung: 'Makbuz / fiş', type_lieferschein: 'İrsaliye', type_kontoauszug: 'Hesap dökümü', type_gutschrift: 'Alacak dekontu',
     fileTitleAcc: 'Muhasebe belgesi tanındı: {{type}}', fileTarget: 'Klasör', fileTransfer: 'Muhasebe programına aktar', fileToFolder: '„Muhasebe“ klasörüne kaydet',
-    fileOther: 'Muhasebe belgesi değil mi? Başka klasör seç', fileSuggest: 'Öneri: „{{folder}}“ klasörüne kaydedilsin mi?', fileYes: 'Evet, „{{folder}}“ klasörüne kaydet',
+    fileOther: 'Muhasebe belgesi değil mi? Başka klasör seç', fileSuggest: '„{{folder}}“ klasörüne kaydedilsin mi?', fileYes: 'Evet, kaydet',
     fileAsk: 'Bu belge nereye ait?', fileAskH: 'Muhasebe belgeleri „Muhasebe“ klasörüne gider ve muhasebe programına aktarılabilir.',
     accGroup: 'Muhasebe belgesi', otherFolders: 'Başka klasör', filedIn: 'Kaydedildi: {{path}}', fileDone: '{{path}} içine kaydedildi',
     transferredTo: '{{date}} tarihinde {{to}} programına aktarıldı', notTransferred: 'aktarılmadı', advisorSent: 'muhasebeciye gönderildi', pcSaved: 'PC’ye kaydedildi',
@@ -2340,7 +2340,7 @@ const ACC_TEXT = {
     folderName: 'Księgowość (faktury, dowody dostawy)', folderTitle: 'Księgowość',
     type_rechnung: 'Faktura', type_quittung: 'Paragon / pokwitowanie', type_lieferschein: 'Dowód dostawy', type_kontoauszug: 'Wyciąg bankowy', type_gutschrift: 'Nota uznaniowa',
     fileTitleAcc: 'Rozpoznano dokument księgowy: {{type}}', fileTarget: 'Folder', fileTransfer: 'Przekaż do programu księgowego', fileToFolder: 'Zapisz w folderze „Księgowość”',
-    fileOther: 'To nie dokument księgowy? Wybierz inny folder', fileSuggest: 'Propozycja: zapisać w folderze „{{folder}}”?', fileYes: 'Tak, zapisz w „{{folder}}”',
+    fileOther: 'To nie dokument księgowy? Wybierz inny folder', fileSuggest: 'Zapisać w folderze „{{folder}}”?', fileYes: 'Tak, zapisz',
     fileAsk: 'Gdzie należy ten dokument?', fileAskH: 'Dokumenty księgowe trafiają do folderu „Księgowość” i można je przekazać do programu księgowego.',
     accGroup: 'Dokument księgowy', otherFolders: 'Inny folder', filedIn: 'Zapisano: {{path}}', fileDone: 'Zapisano w {{path}}',
     transferredTo: 'Przekazano do {{to}} dnia {{date}}', notTransferred: 'nieprzekazany', advisorSent: 'wysłano do doradcy podatkowego', pcSaved: 'zapisano na PC',
@@ -2382,7 +2382,7 @@ const ACC_TEXT = {
     folderName: 'Бухгалтерия (счета, накладные)', folderTitle: 'Бухгалтерия',
     type_rechnung: 'Счёт', type_quittung: 'Квитанция / чек', type_lieferschein: 'Накладная', type_kontoauszug: 'Выписка со счёта', type_gutschrift: 'Кредит-нота',
     fileTitleAcc: 'Распознан бухгалтерский документ: {{type}}', fileTarget: 'Папка', fileTransfer: 'Передать в бухгалтерскую программу', fileToFolder: 'Сохранить в папку «Бухгалтерия»',
-    fileOther: 'Не бухгалтерский документ? Выбрать другую папку', fileSuggest: 'Предложение: сохранить в папку «{{folder}}»?', fileYes: 'Да, сохранить в «{{folder}}»',
+    fileOther: 'Не бухгалтерский документ? Выбрать другую папку', fileSuggest: 'Сохранить в папку «{{folder}}»?', fileYes: 'Да, сохранить',
     fileAsk: 'Куда относится этот документ?', fileAskH: 'Бухгалтерские документы попадают в папку «Бухгалтерия» и могут быть переданы в вашу бухгалтерскую программу.',
     accGroup: 'Бухгалтерский документ', otherFolders: 'Другая папка', filedIn: 'Сохранено: {{path}}', fileDone: 'Сохранено в {{path}}',
     transferredTo: 'Передано в {{to}} {{date}}', notTransferred: 'не передано', advisorSent: 'отправлено налоговому консультанту', pcSaved: 'сохранено на ПК',
@@ -2424,7 +2424,7 @@ const ACC_TEXT = {
     folderName: 'المحاسبة (فواتير، إيصالات تسليم)', folderTitle: 'المحاسبة',
     type_rechnung: 'فاتورة', type_quittung: 'إيصال / فاتورة صندوق', type_lieferschein: 'إيصال تسليم', type_kontoauszug: 'كشف حساب', type_gutschrift: 'إشعار دائن',
     fileTitleAcc: 'تم التعرّف على مستند محاسبي: {{type}}', fileTarget: 'المجلد', fileTransfer: 'نقل إلى برنامج المحاسبة', fileToFolder: 'حفظ في مجلد „المحاسبة“',
-    fileOther: 'ليس مستندًا محاسبيًا؟ اختر مجلدًا آخر', fileSuggest: 'اقتراح: الحفظ في مجلد „{{folder}}“؟', fileYes: 'نعم، احفظ في „{{folder}}“',
+    fileOther: 'ليس مستندًا محاسبيًا؟ اختر مجلدًا آخر', fileSuggest: 'الحفظ في مجلد „{{folder}}“؟', fileYes: 'نعم، احفظ',
     fileAsk: 'إلى أين ينتمي هذا المستند؟', fileAskH: 'تذهب المستندات المحاسبية إلى مجلد „المحاسبة“ ويمكن نقلها إلى برنامج المحاسبة.',
     accGroup: 'مستند محاسبي', otherFolders: 'مجلد آخر', filedIn: 'تم الحفظ: {{path}}', fileDone: 'تم الحفظ في {{path}}',
     transferredTo: 'نُقل إلى {{to}} في {{date}}', notTransferred: 'لم يُنقل', advisorSent: 'أُرسل إلى المستشار الضريبي', pcSaved: 'حُفظ على الحاسوب',
@@ -2466,7 +2466,7 @@ const ACC_TEXT = {
     folderName: 'Contabilitate (facturi, avize)', folderTitle: 'Contabilitate',
     type_rechnung: 'Factură', type_quittung: 'Chitanță / bon', type_lieferschein: 'Aviz de livrare', type_kontoauszug: 'Extras de cont', type_gutschrift: 'Notă de credit',
     fileTitleAcc: 'Document contabil recunoscut: {{type}}', fileTarget: 'Dosar', fileTransfer: 'Transmite în programul de contabilitate', fileToFolder: 'Salvează în dosarul „Contabilitate”',
-    fileOther: 'Nu e document contabil? Alege alt dosar', fileSuggest: 'Propunere: salvezi în dosarul „{{folder}}”?', fileYes: 'Da, salvează în „{{folder}}”',
+    fileOther: 'Nu e document contabil? Alege alt dosar', fileSuggest: 'Salvezi în dosarul „{{folder}}”?', fileYes: 'Da, salvează',
     fileAsk: 'Unde aparține acest document?', fileAskH: 'Documentele contabile ajung în dosarul „Contabilitate” și pot fi transmise programului tău de contabilitate.',
     accGroup: 'Document contabil', otherFolders: 'Alt dosar', filedIn: 'Salvat: {{path}}', fileDone: 'Salvat în {{path}}',
     transferredTo: 'Transmis la {{to}} pe {{date}}', notTransferred: 'netransmis', advisorSent: 'trimis consultantului fiscal', pcSaved: 'salvat pe PC',
@@ -5542,5 +5542,101 @@ document.addEventListener('click', async (e) => {
       return guard(async () => { for (const k of S.tasks.filter((x) => x.duty_id === d.id && x.status !== 'done')) await dutTaskDel(k); await store.del('duties', d.id); S.duties = S.duties.filter((x) => x.id !== d.id); back(); });
   }
 });
+
+/* =================== Design 3 (28.11.2026): ruhiger, eigener Stil ohne typische KI-Merkmale ===================
+   Eine Handlungsfarbe (Petrol), feste Statusfarben (Rot ≤ 3 Tage/überfällig, Gelborange offen/≤ 14 Tage, Grün erledigt),
+   keine Begrüßung/Kennzahl-Kacheln, flache Scan-Karte, Fristen mit Datumsblock, keine „·“-Trenner in Listenzeilen. */
+const D3_LOCALE = { de: 'de-DE', tr: 'tr-TR', pl: 'pl-PL', ru: 'ru-RU', ar: 'ar', ro: 'ro-RO' };
+const D3_TEXT = {
+  de: { left: 'noch {{count}} Tage', left1: 'morgen', today: 'heute', over: 'seit {{count}} Tagen überfällig', over1: 'seit gestern überfällig' },
+  tr: { left: '{{count}} gün kaldı', left1: 'yarın', today: 'bugün', over: '{{count}} gün gecikti', over1: 'dünden beri gecikti' },
+  pl: { left: 'jeszcze {{count}} dni', left1: 'jutro', today: 'dziś', over: 'po terminie od {{count}} dni', over1: 'po terminie od wczoraj' },
+  ru: { left: 'осталось {{count}} дн.', left1: 'завтра', today: 'сегодня', over: 'просрочено на {{count}} дн.', over1: 'просрочено со вчера' },
+  ar: { left: 'باقٍ {{count}} أيام', left1: 'غدًا', today: 'اليوم', over: 'متأخر منذ {{count}} أيام', over1: 'متأخر منذ أمس' },
+  ro: { left: 'încă {{count}} zile', left1: 'mâine', today: 'azi', over: 'întârziat de {{count}} zile', over1: 'întârziat de ieri' },
+};
+for (const l of Object.keys(D3_TEXT)) { I18N[l] = I18N[l] || {}; I18N[l].d3 = Object.assign({}, I18N[l].d3 || {}, D3_TEXT[l]); }
+
+/** Statusklasse einer Frist: r = überfällig/≤ 3 Tage, o = ≤ 14 Tage, '' = später */
+const d3Sev = (d) => (d == null ? '' : d <= 3 ? 'r' : d <= 14 ? 'o' : '');
+const d3Left = (d) => (d < -1 ? t('d3.over', { count: -d }) : d === -1 ? t('d3.over1') : d === 0 ? t('d3.today') : d === 1 ? t('d3.left1') : t('d3.left', { count: d }));
+const d3Loc = () => D3_LOCALE[lang] || 'de-DE';
+/** Datumsblock „01 / DEZ“ (ungültige Daten → leer, nie „NaN“) */
+function d3DateBlock(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); if (!m) return '<span class="d3date" aria-hidden="true"></span>';
+  const dt = new Date(+m[1], +m[2] - 1, +m[3]); if (isNaN(dt) || dt.getMonth() !== +m[2] - 1 || dt.getDate() !== +m[3]) return '<span class="d3date" aria-hidden="true"></span>';
+  let mon = ''; try { mon = dt.toLocaleDateString(d3Loc(), { month: 'short' }).replace('.', ''); } catch { mon = m[2]; }
+  return `<span class="d3date" aria-hidden="true"><b>${m[3]}</b><small>${esc(mon)}</small></span>`;
+}
+// Listenzeilen: Untertitel ohne „·“-Trenner
+{
+  const cell0 = cell;
+  cell = function (o) { return cell0(Object.assign({}, o, { sub: o && typeof o.sub === 'string' ? o.sub.replace(/ · /g, ', ') : o && o.sub })); };
+}
+// Start: „Heute & demnächst“ mit Datumsblock und Statusfarbe statt Uhr-Symbol und „in X Tagen“ rechts
+{
+  todayHtml = function () {
+    const items = todayItems(), all = !!S.todayAll, N = 5;
+    const shown = all ? items : items.slice(0, N);
+    const row = (it) => {
+      const iso = /^\d{4}-\d{2}-\d{2}/.test(it.sortKey || '') && !/^9999/.test(it.sortKey) ? it.sortKey.slice(0, 10) : '';
+      if (!iso) return cell(it);
+      const sv = d3Sev(it.d);
+      const sub = it.d == null ? '' : sv ? `<span class="d3due ${sv}">${esc(d3Left(it.d))}</span>` : esc(String(it.sub || '').replace(/^[\d./-]+( · [\d:]+)?( · )?/, '').replace(/ · /g, ', '));
+      return `<button class="cell d3row" ${it.attrs || ''}>${d3DateBlock(iso)}<span class="cx"><span class="ct">${esc(it.title)}</span>${sub ? `<span class="cs" style="display:block">${sub}</span>` : ''}</span><span class="chev" aria-hidden="true">›</span></button>`;
+    };
+    return `<div class="sec-h row between"><span>${esc(t('heu.todayTitle'))}</span>${items.length ? `<button class="sec-link" data-go="tasks">${esc(t('web.uiAll'))} ›</button>` : ''}</div>
+    ${items.length ? `<div class="group" id="today">${shown.map(row).join('')}</div>
+      ${items.length > N ? `<button class="btn sm ghost" data-a="todayMore">${esc(all ? t('heu.showLess') : t('heu.showMore', { count: items.length - N }))}</button>` : ''}`
+      : `<div class="group">${cell({ icon: 'check', ic: 'g', title: t('heu.todayNone'), attrs: 'data-go="tasks"' })}</div>`}`;
+  };
+}
+// Start: Datum + Betriebsname statt Begrüßung und Kennzahl-Kacheln; schlichte Beleg-Linienzeichnung auf der Scan-Karte
+{
+  const D3_ART = '<svg class="art" viewBox="0 0 24 30" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 1h13l5 5v23H3z"/><path d="M16 1v5h5M7 12h10M7 16h10M7 20h6"/></svg>';
+  const homeRender = VIEWS.home.render;
+  VIEWS.home.render = function () {
+    let h = homeRender.apply(this, arguments);
+    const p = S.profile; if (!p) return h;
+    let day = ''; try { day = new Date().toLocaleDateString(d3Loc(), { weekday: 'long', day: 'numeric', month: 'long' }); } catch { day = fmtDate(todayISO()); }
+    const head = `<div class="hello d3hello"><small>${esc(day)}</small><b>${esc(p.company_name || '')}</b></div>`;
+    h = h.replace(/<div class="hello">[\s\S]*?<\/div>\s*<div class="sum">[\s\S]*?<\/div>/, head);
+    return h.replace(/<svg class="art"[\s\S]*?<\/svg>/, '').replace(/(<button class="scanhero"[\s\S]*?)(<span class="chev")/, `$1${D3_ART}$2`);
+  };
+}
+// Beleg: Absender und Datum mit Komma; Ordner-Pille entfällt (die Ablage-Frage nennt den Ordner)
+{
+  const docRender = VIEWS.doc.render;
+  VIEWS.doc.render = function () {
+    let h = docRender.apply(this, arguments);
+    const d = getDoc(S.params.id);
+    // Absender steht schon im Titel → Unterzeile nur mit Datum (keine Doppelung)
+    const dupSender = d && d.sender && String(d.title || '').toLowerCase().includes(String(d.sender).toLowerCase());
+    h = h.replace(/(<div class="dochead"><h1>[\s\S]*?<\/h1><p>)([\s\S]*?)(<\/p>)/, (m, a, b, c) => {
+      const parts = b.split(' · '); if (dupSender && parts.length > 1) parts.shift();
+      return a + parts.join(', ') + c;
+    });
+    return h.replace(/(<div class="dochead">[\s\S]*?<div class="row">\s*<span class="pill[^"]*">[^<]*<\/span>)\s*<span class="pill c-grey">[^<]*<\/span>/, '$1');
+  };
+}
+// Fristen: gleiche Zeilen wie auf der Startseite (Datumsblock, „noch X Tage“ farbig, Art/Wiederholung als Unterzeile)
+{
+  VIEWS.tasks.render = function () {
+    const list = S.tasks.filter((x) => (S.showDone ? x.status === 'done' : x.status !== 'done')).sort((a, b) => (a.due_date || '9999').localeCompare(b.due_date || '9999'));
+    const rows = list.slice(0, lim('tasks')).map((x) => {
+      const dn = x.status === 'done'; const d = dn || !x.due_date ? null : daysUntil(x.due_date); const sv = d3Sev(d);
+      const circ = dn ? '✓' : x.status === 'in_progress' ? '◐' : '○';
+      const col = dn ? 'ok' : sv === 'r' ? 'due-r' : sv === 'o' ? 'due-o' : 'muted';
+      const info = [x.due_time || '', t('tasks.kind_' + x.kind), x.status === 'in_progress' ? t('tasks.status_' + x.status) : '', x.recur ? '↻ ' + t('tasks.recur_' + x.recur) : ''].filter(Boolean).join(', ');
+      const sub = (sv ? `<span class="d3due ${sv}">${esc(d3Left(d))}</span>${info ? ', ' : ''}` : '') + esc(info);
+      return `<div class="cell" style="padding:0;gap:0"><button class="ib" style="border:0;margin-inline-start:6px;font-size:1.3rem;color:var(--${col})" data-a="taskCycle" data-v="${x.id}" aria-label="${esc(t('tasks.tapStatus'))}: ${esc(t('tasks.status_' + x.status))}">${circ}</button>
+        <button class="cell d3row" style="flex:1" data-go="task" data-id="${x.id}">${d3DateBlock(x.due_date)}<span class="cx"><span class="ct" ${dn ? 'style="text-decoration:line-through;color:var(--muted)"' : ''}>${x.priority === 'high' && !dn ? `<span class="prio" aria-label="${esc(t('tasks.prio_high'))}">!</span>` : ''}${esc(x.title)}</span>${sub ? `<span class="cs" style="display:block">${sub}</span>` : ''}</span><span class="chev">›</span></button></div>`;
+    });
+    return `<h1 class="lt">${esc(VIEWS.tasks.title())}</h1>${voiceButton('compact')}${seg([['open', t('web.open')], ['done', t('web.done')]], S.showDone ? 'done' : 'open', 'taskSeg')}
+      ${list.length ? `<div class="group">${rows.join('')}</div>` : `<div class="empty">${ico('clock')}<p class="muted">${esc(t('tasks.empty'))}</p></div>`}${moreBtn('tasks', list.length)}
+      ${group([cell({ icon: 'cal', ic: 'g', title: t('tasks.taxCalendar'), attrs: 'data-go="tax"' })].concat(S.tasks.some((x) => x.status !== 'done' && x.due_date) ? [cell({ icon: 'bell', ic: 'g', title: t('web.icsExport'), sub: t('web.icsHint'), attrs: 'data-a="icsExport"' })] : []))}
+      <p class="muted small">${esc(t('tax.stateNote'))}</p>`;
+  };
+}
 
 boot();

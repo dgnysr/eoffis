@@ -151,9 +151,9 @@ const LETTER = {
   });
   await check('P1-09', 'Kein Buchhaltungsbeleg: Vorschlag Ordner „Finanzamt“ → ja / anderer Ordner', async () => {
     const id = await scan('ai', LETTER);
-    const tx = await text(); assert(/Vorschlag: im Ordner „Finanzamt“ ablegen/.test(tx) && !/Buchhaltungsbeleg erkannt/.test(tx), 'Vorschlag fehlt: ' + tx.slice(0, 160));
+    const tx = await text(); assert(/In „Finanzamt“ ablegen\?/.test(tx) && !/Vorschlag/.test(tx) && !/Buchhaltungsbeleg erkannt/.test(tx), 'Ablage-Frage fehlt: ' + tx.slice(0, 160));
     await p.click('[data-a=fileFolder][data-v=finanzamt]'); await p.waitForFunction((i) => getDoc(i).filed_at, id);
-    assert(!/Vorschlag/.test(await text()), 'Karte bleibt nach dem Ablegen');
+    assert(!/In „Finanzamt“ ablegen\?/.test(await text()), 'Karte bleibt nach dem Ablegen');
     const id2 = await scan('ai', LETTER);
     assert(!(await p.isVisible('[data-a=fileFolder][data-v=behoerden]')), 'andere Ordner sollten erst nach „Anderer Ordner“ erscheinen');
     await p.click('.acc-card details > summary'); await p.click('[data-a=fileFolder][data-v=behoerden]'); await p.waitForFunction((i) => getDoc(i).folder === 'behoerden' && getDoc(i).filed_at, id2);
