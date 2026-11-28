@@ -10,8 +10,8 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const MODEL = Deno.env.get('ANTHROPIC_MODEL') ?? 'claude-sonnet-5-5';
 const BEDROCK_MODEL = Deno.env.get('BEDROCK_MODEL_ID');
-// Bedrock gilt erst, wenn Schlüssel UND Modell-ID da sind; bis dahin (Übergang) läuft weiter Anthropic.
-const BEDROCK_KEY = BEDROCK_MODEL ? Deno.env.get('BEDROCK_API_KEY') : undefined;
+// Bedrock gilt erst, wenn AI_PROVIDER=bedrock UND Schlüssel UND Modell-ID da sind; sonst (Übergang) läuft Anthropic.
+const BEDROCK_KEY = BEDROCK_MODEL && Deno.env.get('AI_PROVIDER') === 'bedrock' ? Deno.env.get('BEDROCK_API_KEY') : undefined;
 const BEDROCK_REGION = Deno.env.get('BEDROCK_REGION') ?? 'eu-north-1';
 const API_KEY = BEDROCK_KEY ?? Deno.env.get('ANTHROPIC_API_KEY');
 const NOT_SET = 'ANTHROPIC_API_KEY fehlt';

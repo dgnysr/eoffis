@@ -117,7 +117,7 @@ const ENV = { SUPABASE_URL: 'https://p.test', SUPABASE_ANON_KEY: 'ANON', SUPABAS
       ai_give_back: () => ({ data: null, error: null }),
     };
     world.fetch = async (u, o) => { world.urls.push(u); world.last = { u, o, b: JSON.parse(o.body) }; return new Response(JSON.stringify({ content: [{ type: 'text', text: 'Hallo EU' }] }), { status: 200 }); };
-    const E = Object.assign({}, ENV, { BEDROCK_API_KEY: 'br-test', BEDROCK_MODEL_ID: 'eu.anthropic.claude-test-v1:0' });
+    const E = Object.assign({}, ENV, { AI_PROVIDER: 'bedrock', BEDROCK_API_KEY: 'br-test', BEDROCK_MODEL_ID: 'eu.anthropic.claude-test-v1:0' });
     let ai = load('ai/index.ts', world, E);
     let r = await ai({ prompt: 'Hallo' }, 't1'); const j = await r.json();
     ok(r.status === 200 && j.text === 'Hallo EU', 'Bedrock: normale Anfrage');
@@ -127,7 +127,7 @@ const ENV = { SUPABASE_URL: 'https://p.test', SUPABASE_ANON_KEY: 'ANON', SUPABAS
     ok(world.urls.every((x) => !x.includes('api.anthropic.com')), 'Bedrock: nichts geht an api.anthropic.com');
     ai = load('ai/index.ts', world, Object.assign({}, ENV, { BEDROCK_API_KEY: 'br-test' }));
     const n0 = world.urls.length; r = await ai({ prompt: 'x' }, 't1');
-    ok(r.status === 200 && world.urls[n0] === 'https://api.anthropic.com/v1/messages', 'Übergang: Bedrock-Schlüssel ohne Modell-ID → KI läuft weiter über Anthropic (nichts bricht)');
+    ok(r.status === 200 && world.urls[n0] === 'https://api.anthropic.com/v1/messages', 'Übergang: Bedrock-Schlüssel ohne AI_PROVIDER/Modell-ID → KI läuft weiter über Anthropic (nichts bricht)');
   }
 
   /* ===== Server-Funktion eoffis-api ===== */
