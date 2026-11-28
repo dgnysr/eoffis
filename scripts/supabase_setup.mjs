@@ -188,6 +188,10 @@ if (tok) {
   ok('Server-Funktion eoffis-api', ea.s === 200, ea);
   const ai = await call('/functions/v1/' + aiName, { method: 'POST', body: '{}' }, tok);
   ok(ai.b?.code === 'not_configured' ? 'KI-Funktion: KI-Schlüssel (Bedrock oder Anthropic) fehlt' : 'KI-Funktion erreichbar', ai.s === 400, ai);
+  if (env.BEDROCK_API_KEY && env.BEDROCK_MODEL_ID) {
+    const br = await call('/functions/v1/' + aiName, { method: 'POST', body: JSON.stringify({ prompt: 'Antworte nur mit dem Wort OK.', max_tokens: 256 }) }, tok);
+    ok('KI über Amazon Bedrock (EU) antwortet', br.s === 200 && typeof br.b?.text === 'string' && br.b.text.length > 0, { status: br.s, code: br.b?.code, error: String(br.b?.error || '').slice(0, 300) });
+  }
   const fremd = await call('/rest/v1/kv?select=path&limit=5', {}, tok);
   ok('Nur eigene Daten sichtbar', Array.isArray(fremd.b) && fremd.b.every((x) => x.path.startsWith(`data/users/${uidv}/`)), fremd);
   await sql(`delete from auth.users where id = ${lit(uidv)}`);
