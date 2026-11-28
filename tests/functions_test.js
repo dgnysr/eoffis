@@ -120,7 +120,7 @@ const ENV = { SUPABASE_URL: 'https://p.test', SUPABASE_ANON_KEY: 'ANON', SUPABAS
     const E = Object.assign({}, ENV, { AI_PROVIDER: 'bedrock', BEDROCK_API_KEY: 'br-test', BEDROCK_MODEL_ID: 'eu.anthropic.claude-test-v1:0' });
     let ai = load('ai/index.ts', world, E);
     let r = await ai({ prompt: 'Hallo' }, 't1'); const j = await r.json();
-    ok(r.status === 200 && j.text === 'Hallo EU', 'Bedrock: normale Anfrage');
+    ok(r.status === 200 && j.text === 'Hallo EU' && j.provider === 'bedrock', 'Bedrock: normale Anfrage (meldet provider bedrock)');
     ok(world.last.u === 'https://bedrock-runtime.eu-north-1.amazonaws.com/model/eu.anthropic.claude-test-v1%3A0/invoke', 'Bedrock: Stockholm (EU), EU-Modellprofil', world.last.u);
     ok(world.last.o.headers.authorization === 'Bearer br-test' && !('x-api-key' in world.last.o.headers), 'Bedrock: Schlüssel als Bearer, kein Anthropic-Header');
     ok(world.last.b.anthropic_version === 'bedrock-2023-05-31' && !('model' in world.last.b) && world.last.b.max_tokens > 0, 'Bedrock: Anfrageformat (Version, kein model-Feld)');

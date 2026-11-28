@@ -97,7 +97,7 @@ if (!have.has('VAPID_PRIVATE_KEY') || !have.has('VAPID_PUBLIC_KEY') || !vapidPub
   put.push({ name: 'VAPID_PUBLIC_KEY', value: vapidPub }, { name: 'VAPID_PRIVATE_KEY', value: sj.d });
 }
 const cronSecret = b64u(crypto.randomBytes(24)); // wird bei jedem Lauf erneuert und gleichzeitig im Zeitplan eingetragen
-put.push({ name: 'AI_PROVIDER', value: env.AI_PROVIDER === 'bedrock' ? 'bedrock' : 'anthropic' }, { name: 'CRON_SECRET', value: cronSecret }, { name: 'SITE_URL', value: SITE }, { name: 'VAPID_SUBJECT', value: SITE });
+put.push({ name: 'AI_PROVIDER', value: 'anthropic' }, { name: 'CRON_SECRET', value: cronSecret }, { name: 'SITE_URL', value: SITE }, { name: 'VAPID_SUBJECT', value: SITE });
 for (const k of ['ANTHROPIC_API_KEY', 'BEDROCK_API_KEY', 'BEDROCK_MODEL_ID', 'BREVO_API_KEY', 'MAIL_FROM']) if (env[k]) put.push({ name: k, value: env[k] });
 await api('POST', `/v1/projects/${ref}/secrets`, put);
 log('Geheimschlüssel gesetzt: ' + put.map((s) => s.name).join(', '));
@@ -189,8 +189,17 @@ if (tok) {
   const ai = await call('/functions/v1/' + aiName, { method: 'POST', body: '{}' }, tok);
   ok(ai.b?.code === 'not_configured' ? 'KI-Funktion: KI-Schlüssel (Bedrock oder Anthropic) fehlt' : 'KI-Funktion erreichbar', ai.s === 400, ai);
   if (env.AI_PROVIDER === 'bedrock' && env.BEDROCK_API_KEY && env.BEDROCK_MODEL_ID) {
-    const br = await call('/functions/v1/' + aiName, { method: 'POST', body: JSON.stringify({ prompt: 'Antworte nur mit dem Wort OK.', max_tokens: 256 }) }, tok);
-    ok('KI über Amazon Bedrock (EU) antwortet', br.s === 200 && typeof br.b?.text === 'string' && br.b.text.length > 0, { status: br.s, code: br.b?.code, error: String(br.b?.error || '').slice(0, 300) });
+    // Bedrock wird erst nach bestandenem Testaufruf scharf geschaltet; sonst bleibt die KI beim bisherigen Anbieter (nichts fällt aus).
+    await api('POST', `/v1/projects/${ref}/secrets`, [{ name: 'AI_PROVIDER', value: 'bedrock' }]);
+    let br = null;
+    for (let i = 0; i < 4; i++) {
+      br = await call('/functions/v1/' + aiName, { method: 'POST', body: JSON.stringify({ prompt: 'Antworte nur mit dem Wort OK.', max_tokens: 256 }) }, tok);
+      if (br.s === 200 && br.b?.provider === 'bedrock' && br.b?.text) break;
+      if (i < 3) await new Promise((r) => setTimeout(r, 6000));
+    }
+    const brOk = br.s === 200 && br.b?.provider === 'bedrock' && !!br.b?.text;
+    if (!brOk) await api('POST', `/v1/projects/${ref}/secrets`, [{ name: 'AI_PROVIDER', value: 'anthropic' }]);
+    ok('KI über Amazon Bedrock (EU) antwortet' + (brOk ? '' : ' – nicht aktiviert, KI bleibt beim bisherigen Anbieter'), brOk, { status: br.s, code: br.b?.code, error: String(br.b?.error || '').slice(0, 300) });
   }
   const fremd = await call('/rest/v1/kv?select=path&limit=5', {}, tok);
   ok('Nur eigene Daten sichtbar', Array.isArray(fremd.b) && fremd.b.every((x) => x.path.startsWith(`data/users/${uidv}/`)), fremd);

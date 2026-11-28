@@ -18,7 +18,7 @@ function mock(opts) {
       if (u === '/v1/projects/ref/restore') { st.restored = true; return send(200, {}); }
       if (u === '/v1/projects/ref/database/query') { const q = JSON.parse(b).query; st.sql.push(q); return send(201, /count\(\*\)/.test(q) ? [{ n: 1 }] : []); }
       if (u === '/v1/projects/ref/secrets' && req.method === 'GET') return send(200, (opts.have || []).map((name) => ({ name, value: 'x' })));
-      if (u === '/v1/projects/ref/secrets') { st.secrets = JSON.parse(b); return send(201); }
+      if (u === '/v1/projects/ref/secrets') { st.secrets = JSON.parse(b); (st.allSecrets = st.allSecrets || []).push(...st.secrets); return send(201); }
       if (u === '/v1/projects/ref/config/auth') { st.auth = Object.assign(st.auth || {}, JSON.parse(b)); (st.authLog = st.authLog || []).push(JSON.parse(b)); return send(200, {}); }
       if (u.startsWith('/v3/smtp/statistics')) return req.headers['api-key'] === 'brevo-ok' ? send(200, {}) : send(401, {});
       if (u === '/v3/smtp/email') { st.mails = (st.mails || []).concat([JSON.parse(b)]); return send(201, { messageId: 'x' }); }
@@ -32,7 +32,7 @@ function mock(opts) {
       if (u === '/rest/v1/rpc/industry_list') return send(200, [{ key: 'alle' }, { key: 'immobilienmakler' }]);
       if (u === '/rest/v1/rpc/account_info') return send(200, { state: opts.accState || 'trial' });
       if (u === '/functions/v1/eoffis-api') return send(200, { set: false });
-      if (u === '/functions/v1/smooth-processor') return opts.noAi ? send(503, { code: 'not_configured' }) : /Antworte nur/.test(String(b || '')) ? (opts.bedrockFail ? send(502, { error: 'AccessDenied', code: 'unavailable' }) : send(200, { text: 'OK' })) : send(400, { error: 'Kein Text' });
+      if (u === '/functions/v1/smooth-processor') return opts.noAi ? send(503, { code: 'not_configured' }) : /Antworte nur/.test(String(b || '')) ? (opts.bedrockFail ? send(502, { error: 'AccessDenied', code: 'unavailable' }) : send(200, { text: 'OK', provider: 'bedrock' })) : send(400, { error: 'Kein Text' });
       send(404, {});
     });
   });
@@ -101,8 +101,8 @@ async function run(name, opts, check) {
     ok('Turnstile: Selbsttest mit Test-Schlüssel und Test-Token, danach wieder echter Schlüssel', r.st.signupCap && r.st.signupCap.tk === 'XXXX.DUMMY.TOKEN.XXXX' && r.st.signupCap.secret === '1x0000000000000000000000000000000AA' && r.st.authLog[r.st.authLog.length - 1].security_captcha_secret === 'tsec-geheim' && /Prüfung: (\d+)\/\1 bestanden/.test(r.o), r.o.slice(-600));
   });
   await run('Roboter-Prüfung ohne Site Key', { have: ['EOFFIS_ENC_KEY', 'ANTHROPIC_API_KEY'], env: { TURNSTILE_SECRET: 'tsec' } }, (r) => ok('Ohne Site Key in der App bleibt die Prüfung aus (sonst scheitert jede Anmeldung)', r.code === 0 && !('security_captcha_enabled' in (r.st.auth || {})) && /Roboter-Prüfung bleibt aus/.test(r.o), r.o));
-  await run('Bedrock ok', { have: ['EOFFIS_ENC_KEY'], env: { AI_PROVIDER: 'bedrock', BEDROCK_API_KEY: 'br', BEDROCK_MODEL_ID: 'eu.anthropic.x' } }, (r) => { const names = (r.st.secrets || []).map((x) => x.name); ok('Bedrock: Schlüssel und Modell-ID werden gesetzt, Testaufruf besteht', r.code === 0 && names.includes('BEDROCK_API_KEY') && names.includes('BEDROCK_MODEL_ID') && /KI über Amazon Bedrock \(EU\) antwortet/.test(r.o), r.o); });
-  await run('Bedrock Fehler', { have: ['EOFFIS_ENC_KEY'], bedrockFail: true, env: { AI_PROVIDER: 'bedrock', BEDROCK_API_KEY: 'br', BEDROCK_MODEL_ID: 'eu.anthropic.x' } }, (r) => ok('Bedrock: fehlerhafter Testaufruf lässt den Lauf scheitern', r.code === 1 && /FAIL KI über Amazon Bedrock/.test(r.o), r.o));
+  await run('Bedrock ok', { have: ['EOFFIS_ENC_KEY'], env: { AI_PROVIDER: 'bedrock', BEDROCK_API_KEY: 'br', BEDROCK_MODEL_ID: 'eu.anthropic.x' } }, (r) => { const names = (r.st.allSecrets || []).map((x) => x.name); ok('Bedrock: Schlüssel und Modell-ID werden gesetzt, Testaufruf besteht', r.code === 0 && names.includes('BEDROCK_API_KEY') && names.includes('BEDROCK_MODEL_ID') && (r.st.allSecrets || []).filter((x) => x.name === 'AI_PROVIDER').pop().value === 'bedrock' && /KI über Amazon Bedrock \(EU\) antwortet/.test(r.o), r.o); });
+  await run('Bedrock Fehler', { have: ['EOFFIS_ENC_KEY'], bedrockFail: true, env: { AI_PROVIDER: 'bedrock', BEDROCK_API_KEY: 'br', BEDROCK_MODEL_ID: 'eu.anthropic.x' } }, (r) => ok('Bedrock: fehlerhafter Testaufruf lässt den Lauf scheitern und stellt auf den bisherigen Anbieter zurück', r.code === 1 && /FAIL KI über Amazon Bedrock/.test(r.o) && (r.st.allSecrets || []).filter((x) => x.name === 'AI_PROVIDER').pop().value === 'anthropic', r.o));
   await run('falscher Schlüssel', { token: 'bad' }, (r) => ok('Ungültiger Zugangsschlüssel: klare Meldung', r.code === 1 && /SUPABASE_ACCESS_TOKEN\) ungültig/.test(r.o), r.o));
   await run('ohne KI-Schlüssel', { noAi: true }, (r) => ok('Fehlender KI-Schlüssel lässt die Prüfung scheitern', r.code === 1 && /FAIL KI-Funktion: KI-Schlüssel/.test(r.o), r.o));
   await run('Datenbank falsch', { accState: 'readonly' }, (r) => ok('Fehlerhafte Prüfung → Lauf scheitert', r.code === 1 && /FAIL Probezeit-Status/.test(r.o), r.o));

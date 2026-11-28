@@ -127,7 +127,8 @@ Deno.serve(async (req) => {
 
   try {
     const text = await callClaude(body.prompt, images, wantJson, maxTokens);
-    return json(wantJson ? { value: parseJson(text) } : { text });
+    const provider = BEDROCK_KEY ? 'bedrock' : 'anthropic';
+    return json(wantJson ? { value: parseJson(text), provider } : { text, provider });
   } catch (e) {
     try { await admin.rpc('ai_give_back', { p_owner: u.user.id }); } catch { /* egal */ }
     const code = (e as { code?: string }).code;
